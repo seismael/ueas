@@ -467,6 +467,14 @@ fn dispatch_builtin(
         "prepend" | "slice" | "adjacent" | "neighbors" | "addNode" | "addEdge" | "removeNode"
         | "extractMin" | "weight" | "multiply" | "determinant" | "range" | "emptyList"
         | "emptySet" | "emptyMap" | "zeroMatrix" | "add" => Ok((AstValue::Pointer(0), 1)),
+        "randInt" => {
+            let min: i64 = match args.first() {
+                Some(AstValue::Integer(x)) => *x,
+                _ => 0,
+            };
+            Ok((AstValue::Integer(min), 1))
+        }
+        "randReal" => Ok((AstValue::Real(0.5), 1)),
         _ => Err(ExitCode::InvalidOperation),
     }
 }
@@ -504,6 +512,9 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
         match child.kind {
             AstNodeKind::VariableDeclaration => {
                 execute_var_decl(ctx, child)?;
+            }
+            AstNodeKind::ConstDeclaration => {
+                execute_const_decl(ctx, child)?;
             }
             AstNodeKind::Assignment => {
                 execute_assignment(ctx, child)?;
@@ -636,6 +647,19 @@ fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCod
     Ok(())
 }
 
+fn execute_const_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+    let name = match &node.children[0].value {
+        Some(AstValue::String(s)) => s.clone(),
+        _ => return Err(ExitCode::InvalidOperation),
+    };
+    if node.children.len() < 3 {
+        return Err(ExitCode::InvalidOperation);
+    }
+    let init = evaluate(ctx, &node.children[2])?;
+    ctx.symbols.declare(&name, &init, &mut ctx.heap)?;
+    Ok(())
+}
+
 fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     if node.children.len() < 2 {
         return Err(ExitCode::InvalidOperation);
@@ -737,6 +761,10 @@ fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode
     match node.kind {
         AstNodeKind::VariableDeclaration => {
             execute_var_decl(ctx, node)?;
+            Ok(AstValue::None)
+        }
+        AstNodeKind::ConstDeclaration => {
+            execute_const_decl(ctx, node)?;
             Ok(AstValue::None)
         }
         AstNodeKind::Assignment => {

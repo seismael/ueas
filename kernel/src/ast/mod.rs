@@ -24,6 +24,7 @@ pub enum AstNodeKind {
     Parameter,
     VariableBinding,
     VariableDeclaration,
+    ConstDeclaration,
     Assignment,
     Return,
     If,
@@ -185,6 +186,16 @@ impl AstNodeFactory {
             children.push(init);
         }
         AstNode::internal(AstNodeKind::VariableDeclaration, children, None)
+    }
+
+    pub fn const_declaration(name: &str, typ: AstNode, initializer: AstNode) -> AstNode {
+        let mut children = vec![AstNode::leaf(
+            AstNodeKind::Identifier,
+            Some(AstValue::String(name.to_string())),
+        )];
+        children.push(typ);
+        children.push(initializer);
+        AstNode::internal(AstNodeKind::ConstDeclaration, children, None)
     }
 
     pub fn assignment(target: AstNode, value: AstNode) -> AstNode {
@@ -474,6 +485,7 @@ pub trait AstVisitor {
     fn visit_parameter(&mut self, _node: &AstNode) {}
     fn visit_variable_binding(&mut self, _node: &AstNode) {}
     fn visit_variable_declaration(&mut self, _node: &AstNode) {}
+    fn visit_const_declaration(&mut self, _node: &AstNode) {}
     fn visit_assignment(&mut self, _node: &AstNode) {}
     fn visit_return(&mut self, _node: &AstNode) {}
     fn visit_if(&mut self, _node: &AstNode) {}
@@ -510,6 +522,7 @@ pub trait AstVisitor {
             AstNodeKind::Parameter => self.visit_parameter(node),
             AstNodeKind::VariableBinding => self.visit_variable_binding(node),
             AstNodeKind::VariableDeclaration => self.visit_variable_declaration(node),
+            AstNodeKind::ConstDeclaration => self.visit_const_declaration(node),
             AstNodeKind::Assignment => self.visit_assignment(node),
             AstNodeKind::Return => self.visit_return(node),
             AstNodeKind::If => self.visit_if(node),
@@ -573,6 +586,7 @@ mod tests {
             AstNodeKind::Parameter,
             AstNodeKind::VariableBinding,
             AstNodeKind::VariableDeclaration,
+            AstNodeKind::ConstDeclaration,
             AstNodeKind::Assignment,
             AstNodeKind::Return,
             AstNodeKind::If,

@@ -2,10 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Spec Version](https://img.shields.io/badge/Spec-1.0.0--draft-orange)](SPEC.md)
-[![Status](https://img.shields.io/badge/Status-Working%20Draft-yellow)](SPEC.md)
+[![Tests](https://img.shields.io/badge/Tests-151-brightgreen)](kernel/)
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](kernel/)
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](grammar/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 
 > The Universal Executable Algorithm Standard (UEAS). An executable, language-agnostic pseudocode specification. UEAS allows algorithms to be written universally, mathematically verified, and natively tested, eliminating language-specific syntax constraints for technical evaluations, research, and core engineering.
 

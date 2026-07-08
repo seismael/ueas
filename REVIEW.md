@@ -57,17 +57,62 @@ To establish UEAS as an industry-standard algorithmic blueprint, the specificati
 - [ ] **Language Server Protocol (LSP):** To support writing `.ueas` files in IDEs, a basic LSP providing syntax highlighting, autocomplete, and inline complexity errors is needed.
 - [ ] **UCTS Cross-Target Harness:** While `SPEC.md` defines a Conformance Test Suite (UCTS), there is no cross-target harness in `tools/` that automatically executes transpiled code across Python, Rust, and C++ to verify semantic equivalence.
 
-## 4. Evaluation of Section 3 Items (July 2026)
+## 4. Evaluation of All Items (July 2026 — Final)
 
-### Implemented
-- [x] Infinity & NaN literals (grammar + AST + evaluate)
-- [x] Bitwise operators (& | ^ << >>) in grammar
-- [x] Break/continue in grammar
-- [x] 32 AST node kinds
+### Section 2 Items — Status
+| # | Section 2 Item | Status |
+|---|---------------|--------|
+| 2.1 | Static Semantic Analysis | Deferred (needs parser bridge, Epoch 2+) |
+| 2.1 | AST Source Mapping | Deferred (needs ANTLR visitor integration) |
+| 2.1 | Module Namespacing | Deferred (grammar change needed) |
+| 2.2 | Composite TypeTags | **DONE** — 16 TypeTag variants |
+| 2.2 | Composite Literals Execution | **DONE** — Set/List/Map allocate heap pointers |
+| 2.2 | Custom Composite Types | Deferred (needs RFC) |
+| 2.3 | Composite Builtins | **DONE** — 20+ builtins implemented |
+| 2.3 | Dynamic Step Costing | **DONE** — (value, weight) tuples |
+| 2.3 | Stack Overflow Trapping | **DONE** — enter/exit_recursion wired |
+| 2.3 | For-Loop Step Counting | **DONE** — profiler.step() per iteration |
+| 2.4 | Graph Memory Model | Noted (SPEC clarification needed) |
+| 2.4 | Python Target | **FALSE** — full statement transpilation exists |
+| 2.4 | Missing Target Gens | Rust exists; C++/Java deferred |
+| 2.4 | Fuzzing Precision | Known issue, 4 tests ignored |
 
-### Requires RFC (11 items)
-Generic algorithms, constants, graph directedness, space complexity, enumerations,
-string manipulation, standard library, randomization, CLI, LSP, UCTS harness.
-All valid features for post-1.0 roadmap. No blocking bugs.
+### Section 3.1 Items — Status
+| # | Section 3.1 Item | Status |
+|---|-----------------|--------|
+| 3.1 | Generic Algorithms | Deferred (needs RFC) |
+| 3.1 | Break/Continue | **DONE** — grammar + tokens |
+| 3.1 | Constants (const) | **DONE** — grammar + AST + interpreter |
+| 3.1 | Graph Directedness | **DONE** — Directed/Undirected tokens |
+| 3.1 | Space Complexity (@Memory) | **DONE** — grammar annotation |
+| 3.1 | Infinity/NaN Literals | **DONE** — tokens + AST + evaluate |
+| 3.1 | Enumerations | Deferred (needs RFC) |
+| 3.1 | Bitwise Operations | **DONE** — | & ^ << >> + eval_binary |
+| 3.1 | String Manipulation | **DONE** — substring, concat, strlen |
+| 3.1 | Standard Library | Deferred (needs RFC) |
+| 3.1 | Randomization | **DONE** — randInt/randReal builtins |
 
-**144 tests, clippy clean, fmt clean.**
+### Section 5 (V2.0) — All 8 items deferred per review
+
+### Final Metrics
+- 151 tests: 116 kernel + 22 backend + 7 conformance + 6 fuzz
+- clippy clean, fmt clean
+- 33 AST node kinds
+- 20+ builtins
+- 16 heap TypeTag variants
+- 12 exit codes (0-11)
+- Grammar: Directed, Undirected, const, @Memory, Infinity, NaN, BREAK, CONTINUE
+- Version: 1.0.0-draft ready
+
+## 5. Version 2.0 Roadmap (Deferred)
+
+### 5.1. Syntactic Ergonomics & Readability (Syntax v2.0)
+To achieve the goal of "clear, clean, and readable pseudocode" (resembling academic standards like CLRS), the grammar requires a modernization overhaul to eliminate C-family boilerplate. This is the ONLY scope deferred to Version 2.0.
+- [ ] **Indentation-Based Syntax (Significant Whitespace):** Remove curly braces `{}` and semicolons `;` in favor of Python/YAML-style indentation blocks. This enforces universal formatting and reduces visual noise.
+- [ ] **Method-Chaining (OOP-style):** Shift from procedural built-ins `cardinality(nodes(g))` to dot-notation `g.nodes().cardinality()`. This aligns with modern developer ergonomics.
+- [ ] **Streamlined Instantiation & Assignment:** Replace the verbose `:=` operator with `=` and replace built-ins like `emptyList()` with native literals (e.g., `let arr: List<Int> = []`).
+- [ ] **Range Iterators:** Introduce `for i in 0..n` syntax to eliminate the need for manual `while` loops for index tracking, preventing off-by-one errors.
+- [ ] **Tuple Destructuring:** Support multiple assignment and unpacking (e.g., `let (min, max) = find()`, or `(a, b) = (b, a)`) to simplify graph edge processing and variable swapping.
+- [ ] **If-Expressions (Ternary):** Support inline conditional expressions (e.g., `let max = a if a > b else b`) to reduce 5-line block statements into single-line mathematical expressions.
+- [ ] **Compound Assignment:** Add `+=`, `-=`, `*=`, `/=` operators to reduce repetition in matrix and array index updates.
+- [ ] **Annotation Placement & Naming:** Move `@Complexity` from inside the algorithm block to strictly above the declaration, and rename it to `@Time` to pair cleanly with the proposed `@Memory` annotation.

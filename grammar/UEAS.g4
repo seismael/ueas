@@ -25,6 +25,10 @@ FOR       : 'for';
 WHILE     : 'while';
 BREAK     : 'break';
 CONTINUE  : 'continue';
+DIRECTED  : 'Directed';
+UNDIRECTED: 'Undirected';
+CONST     : 'const';
+MEMORY    : 'Memory' | 'memory';
 IN        : 'in';
 LET       : 'let';
 ASSERT    : 'assert';
@@ -93,7 +97,8 @@ importDecl : IMPORT identifier NEWLINE?;
 algorithmDecl : ALGORITHM identifier
                 LPAREN (parameter (COMMA parameter)*)? RPAREN
                 (ARROW typeAnnotation)?
-                NEWLINE? complexityAnnotation NEWLINE?
+                complexityAnnotation NEWLINE?
+                memoryAnnotation? NEWLINE?
                 block;
 
 parameter : identifier COLON typeAnnotation;
@@ -101,10 +106,13 @@ parameter : identifier COLON typeAnnotation;
 complexityAnnotation : AT COMPLEXITY LPAREN STRING_LIT
                        (COMMA variableBinding)* RPAREN;
 
+memoryAnnotation : AT MEMORY LPAREN STRING_LIT RPAREN;
+
 variableBinding : identifier BIND expression;
 
 // Statements
 statement : variableDecl
+          | constDecl
           | assignment
           | returnStmt
           | ifStmt
@@ -120,6 +128,8 @@ block : LBRACE statement* RBRACE;
 
 variableDecl : LET identifier COLON typeAnnotation
                (ASSIGN expression)?;
+
+constDecl : CONST identifier COLON typeAnnotation ASSIGN expression;
 
 assignment : identifier
              (DOT identifier | LBRACKET expression RBRACKET)*
@@ -219,4 +229,4 @@ compositeType : 'Set'    LT typeAnnotation GT
               | 'Tuple'  LT typeAnnotation (COMMA typeAnnotation)* GT;
 
 // Identifier — accepts keywords usable as variable names
-identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' | 'true' | 'false';
+identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' | 'true' | 'false' | 'const' | 'Directed' | 'Undirected';
