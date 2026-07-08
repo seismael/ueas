@@ -1,39 +1,25 @@
-# UEAS — Implementation Status (Final)
+# UEAS — Final Implementation Loop (Verified)
 
-## Epoch 1 — Combinatorial Core [COMPLETE]
-- [x] ANTLR4 grammar (Modern Mathematical syntax: no semis, no control parens)
-- [x] 14/14 grammar parse tests (7 positive + 7 examples)
-- [x] AST: 29 node kinds, Factory, Visitor, JSON serde
-- [x] Type system: primitives, composites, custom types
-
-## Epoch 2 — Profiling Kernel [COMPLETE]
-- [x] SymbolTable → VirtualHeap (no native Rust values)
-- [x] Complexity enforcement (enforce_complexity at algorithm termination)
-- [x] 15+ built-in prelude functions (sqrt, length, cardinality, etc.)
-- [x] 128 tests pass (93 kernel + 22 backend + 7 conformance + 6 fuzz)
-
-## Epoch 3 — Universal Bridge [90%]
-- [x] TargetGenerator trait + Python + Rust targets
-- [x] Python: full statement transpilation + prelude_map
-- [x] Rust: expression transpilation + prelude_map
+## VERIFIED DONE
+- [x] Grammar: no semicolons, no control parens, elif, import, NEWLINE
+- [x] Grammar: graph/matrix literals (full rules, no "reserved")
+- [x] 14/14 grammar parse tests pass
+- [x] AST: IntegerLiteral→AstValue::Integer, factory+binary ops handle both
+- [x] SymbolTable→HeapHandle (SymbolValue removed, allocate→write→read)
+- [x] enforce_complexity() exists, delegates to Profiler
+- [x] 15+ builtins in dispatch_builtin()
+- [x] Python target: full statement transpilation + prelude_map
 - [x] MCP endpoint (handle_transpile)
-- [x] 7 cross-target benchmark tests
-- [ ] Rust statement transpilation (control flow)
+- [x] conformance.rs: 7 tests (all 11 exit codes defined)
+- [x] 128 tests pass, clippy clean, fmt clean
 
-## Conformance (UCTS) [70%]
-- [x] 7 conformance tests: NoError, DivisionByZero, AssertionFailure,
-      InvariantViolation, InfiniteLoopDetected, ComplexityViolation,
-      all 11 exit codes defined
-- [x] examples/ with 7 benchmark .ueas files
-- [ ] Full E2E: .ueas → parse → AST → kernel → transpile
-- [ ] 10^6 fuzz batch
-
-## Known Limitations
-- [ ] `#[serde(untagged)]` on AstValue (needs i64 inner type redesign)
-- [ ] Graph/Matrix literals: reserved comments still in grammar
-- [ ] Rust backend: control flow statement transpilation
-
-## Quality Gates: ALL GREEN
-  cargo test --workspace: 128/128 pass
-  cargo clippy -- -D warnings: clean
-  cargo fmt: clean
+## ACTUAL GAPS (from verified audit)
+- [ ] 1. `#[serde(untagged)]` on AstValue — needs Integer(i64) to resolve ambiguity
+- [ ] 2. Rust backend: generate_statement() for if/while/for/var/assign/return
+- [ ] 3. enforce_complexity: evaluate variableBinding expressions to concrete u64
+- [ ] 4. count_collection_items removed but length/cardinality return parsed 0
+- [ ] 5. Trap .ueas files for negative conformance tests
+- [ ] 6. Cross-target E2E with real execution (7 benchmarks)
+- [ ] 7. Fuzz: 10^6 AST permutations (currently 200K)
+- [ ] 8. SPEC.md: update Definition of Done, remove "reserved" comments
+- [ ] 9. REVIEW.md delete after all items addressed

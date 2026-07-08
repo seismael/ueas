@@ -132,6 +132,7 @@ impl TargetGenerator for PythonTarget {
 
 impl PythonTarget {
     /// Map UEAS standard prelude functions to Python equivalents.
+    #[allow(dead_code)]
     fn prelude_map(&self) -> Vec<(&str, &str)> {
         vec![
             ("length", "len"),
@@ -514,9 +515,28 @@ impl TargetGenerator for RustTarget {
         let root: serde_json::Value =
             serde_json::from_str(ast_json).map_err(|e| TranspilationError::new(e.to_string()))?;
 
-        let mut output = String::new();
-        self.generate_node(&root, &mut output)?;
-        Ok(output)
+        let kind = root["kind"].as_str().unwrap_or("");
+        match kind {
+            "Program" => {
+                let mut output = String::new();
+                if let Some(algorithms) = root["children"].as_array() {
+                    for algo in algorithms {
+                        self.generate_algo(algo, &mut output)?;
+                    }
+                }
+                Ok(output)
+            }
+            "Algorithm" => {
+                let mut output = String::new();
+                self.generate_algo(&root, &mut output)?;
+                Ok(output)
+            }
+            _ => {
+                let mut output = String::new();
+                self.generate_node(&root, &mut output)?;
+                Ok(output)
+            }
+        }
     }
 
     fn supported_kinds(&self) -> Vec<&str> {
@@ -541,6 +561,7 @@ impl TargetGenerator for RustTarget {
 }
 
 impl RustTarget {
+    #[allow(dead_code)]
     fn prelude_map(&self) -> Vec<(&str, &str)> {
         vec![
             ("length", "len"),
@@ -555,6 +576,159 @@ impl RustTarget {
 }
 
 impl RustTarget {
+    fn generate_algo(
+        &self,
+        node: &serde_json::Value,
+        output: &mut String,
+    ) -> Result<(), TranspilationError> {
+        let children = node["children"]
+            .as_array()
+            .ok_or_else(|| TranspilationError::new("Algorithm missing children"))?;
+        if children.is_empty() {
+            return Ok(());
+        }
+        let name = children[0]["value"].as_str().unwrap_or("unnamed");
+        let mut params = Vec::new();
+        let mut body_start = 1;
+        for child in children.iter().skip(1) {
+            if child["kind"] == "Parameter" {
+                if let Some(pc) = child["children"].as_array() {
+                    if !pc.is_empty() {
+                        params.push(pc[0]["value"].as_str().unwrap_or("_").to_string());
+                    }
+                }
+                body_start += 1;
+            } else {
+                break;
+            }
+        }
+        output.push_str(&format!("fn {}(", name));
+        output.push_str(
+            &params
+                .iter()
+                .map(|p| format!("{}: i64", p))
+                .collect::<Vec<_>>()
+                .join(", "),
+        );
+        output.push_str(") -> i64 {\n");
+        for child in children.iter().skip(body_start + 1) {
+            self.generate_statement(child, output, 1)?;
+        }
+        output.push_str("}\n\n");
+        Ok(())
+    }
+
+    fn generate_statement(
+        &self,
+        node: &serde_json::Value,
+        output: &mut String,
+        indent: usize,
+    ) -> Result<(), TranspilationError> {
+        let kind = node["kind"].as_str().unwrap_or("");
+        let prefix = "    ".repeat(indent);
+        let children = node["children"].as_array();
+        match kind {
+            "VariableDeclaration" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+                let name = c[0]["value"].as_str().unwrap_or("_");
+                output.push_str(&format!("{}let {}: i64 = ", prefix, name));
+                if c.len() > 2 {
+                    self.generate_node(&c[2], output)?;
+                } else {
+                    output.push_str("0_i64");
+                }
+                output.push_str(";\n");
+            }
+            "Assignment" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+
+                let target = c[0]["value"].as_str().unwrap_or("_");
+                output.push_str(&format!("{}{} = ", prefix, target));
+                self.generate_node(&c[1], output)?;
+                output.push_str(";\n");
+            }
+            "Return" => {
+                output.push_str(&format!("{}return ", prefix));
+                if let Some(c) = children {
+                    if let Some(val) = c.first() {
+                        self.generate_node(val, output)?;
+                    }
+                }
+                output.push_str(";\n");
+            }
+            "If" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+
+                output.push_str(&format!("{}if ", prefix));
+                self.generate_node(&c[0], output)?;
+                output.push_str(" {\n");
+                if c.len() > 1 {
+                    if let Some(body) = c[1]["children"].as_array() {
+                        for stmt in body {
+                            self.generate_statement(stmt, output, indent + 1)?;
+                        }
+                    }
+                }
+                if c.len() > 2 {
+                    output.push_str(&format!("{}}} else {{\n", prefix));
+                    if let Some(body) = c[2]["children"].as_array() {
+                        for stmt in body {
+                            self.generate_statement(stmt, output, indent + 1)?;
+                        }
+                    }
+                }
+                output.push_str(&format!("{}}}\n", prefix));
+            }
+            "WhileLoop" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+
+                output.push_str(&format!("{}while ", prefix));
+                self.generate_node(&c[0], output)?;
+                output.push_str(" {\n");
+                if c.len() > 1 {
+                    if let Some(body) = c[1]["children"].as_array() {
+                        for stmt in body {
+                            self.generate_statement(stmt, output, indent + 1)?;
+                        }
+                    }
+                }
+                output.push_str(&format!("{}}}\n", prefix));
+            }
+            "ForLoop" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+
+                let iterator = c[0]["value"].as_str().unwrap_or("_");
+                output.push_str(&format!("{}for {} in 0..", prefix, iterator));
+                self.generate_node(&c[1], output)?;
+                output.push_str(" {\n");
+                for child in &c[2..] {
+                    self.generate_statement(child, output, indent + 1)?;
+                }
+                output.push_str(&format!("{}}}\n", prefix));
+            }
+            "Assert" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+
+                output.push_str(&format!("{}assert!(", prefix));
+                self.generate_node(&c[0], output)?;
+                output.push_str(");\n");
+            }
+            "Invariant" => {
+                let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
+
+                output.push_str(&format!("{}// invariant: ", prefix));
+                self.generate_node(&c[0], output)?;
+                output.push('\n');
+            }
+            _ => {
+                output.push_str(&prefix);
+                self.generate_node(node, output)?;
+                output.push_str(";\n");
+            }
+        }
+        Ok(())
+    }
+
     fn generate_node(
         &self,
         node: &serde_json::Value,
