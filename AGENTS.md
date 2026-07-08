@@ -668,14 +668,13 @@ ueas/
 ├── SECURITY.md            Vulnerability reporting policy
 ├── CODE_OF_CONDUCT.md     Apache Foundation CoC
 ├── Cargo.toml             Workspace root (kernel + backends)
-├── .github/               GitHub CI and templates
-│   ├── workflows/
-│   │   ├── ci.yml         Push/PR: test + clippy + fmt
-│   │   └── fuzz.yml       Weekly 10^6 fuzz batch
+├── .github/               GitHub PR and issue templates
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── ISSUE_TEMPLATE/
 │       ├── bug_report.md
-│       └── feature_request.md
+│       ├── feature_request.md
+│       ├── rfc_proposal.yml
+│       └── target_generator.yml
 ├── grammar/               ANTLR4 grammar (Epoch 1)
 │   ├── UEAS.g4            Full ANTLR4 grammar
 │   └── tests/
