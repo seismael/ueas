@@ -363,22 +363,14 @@ impl RustTarget {
                     .as_array()
                     .ok_or_else(|| TranspilationError::new("UnaryExpression missing children"))?;
                 let op = children[0]["value"].as_str().unwrap_or("");
-                match op {
-                    "-" => {
-                        output.push('-');
-                        self.generate_node(&children[1], output)?;
-                    }
-                    "not" => {
-                        output.push('!');
-                        self.generate_node(&children[1], output)?;
-                    }
-                    _ => {
-                        output.push_str(op);
-                        output.push('(');
-                        self.generate_node(&children[1], output)?;
-                        output.push(')');
-                    }
-                }
+                let rust_op = match op {
+                    "not" => "!",
+                    _ => op,
+                };
+                output.push_str(rust_op);
+                output.push('(');
+                self.generate_node(&children[1], output)?;
+                output.push(')');
             }
             "FunctionCall" => {
                 let children = node["children"]

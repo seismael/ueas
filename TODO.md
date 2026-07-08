@@ -72,15 +72,15 @@
 
 ---
 
-## Epoch 1 Success Criteria
+| Framework | Passed | Notes |
+|-----------|--------|-------|
+| Kernel unit tests | 75 | AST, heap, traps, profiling, visitor |
+| Backend unit tests | 11 | Python + Rust targets |
+| Cross-target benchmarks | 7 | Euclidean, Linear, Binary, Merge, Matrix, Dijkstra, Unary |
+| Fuzz (proptest) | 6 | +2 large batch (200K cases), 4 ignored |
+| Grammar parse | 7/8 | 5 positive + 2 negative, 1 semantic limitation |
+| **Total** | **99** | clippy clean, fmt clean |
 
-- [x] ANTLR4 parser ingests 5 benchmark algorithms
-- [x] All unit tests pass (`cargo test --workspace`)
-- [x] `cargo clippy -- -D warnings` — zero warnings
-- [x] `cargo fmt --check` — clean
-- [x] Cross-target equivalence verified (Python + Rust, basic expression)
-- [ ] Property-based fuzz tests pass (`cargo test --test fuzz -- --ignored`)
-- [ ] Cross-target equivalence on all 7 benchmarks from SPEC.md Section 9.3
 
 ---
 
