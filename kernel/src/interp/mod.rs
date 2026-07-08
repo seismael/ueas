@@ -292,10 +292,14 @@ fn eval_function_call(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue,
         args.push(evaluate(ctx, child)?);
     }
     ctx.profiler.step()?;
-    dispatch_builtin(&name, &args)
+    dispatch_builtin(&name, &args, &ctx.heap)
 }
 
-fn dispatch_builtin(name: &str, args: &[AstValue]) -> Result<AstValue, ExitCode> {
+fn dispatch_builtin(
+    name: &str,
+    args: &[AstValue],
+    _heap: &VirtualHeap,
+) -> Result<AstValue, ExitCode> {
     match name {
         "sqrt" => {
             if args.is_empty() {
@@ -315,7 +319,11 @@ fn dispatch_builtin(name: &str, args: &[AstValue]) -> Result<AstValue, ExitCode>
             if args.is_empty() {
                 return Err(ExitCode::HeapExhaustion);
             }
-            Ok(AstValue::Integer(args.len() as i64))
+            match &args[0] {
+                AstValue::Integer(x) => Ok(AstValue::Integer(*x)),
+                AstValue::Real(x) => Ok(AstValue::Integer(*x as i64)),
+                _ => Ok(AstValue::Integer(0)),
+            }
         }
         "contains" => {
             if args.len() < 2 {
@@ -416,26 +424,57 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
         Some(AstValue::String(s)) => s.clone(),
         _ => return Ok(()),
     };
-    let n_val: u64 = node
-        .children
-        .iter()
-        .filter(|c| c.kind == AstNodeKind::Parameter)
-        .count() as u64;
+
+    // Evaluate variableBinding expressions to get concrete input sizes
+    let mut n_val: u64 = 0;
+    let mut v_val: u64 = 0;
+    let mut e_val: u64 = 0;
+
+    for child in &node.children {
+        if child.kind == AstNodeKind::VariableBinding {
+            if child.children.len() < 2 {
+                continue;
+            }
+            let var_name = match &child.children[0].value {
+                Some(AstValue::String(s)) => s.clone(),
+                _ => continue,
+            };
+            if let Ok(value) = evaluate(ctx, &child.children[1]) {
+                let concrete = match value {
+                    AstValue::Integer(x) => x.max(0) as u64,
+                    _ => 0,
+                };
+                match var_name.as_str() {
+                    "N" => n_val = concrete,
+                    "V" => v_val = concrete,
+                    "E" => e_val = concrete,
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    if n_val == 0 && v_val == 0 && e_val == 0 {
+        n_val = 1;
+    }
+
     let s = complexity_str.trim();
-    // Use boundary-aware matching: ensure pattern end is followed by ) or EOS
     let contract = match () {
         _ if s.contains("O(1)") => ComplexityContract::Constant,
-        _ if s.contains("O(N^3)") && !s.contains("O(N^30") => ComplexityContract::Polynomial {
-            n: n_val.max(1),
-            k: 3,
+        _ if s.contains("O((V+E) log V)") => {
+            let sum = v_val.saturating_add(e_val).max(1);
+            ComplexityContract::MixedLogLinear {
+                sum,
+                log_term: v_val.max(1),
+            }
+        }
+        _ if s.contains("O(V+E)") || s.contains("O(V + E)") => ComplexityContract::Sum {
+            terms: vec![v_val.max(1), e_val.max(1)],
         },
-        _ if s.contains("O(N^2)") && !s.contains("O(N^20") => {
-            ComplexityContract::Quadratic { n: n_val.max(1) }
-        }
-        _ if s.contains("O(N log N)") || s.contains("O((V+E) log V)") => {
-            ComplexityContract::Linearithmic { n: n_val.max(1) }
-        }
-        _ if s.contains("O(log N)") => ComplexityContract::Logarithmic { n: n_val.max(1) },
+        _ if s.contains("O(N^3)") => ComplexityContract::Polynomial { n: n_val, k: 3 },
+        _ if s.contains("O(N^2)") => ComplexityContract::Quadratic { n: n_val },
+        _ if s.contains("O(N log N)") => ComplexityContract::Linearithmic { n: n_val },
+        _ if s.contains("O(log N)") => ComplexityContract::Logarithmic { n: n_val },
         _ if s.contains("O(2^N)") => ComplexityContract::Exponential {
             n: n_val.clamp(1, 20),
         },
@@ -447,9 +486,9 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
             && !s.contains("O(N ")
             && !s.contains("O(N!") =>
         {
-            ComplexityContract::Linear { n: n_val.max(1) }
+            ComplexityContract::Linear { n: n_val }
         }
-        _ => ComplexityContract::Linear { n: n_val.max(1) },
+        _ => ComplexityContract::Linear { n: n_val },
     };
     ctx.profiler.verify_complexity(&contract)
 }
@@ -993,36 +1032,56 @@ mod tests {
     }
     #[test]
     fn builtin_length() {
+        let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("length", &[AstValue::Integer(1)]).unwrap(),
-            AstValue::Integer(1)
+            dispatch_builtin("length", &[AstValue::Integer(5)], &heap).unwrap(),
+            AstValue::Integer(5)
         );
     }
     #[test]
     fn builtin_contains_true() {
+        let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("contains", &[AstValue::Integer(1), AstValue::Integer(1)]).unwrap(),
+            dispatch_builtin(
+                "contains",
+                &[AstValue::Integer(1), AstValue::Integer(1)],
+                &heap
+            )
+            .unwrap(),
             AstValue::Boolean(true)
         );
     }
     #[test]
     fn builtin_contains_false() {
+        let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("contains", &[AstValue::Integer(1), AstValue::Integer(2)]).unwrap(),
+            dispatch_builtin(
+                "contains",
+                &[AstValue::Integer(1), AstValue::Integer(2)],
+                &heap
+            )
+            .unwrap(),
             AstValue::Boolean(false)
         );
     }
     #[test]
     fn builtin_append() {
+        let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("append", &[AstValue::Integer(1), AstValue::Integer(42)]).unwrap(),
+            dispatch_builtin(
+                "append",
+                &[AstValue::Integer(1), AstValue::Integer(42)],
+                &heap
+            )
+            .unwrap(),
             AstValue::Integer(42)
         );
     }
     #[test]
     fn builtin_pop() {
+        let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("pop", &[AstValue::Integer(99)]).unwrap(),
+            dispatch_builtin("pop", &[AstValue::Integer(99)], &heap).unwrap(),
             AstValue::Integer(99)
         );
     }

@@ -352,18 +352,13 @@ impl AstNodeFactory {
         AstNode::internal(AstNodeKind::GraphLiteral, children, None)
     }
 
-    pub fn matrix_literal(rows: u64, cols: u64, typ: AstNode, elements: Vec<AstNode>) -> AstNode {
-        let mut children = vec![
-            AstNode::leaf(
-                AstNodeKind::IntegerLiteral,
-                Some(AstValue::Integer(rows as i64)),
-            ),
-            AstNode::leaf(
-                AstNodeKind::IntegerLiteral,
-                Some(AstValue::Integer(cols as i64)),
-            ),
-            typ,
-        ];
+    pub fn matrix_literal(
+        rows: AstNode,
+        cols: AstNode,
+        typ: AstNode,
+        elements: Vec<AstNode>,
+    ) -> AstNode {
+        let mut children = vec![rows, cols, typ];
         children.extend(elements);
         AstNode::internal(AstNodeKind::MatrixLiteral, children, None)
     }
