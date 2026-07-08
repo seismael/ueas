@@ -8,5 +8,6 @@
 pub mod ast;
 pub mod heap;
 pub mod interp;
+pub mod invariants;
 pub mod profiling;
 pub mod traps;

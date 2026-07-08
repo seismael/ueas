@@ -146,7 +146,7 @@ impl VirtualHeap {
         self.allocations
             .remove(&handle)
             .map(|_| ())
-            .ok_or(ExitCode::HeapExhaustion)
+            .ok_or(ExitCode::NullDereference)
     }
 
     /// Write bytes to an allocated region.
@@ -163,7 +163,7 @@ impl VirtualHeap {
         let meta = self
             .allocations
             .get(&handle)
-            .ok_or(ExitCode::HeapExhaustion)?;
+            .ok_or(ExitCode::NullDereference)?;
         let alloc_offset = meta.offset;
         if offset + data.len() > meta.size {
             return Err(ExitCode::IndexOutOfBounds);
@@ -182,7 +182,7 @@ impl VirtualHeap {
         let meta = self
             .allocations
             .get(&handle)
-            .ok_or(ExitCode::HeapExhaustion)?;
+            .ok_or(ExitCode::NullDereference)?;
         let alloc_offset = meta.offset;
         if offset + size > meta.size {
             return Err(ExitCode::IndexOutOfBounds);
@@ -294,7 +294,7 @@ mod tests {
         let mut heap = VirtualHeap::new(test_config());
         let fake = HeapHandle(999);
         let result = heap.write(fake, 0, &[1]);
-        assert_eq!(result.unwrap_err(), ExitCode::HeapExhaustion);
+        assert_eq!(result.unwrap_err(), ExitCode::NullDereference);
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
         let heap = VirtualHeap::new(test_config());
         let fake = HeapHandle(999);
         let result = heap.read(fake, 0, 1);
-        assert_eq!(result.unwrap_err(), ExitCode::HeapExhaustion);
+        assert_eq!(result.unwrap_err(), ExitCode::NullDereference);
     }
 
     #[test]
@@ -320,7 +320,7 @@ mod tests {
         heap.deallocate(handle).unwrap();
         assert_eq!(
             heap.deallocate(handle).unwrap_err(),
-            ExitCode::HeapExhaustion
+            ExitCode::NullDereference
         );
     }
 
