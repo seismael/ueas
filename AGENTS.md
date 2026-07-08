@@ -873,34 +873,63 @@ ueas/
 ├── LICENSE                Apache License 2.0
 ├── NOTICE                 Apache copyright notice
 ├── CONTRIBUTORS.md        List of contributors (All Contributors spec)
+├── CHANGELOG.md           Release history (Keep a Changelog)
+├── TODO.md                Current task list
+├── SECURITY.md            Vulnerability reporting policy
+├── CODE_OF_CONDUCT.md     Apache Foundation CoC
+├── Cargo.toml             Workspace root (kernel + backends)
 ├── .github/               GitHub CI and templates
+│   ├── workflows/
+│   │   ├── ci.yml         Push/PR: test + clippy + fmt
+│   │   └── fuzz.yml       Weekly 10^6 fuzz batch
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── ISSUE_TEMPLATE/
 │       ├── bug_report.md
 │       └── feature_request.md
-├── grammar/               ANTLR4 grammar files (Epoch 1)
-│   └── UEAS.g4            (future)
+├── grammar/               ANTLR4 grammar (Epoch 1)
+│   ├── UEAS.g4            Full ANTLR4 grammar
+│   └── tests/
+│       ├── positive/      7 parse-test .ueas files
+│       └── negative/      3 rejection-test .ueas files
 ├── kernel/                Rust abstract interpreter (Epoch 2)
-│   ├── Cargo.toml         (future)
-│   └── src/
-│       ├── ast/           AST node types, Visitor trait
-│       ├── interp/        Execution engine
-│       ├── heap/          Virtual heap implementation
-│       ├── invariants/    Invariant engine
-│       ├── traps/         Trap code definitions
-│       └── profiling/     Step counter, complexity profiler
+│   ├── Cargo.toml
+│   ├── src/
+│   │   ├── lib.rs         Module declarations
+│   │   ├── ast/mod.rs     AST node types, Factory, Visitor, Types, serde
+│   │   ├── interp/mod.rs  Expression evaluator, statement executor
+│   │   ├── heap/mod.rs    Virtual heap (bump-alloc, bounds-checked)
+│   │   ├── traps/mod.rs   Exit codes (0-10), trap register
+│   │   ├── profiling/     Step counter, complexity profiler
+│   │   │   └── mod.rs
+│   │   └── invariants/    Invariant engine
+│   │       └── mod.rs
+│   └── tests/
+│       ├── fuzz.rs         Property-based fuzz (6 proptest + 200K batch)
+│       └── conformance.rs  UCTS — 7 conformance tests
 ├── backends/              Transpiler plugins (Epoch 3)
-│   ├── python/            (future)
-│   ├── rust/              (future)
-│   └── cpp/               (future)
-├── tools/                 CI, fuzzing, benchmarks, containers
-│   └── Dockerfile         (future)
+│   ├── Cargo.toml
+│   ├── src/
+│   │   ├── lib.rs         TargetGenerator, PythonTarget, RustTarget
+│   │   └── mcp.rs         MCP endpoint (handle_transpile)
+│   └── tests/
+│       └── cross_target.rs  7 benchmark equivalence tests
+├── examples/               Benchmark algorithm .ueas files
+│   ├── euclidean.ueas     O(1)
+│   ├── linear_search.ueas O(N)
+│   ├── binary_search.ueas O(log N)
+│   ├── merge_sort.ueas    O(N log N)
+│   ├── dijkstra.ueas      O((V+E) log V)
+│   ├── dfs.ueas           O(V+E)
+│   └── matrix_multiply.ueas  O(R*C*K)
+├── tools/                 CI, containers
+│   └── Dockerfile         Reproducible CI environment
 └── docs/
     ├── CONTRIBUTING.md    Contribution guide (full contributor lifecycle)
     ├── CLA.md             Contributor License Agreement (ICLA + CCLA)
+    ├── GOVERNANCE.md      BDFL → TSC transition
     ├── rfcs/              RFC proposals (NNNN-title.md)
     │   └── README.md      RFC lifecycle, template, review criteria
-    ├── adr/               Architecture Decision Records (NNNN-title.md)
+    ├── adr/               Architecture Decision Records
     │   └── README.md      ADR format and index
     ├── specs/             Detailed per-domain specifications
     │   └── README.md      Format and index
