@@ -1,5 +1,5 @@
 # Rust
-kernel/target/
+target/
 **/*.rs.bk
 *.pdb
 
