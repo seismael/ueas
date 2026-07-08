@@ -4,24 +4,78 @@ This document is the **authoritative, non-negotiable protocol** for all
 development work on UEAS. Every agent, contributor, and maintainer MUST
 follow this protocol exactly. Deviation is not permitted.
 
+## Architecture & Documentation Stability
+
+The architecture, specification, and core documentation of UEAS are
+**sealed** as of the current baseline. This means:
+
+- **Specification (SPEC.md):** Immutable. No changes to grammar rules, AST
+  schema, kernel semantics, type system, or transpiler contracts are
+  permitted without a ratified RFC. See [RFC Workflow](#rfc-workflow).
+
+- **Architecture (AGENTS.md, domain boundaries):** Immutable. No changes
+  to Domain-Driven Design boundaries, SOLID enforcement rules, design pattern
+  mandates, or architectural decisions are permitted without a corresponding
+  Architecture Decision Record (ADR) and explicit approval from the project
+  maintainer.
+
+- **Core Documentation (README.md, LICENSE, NOTICE):** Immutable. No changes
+  permitted without explicit approval from the project maintainer.
+
+- **Contributor Documentation (CONTRIBUTING.md, CLA.md):** Changes permitted
+  only via the RFC process.
+
+**What IS permitted without approval:**
+
+- Adding new documentation files that **extend and align** with existing
+  documentation (e.g., new `docs/specs/` files, tutorial content, meeting
+  notes, new ADRs documenting decisions consistent with the current
+  architecture, new RFC drafts).
+- Adding new code in `grammar/`, `kernel/`, `backends/`, or `tools/` that
+  conforms to the existing specification and architecture.
+- Adding new tests, benchmarks, fuzzing strategies, CI configurations.
+- Fixing typos, broken links, or formatting issues in documentation.
+
+**What IS NOT permitted without approval:**
+
+- Any documentation change that contradicts, removes, or reinterprets
+  existing architectural decisions, SOLID/DDD principles, domain boundaries,
+  or specification text.
+- Any code change that introduces new dependencies, modifies domain
+  boundaries, adds I/O to the kernel, or alters the canonical AST schema.
+- Any change that relaxes quality gates, coverage thresholds, or testing
+  requirements.
+
+**Conflict Resolution:** If an agent discovers a gap, inconsistency, or
+potential improvement that conflicts with existing architecture or
+specification, the agent MUST:
+1. Document the finding as a new RFC draft in `docs/rfcs/`.
+2. Present the concern to the project maintainer.
+3. Await explicit approval before making any changes.
+
+**Policy Enforcement:** Any pull request that modifies a sealed document
+without explicit approval will be rejected. Any agent instruction that
+conflicts with this policy must be declined with a reference to this section.
+
 ---
 
 ## Table of Contents
 
 1. [Project Identity](#project-identity)
-2. [Domain Boundaries](#domain-boundaries)
-3. [The Development Pipeline](#the-development-pipeline)
-4. [Architecture & Design Enforcement](#architecture--design-enforcement)
-5. [Documentation Enforcement](#documentation-enforcement)
-6. [Testing Enforcement](#testing-enforcement)
-7. [Code Quality Enforcement](#code-quality-enforcement)
-8. [RFC Workflow](#rfc-workflow)
-9. [Toolchain](#toolchain)
-10. [Quality Gates](#quality-gates)
-11. [Design Rationale](#design-rationale)
-12. [No-Go Zones](#no-go-zones)
-13. [Vocabulary](#vocabulary)
-14. [Directory Map](#directory-map)
+2. [Architecture & Documentation Stability](#architecture--documentation-stability)
+3. [Domain Boundaries](#domain-boundaries)
+4. [The Development Pipeline](#the-development-pipeline)
+5. [Architecture & Design Enforcement](#architecture--design-enforcement)
+6. [Documentation Enforcement](#documentation-enforcement)
+7. [Testing Enforcement](#testing-enforcement)
+8. [Code Quality Enforcement](#code-quality-enforcement)
+9. [RFC Workflow](#rfc-workflow)
+10. [Toolchain](#toolchain)
+11. [Quality Gates](#quality-gates)
+12. [Design Rationale](#design-rationale)
+13. [No-Go Zones](#no-go-zones)
+14. [Vocabulary](#vocabulary)
+15. [Directory Map](#directory-map)
 
 ---
 
@@ -786,7 +840,8 @@ The following are **strictly forbidden** project-wide:
 - Skipping any phase of the development pipeline
 - Merging a PR with any failing quality gate
 - Leaving TODO comments without a `TODO(#issue_number)` format
-- Using emoji in code, comments, or documentation
+- Modifying sealed architecture or specification documents (SPEC.md, AGENTS.md architecture sections, README.md, LICENSE, NOTICE) without explicit maintainer approval
+- Introducing documentation that contradicts, removes, or reinterprets existing architectural decisions, SOLID principles, or domain boundaries
 
 ---
 

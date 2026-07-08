@@ -3,7 +3,12 @@
 **Version:** 1.0.0-draft  
 **Status:** Working Draft  
 **License:** Apache License 2.0  
-**Copyright:** UEAS Contributors  
+**Copyright:** UEAS Contributors
+
+> **Stability:** This specification is sealed as of the v1.0.0-draft baseline.
+> No changes to grammar rules, AST schema, kernel semantics, or transpiler
+> contracts are permitted without a ratified RFC. See the
+> [RFC Process](#8-rfc-process-and-governance) for the full procedure.  
 
 ---
 
