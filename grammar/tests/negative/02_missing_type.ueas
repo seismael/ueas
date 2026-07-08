@@ -1,0 +1,5 @@
+algorithm BadAlgo(x) -> Real
+    @Complexity("O(1)")
+{
+    return 0.0;
+}

@@ -1,0 +1,13 @@
+algorithm Dijkstra(graph: Graph<Node, Real>, source: Node) -> Map<Node, Real>
+    @Complexity("O((V+E) log V)", V = length(graph.nodes), E = length(graph.edges))
+{
+    let dist: Map<Node, Real> := {};
+    let visited: Set<Node> := {};
+    dist[source] := 0.0;
+    for n in graph.nodes {
+        if (n != source) {
+            dist[n] := 999999.0;
+        }
+    }
+    return dist;
+}

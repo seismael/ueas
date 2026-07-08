@@ -22,18 +22,7 @@ IN        : 'in';
 LET       : 'let';
 ASSERT    : 'assert';
 INVARIANT : 'invariant';
-COMPLEXITY: 'complexity';
-GRAPH     : 'graph';
-SET       : 'set';
-LIST      : 'list';
-MAP       : 'map';
-MATRIX    : 'matrix';
-OPTION    : 'option';
-RESULT    : 'result';
-SOME      : 'some';
-NONE      : 'none';
-OK        : 'ok';
-ERR       : 'err';
+COMPLEXITY: 'Complexity' | 'complexity';
 TRUE      : 'true';
 FALSE     : 'false';
 AND       : 'and';
@@ -53,6 +42,7 @@ MINUS     : '-';
 STAR      : '*';
 SLASH     : '/';
 ASSIGN    : ':=';
+BIND      : '=';
 EQ        : '==';
 NEQ       : '!=';
 LT        : '<';
@@ -70,10 +60,9 @@ LPAREN    : '(';
 RPAREN    : ')';
 LBRACKET  : '[';
 RBRACKET  : ']';
-LANGLE    : '<';
-RANGLE    : '>';
 PIPE      : '|';
 AT        : '@';
+AS        : 'as';
 
 // Comments and Whitespace
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
@@ -85,18 +74,21 @@ WS            : [ \t\r\n]+ -> skip;
 // Top-Level
 program : algorithmDecl+ EOF;
 
-algorithmDecl : ALGORITHM IDENTIFIER
+algorithmDecl : ALGORITHM identifier
                 LPAREN (parameter (COMMA parameter)*)? RPAREN
                 (ARROW typeAnnotation)?
                 complexityAnnotation
                 LBRACE statement* RBRACE;
 
-parameter : IDENTIFIER COLON typeAnnotation;
+parameter : identifier COLON typeAnnotation;
 
 complexityAnnotation : AT COMPLEXITY LPAREN STRING_LIT
                        (COMMA variableBinding)* RPAREN;
 
-variableBinding : IDENTIFIER ASSIGN expression;
+variableBinding : identifier BIND expression;
+
+// Identifier — accepts keywords usable as variable names
+identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' | 'true' | 'false';
 
 // Statements
 statement : variableDecl
@@ -107,16 +99,16 @@ statement : variableDecl
           | whileLoop
           | assertStmt
           | invariantStmt
-          | functionCall SEMICOLON
+          | compositeCall SEMICOLON
           | block;
 
 block : LBRACE statement* RBRACE;
 
-variableDecl : LET IDENTIFIER COLON typeAnnotation
+variableDecl : LET identifier COLON typeAnnotation
                (ASSIGN expression)? SEMICOLON;
 
-assignment : IDENTIFIER
-             (DOT IDENTIFIER | LBRACKET expression RBRACKET)*
+assignment : identifier
+             (DOT identifier | LBRACKET expression RBRACKET)*
              ASSIGN expression SEMICOLON;
 
 returnStmt : RETURN expression? SEMICOLON;
@@ -125,7 +117,7 @@ ifStmt : IF LPAREN expression RPAREN block
          (ELSE IF LPAREN expression RPAREN block)*
          (ELSE block)?;
 
-forLoop : FOR IDENTIFIER IN expression block;
+forLoop : FOR identifier IN expression block;
 
 whileLoop : WHILE LPAREN expression RPAREN block;
 
@@ -136,7 +128,7 @@ invariantStmt : INVARIANT LPAREN expression RPAREN
                 (COLON STRING_LIT)? SEMICOLON;
 
 // Expressions (ordered by precedence — lowest to highest)
-expression : logicalOr;
+expression : logicalOr (AS typeAnnotation)?;
 
 logicalOr : logicalAnd (OR logicalAnd)*;
 
@@ -157,12 +149,13 @@ primary : INTEGER_LIT
         | STRING_LIT
         | TRUE
         | FALSE
-        | NONE
-        | IDENTIFIER
-        | functionCall
+        | 'none'
+        | 'some'
+        | compositeCall
         | LPAREN expression RPAREN
-        | compositeLiteral
-        | castExpression;
+        | compositeLiteral;
+
+compositeCall : identifier ( DOT identifier | LBRACKET expression RBRACKET )* ( LPAREN (expression (COMMA expression)*)? RPAREN )?;
 
 compositeLiteral : setLiteral
                  | listLiteral
@@ -170,40 +163,36 @@ compositeLiteral : setLiteral
                  | graphLiteral
                  | matrixLiteral;
 
-setLiteral : LBRACE expression (COMMA expression)* RBRACE;
+setLiteral : LBRACE (expression (COMMA expression)*)? RBRACE;
 
 listLiteral : LBRACKET expression (COMMA expression)* RBRACKET;
 
 mapLiteral : LBRACE (expression COLON expression
                      (COMMA expression COLON expression)*)? RBRACE;
 
-graphLiteral : GRAPH LANGLE typeAnnotation COMMA typeAnnotation RANGLE
+graphLiteral : 'graph' LT typeAnnotation COMMA typeAnnotation GT
                LPAREN LPAREN expression (COMMA expression)* RPAREN COMMA
                LPAREN edgeLiteral (COMMA edgeLiteral)* RPAREN RPAREN;
 
 edgeLiteral : LPAREN expression COMMA expression
               (COMMA expression)? RPAREN;
 
-matrixLiteral : MATRIX LANGLE INTEGER_LIT COMMA INTEGER_LIT
-                COMMA typeAnnotation RANGLE
+matrixLiteral : 'matrix' LT INTEGER_LIT COMMA INTEGER_LIT
+                COMMA typeAnnotation GT
                 LPAREN expression (COMMA expression)* RPAREN;
-
-castExpression : expression AS typeAnnotation;
-
-functionCall : IDENTIFIER LPAREN
-               (expression (COMMA expression)*)? RPAREN;
 
 // Types
 typeAnnotation : primitiveType
-               | compositeType;
+               | compositeType
+               | IDENTIFIER;
 
 primitiveType : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void';
 
-compositeType : 'Set'    LANGLE typeAnnotation RANGLE                                            # SetType
-              | 'List'   LANGLE typeAnnotation RANGLE                                            # ListType
-              | 'Map'    LANGLE typeAnnotation COMMA typeAnnotation RANGLE                       # MapType
-              | 'Graph'  LANGLE typeAnnotation COMMA typeAnnotation RANGLE                       # GraphType
-              | 'Matrix' LANGLE INTEGER_LIT COMMA INTEGER_LIT COMMA typeAnnotation RANGLE        # MatrixType
-              | 'Option' LANGLE typeAnnotation RANGLE                                            # OptionType
-              | 'Result' LANGLE typeAnnotation COMMA typeAnnotation RANGLE                       # ResultType
-              | 'Tuple'  LANGLE typeAnnotation (COMMA typeAnnotation)* RANGLE                    # TupleType;
+compositeType : 'Set'    LT typeAnnotation GT                                            # SetType
+              | 'List'   LT typeAnnotation GT                                            # ListType
+              | 'Map'    LT typeAnnotation COMMA typeAnnotation GT                       # MapType
+              | 'Graph'  LT typeAnnotation COMMA typeAnnotation GT                       # GraphType
+              | 'Matrix' LT INTEGER_LIT COMMA INTEGER_LIT COMMA typeAnnotation GT        # MatrixType
+              | 'Option' LT typeAnnotation GT                                            # OptionType
+              | 'Result' LT typeAnnotation COMMA typeAnnotation GT                       # ResultType
+              | 'Tuple'  LT typeAnnotation (COMMA typeAnnotation)* GT                    # TupleType;

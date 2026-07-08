@@ -1,0 +1,12 @@
+algorithm LinearSearch(items: List<Integer>, target: Integer) -> Integer
+    @Complexity("O(N)", N = length(items))
+{
+    let i: Integer := 0;
+    while (i < length(items)) {
+        if (items[i] == target) {
+            return i;
+        }
+        i := i + 1;
+    }
+    return -1;
+}

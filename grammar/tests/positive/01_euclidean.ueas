@@ -1,0 +1,7 @@
+algorithm EuclideanDistance(x1: Real, y1: Real, x2: Real, y2: Real) -> Real
+    @Complexity("O(1)")
+{
+    let dx: Real := x2 - x1;
+    let dy: Real := y2 - y1;
+    return sqrt(dx * dx + dy * dy);
+}
