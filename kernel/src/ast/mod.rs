@@ -58,9 +58,12 @@ pub struct SourceLocation {
 }
 
 /// Value types carried by AST nodes.
+/// Uses #[serde(untagged)] for flat JSON output:
+///   Integer(42) → 42, Real(3.14) → 3.14, Boolean(true) → true
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum AstValue {
-    Integer(String),
+    Integer(i64),
     Real(f64),
     Boolean(bool),
     String(String),
@@ -242,7 +245,7 @@ impl AstNodeFactory {
     pub fn integer_literal(value: &str) -> AstNode {
         AstNode::leaf(
             AstNodeKind::IntegerLiteral,
-            Some(AstValue::Integer(value.to_string())),
+            Some(AstValue::Integer(value.parse().unwrap_or(0))),
         )
     }
 
@@ -353,11 +356,11 @@ impl AstNodeFactory {
         let mut children = vec![
             AstNode::leaf(
                 AstNodeKind::IntegerLiteral,
-                Some(AstValue::Integer(rows.to_string())),
+                Some(AstValue::Integer(rows as i64)),
             ),
             AstNode::leaf(
                 AstNodeKind::IntegerLiteral,
-                Some(AstValue::Integer(cols.to_string())),
+                Some(AstValue::Integer(cols as i64)),
             ),
             typ,
         ];
@@ -591,7 +594,7 @@ mod tests {
     fn factory_integer_literal_creates_correct_node() {
         let node = AstNodeFactory::integer_literal("42");
         assert_eq!(node.kind, AstNodeKind::IntegerLiteral);
-        assert_eq!(node.value, Some(AstValue::Integer("42".to_string())));
+        assert_eq!(node.value, Some(AstValue::Integer(42)));
         assert!(node.children.is_empty());
     }
 
