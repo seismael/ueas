@@ -35,6 +35,29 @@ impl TranspilationError {
     }
 }
 
+/// Helper: get array from a serde_json Value, returning error if not an array.
+fn as_array<'a>(
+    node: &'a serde_json::Value,
+) -> Result<&'a Vec<serde_json::Value>, TranspilationError> {
+    node.as_array()
+        .ok_or_else(|| TranspilationError::new("Expected JSON array"))
+}
+
+/// Helper: get string from a serde_json Value.
+fn as_str<'a>(node: &'a serde_json::Value, default: &'static str) -> &'a str {
+    node.as_str().unwrap_or(default)
+}
+
+/// Helper: get child value by index from arrays.
+fn child_val<'a>(node: &'a serde_json::Value, idx: usize) -> Option<&'a serde_json::Value> {
+    node.as_array().and_then(|a| a.get(idx))
+}
+
+/// Helper: get child count.
+fn child_count(node: &serde_json::Value) -> usize {
+    node.as_array().map(|a| a.len()).unwrap_or(0)
+}
+
 /// GoF Strategy — every transpilation target implements this trait.
 ///
 /// Each implementation translates the canonical UEAS AST into idiomatic
@@ -57,6 +80,11 @@ pub trait TargetGenerator {
     ///
     /// The input AST MUST have passed kernel validation.
     fn generate(&self, ast_json: &str) -> Result<String, TranspilationError>;
+
+    /// Transpile a full program AST into a complete source file.
+    fn generate_program(&self, ast_json: &str) -> Result<String, TranspilationError> {
+        self.generate(ast_json)
+    }
 
     /// Returns the set of UEAS AST node kinds this target supports.
     fn supported_kinds(&self) -> Vec<&str>;
@@ -82,9 +110,24 @@ impl TargetGenerator for PythonTarget {
         let root: serde_json::Value =
             serde_json::from_str(ast_json).map_err(|e| TranspilationError::new(e.to_string()))?;
 
-        let mut output = String::new();
-        self.generate_node(&root, &mut output, 0)?;
-        Ok(output)
+        let kind = root["kind"].as_str().unwrap_or("");
+        match kind {
+            "Program" => self.generate_program_impl(&root),
+            "Algorithm" => {
+                let mut output = String::new();
+                self.generate_algo(&root, &mut output)?;
+                Ok(output)
+            }
+            _ => {
+                let mut output = String::new();
+                self.generate_node(&root, &mut output, 0)?;
+                Ok(output)
+            }
+        }
+    }
+
+    fn generate_program(&self, ast_json: &str) -> Result<String, TranspilationError> {
+        self.generate(ast_json)
     }
 
     fn supported_kinds(&self) -> Vec<&str> {
@@ -109,6 +152,192 @@ impl TargetGenerator for PythonTarget {
 }
 
 impl PythonTarget {
+    fn generate_program_impl(
+        &self,
+        node: &serde_json::Value,
+    ) -> Result<String, TranspilationError> {
+        let mut output = String::new();
+        let algorithms = node["children"]
+            .as_array()
+            .ok_or_else(|| TranspilationError::new("Program missing children"))?;
+        output.push_str("import math\n\n");
+        for algo in algorithms {
+            self.generate_algo(algo, &mut output)?;
+        }
+        Ok(output)
+    }
+
+    fn generate_algo(
+        &self,
+        node: &serde_json::Value,
+        output: &mut String,
+    ) -> Result<(), TranspilationError> {
+        let kind = node["kind"].as_str().unwrap_or("");
+        match kind {
+            "Algorithm" => {
+                let children = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("Algorithm missing children"))?;
+                // name is children[0]
+                let name = children
+                    .first()
+                    .and_then(|c| c["value"].as_str())
+                    .unwrap_or("unnamed");
+                output.push_str(&format!("def {}(", name));
+                // parameters: children[1..]
+                let mut params = Vec::new();
+                let mut body_start = 1;
+                for child in children.iter().skip(1) {
+                    if child["kind"] == "Parameter" {
+                        let pname = child["children"][0]["value"].as_str().unwrap_or("_");
+                        params.push(pname.to_string());
+                        body_start += 1;
+                    } else {
+                        break;
+                    }
+                }
+                output.push_str(&params.join(", "));
+                output.push_str("):\n");
+
+                // Body statements
+                for child in children.iter().skip(body_start + 1) {
+                    self.generate_statement(child, output, 1)?;
+                }
+                output.push('\n');
+                Ok(())
+            }
+            _ => Err(TranspilationError::new(format!(
+                "Unexpected node kind in algorithm: {}",
+                kind
+            ))),
+        }
+    }
+
+    fn generate_statement(
+        &self,
+        node: &serde_json::Value,
+        output: &mut String,
+        indent: usize,
+    ) -> Result<(), TranspilationError> {
+        let kind = node["kind"].as_str().unwrap_or("");
+        let prefix = "    ".repeat(indent);
+        match kind {
+            "VariableDeclaration" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                let name = c[0]["value"].as_str().unwrap_or("_");
+                output.push_str(&format!("{}{} = ", prefix, name));
+                if c.len() > 2 {
+                    self.generate_node(&c[2], output, 0)?;
+                } else {
+                    output.push_str("None");
+                }
+                output.push('\n');
+                Ok(())
+            }
+            "Assignment" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                let target = c[0]["value"].as_str().unwrap_or("_");
+                output.push_str(&format!("{}{} = ", prefix, target));
+                self.generate_node(&c[1], output, 0)?;
+                output.push('\n');
+                Ok(())
+            }
+            "Return" => {
+                output.push_str(&format!("{}return ", prefix));
+                if let Some(c) = node["children"].as_array() {
+                    if let Some(val) = c.first() {
+                        self.generate_node(val, output, 0)?;
+                    }
+                }
+                output.push('\n');
+                Ok(())
+            }
+            "If" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                output.push_str(&format!("{}if ", prefix));
+                self.generate_node(&c[0], output, 0)?;
+                output.push_str(":\n");
+                if c.len() > 1 {
+                    if let Some(body) = c[1]["children"].as_array() {
+                        for stmt in body {
+                            self.generate_statement(stmt, output, indent + 1)?;
+                        }
+                    }
+                }
+                if c.len() > 2 {
+                    output.push_str(&format!("{}else:\n", prefix));
+                    if let Some(body) = c[2]["children"].as_array() {
+                        for stmt in body {
+                            self.generate_statement(stmt, output, indent + 1)?;
+                        }
+                    }
+                }
+                Ok(())
+            }
+            "WhileLoop" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                output.push_str(&format!("{}while ", prefix));
+                if !c.is_empty() {
+                    self.generate_node(&c[0], output, 0)?;
+                }
+                output.push_str(":\n");
+                if c.len() > 1 {
+                    if let Some(body) = c[1]["children"].as_array() {
+                        for stmt in body {
+                            self.generate_statement(stmt, output, indent + 1)?;
+                        }
+                    }
+                }
+                Ok(())
+            }
+            "ForLoop" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                let iterator = c[0]["value"].as_str().unwrap_or("_");
+                output.push_str(&format!("{}for {} in range(", prefix, iterator));
+                self.generate_node(&c[1], output, 0)?;
+                output.push_str("):\n");
+                for i in 2..c.len() {
+                    self.generate_statement(&c[i], output, indent + 1)?;
+                }
+                Ok(())
+            }
+            "Assert" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                output.push_str(&format!("{}assert ", prefix));
+                self.generate_node(&c[0], output, 0)?;
+                output.push('\n');
+                Ok(())
+            }
+            "Invariant" => {
+                let c = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("No children"))?;
+                output.push_str(&format!("{}# invariant: ", prefix));
+                self.generate_node(&c[0], output, 0)?;
+                output.push('\n');
+                Ok(())
+            }
+            _ => {
+                output.push_str(&prefix);
+                self.generate_node(node, output, 0)?;
+                output.push('\n');
+                Ok(())
+            }
+        }
+    }
+
     fn generate_node(
         &self,
         node: &serde_json::Value,
