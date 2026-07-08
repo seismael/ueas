@@ -36,6 +36,11 @@ by Domain-Driven Design (DDD) and SOLID principles.
 algorithms with guaranteed complexity-invariant enforcement and semantically
 equivalent transpilation.
 
+**UEAS is not a programming language.** It is a mathematical blueprint
+specification. It does not build applications, manage memory, or handle I/O.
+It defines, verifies, and transpiles algorithms. The canonical AST is the
+source of truth; implementation follows specification.
+
 **Repository root:** `ueas/`
 
 ---
@@ -760,7 +765,9 @@ The following decisions are intentional and non-negotiable.
 
 ## No-Go Zones
 
-The following are **strictly forbidden** in the kernel domain:
+The **Immutable Axioms** defined in [SPEC.md Section 1.4](SPEC.md#14-immutable-axioms)
+are non-negotiable. Any change that violates them is automatically rejected.
+In addition, the following are **strictly forbidden** in the kernel domain:
 
 - System I/O (file read/write, stdin/stdout)
 - Network access (sockets, HTTP)

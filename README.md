@@ -37,6 +37,15 @@ UEAS fills this gap. It treats algorithmic logic as a first-class, deployable
 asset — decoupled entirely from programming language syntax, hardware
 constraints, and execution environment.
 
+### What UEAS Is NOT
+
+UEAS is **not a new programming language.** It does not build web servers,
+manage databases, or render user interfaces. It has no network sockets, no
+filesystem access, no hardware primitives. It is a **mathematical blueprint**
+— a pure, verified logic specification that compiles *into* your existing
+programming languages. If you need a general-purpose language, use Rust,
+Python, or C++. If you need to prove that your algorithm is correct, use UEAS.
+
 ---
 
 ## Architecture
@@ -87,15 +96,35 @@ pure logic as a first-class asset.
 | **Academic Pseudocode (LaTeX, algorithm2e)** | Purely visual. Cannot be parsed, executed, tested, or debugged. |
 | **UEAS** | Human-readable, machine-executable, complexity-profiling, language-agnostic. Algorithm logic as a deployable, testable artifact. |
 
+### Immutable Axioms
+
+To guarantee mathematical verification, UEAS enforces these design boundaries as
+matters of principle. They are not temporary constraints — they are the source
+of the standard's power.
+
+1. **Zero System I/O.** The kernel has no access to network, filesystem, or
+   hardware. Algorithms are isolated, pure state mutations. This guarantees
+   deterministic, reproducible complexity profiling regardless of environment.
+
+2. **Abstract Step-Counting.** Wall-clock profiling is forbidden. All
+   computational cost is measured in abstract step mutations — each primitive
+   operation has a fixed, spec-defined cost. An `O(N log N)` contract yields
+   identical complexity bounds on any hardware.
+
+3. **Specification Before Implementation.** The canonical AST is the source of
+   truth. Implementation follows the specification, never the reverse.
+   Behavior not specified in SPEC.md has no place in the reference
+   implementation.
+
 ---
 
 ## High-Impact Domains
 
 | Domain | Problem UEAS Solves |
 |--------|-------------------|
+| **AI Agent Orchestration** | LLM-based coding agents struggle with syntax quirks and dependency management. UEAS provides a minimal logical grammar that reduces the agent's search space. Generated ASTs can be mathematically verified to terminate and meet complexity bounds *before* a single line of production code is emitted — directly addressing the hallucination problem in AI code generation. |
 | **Quantitative Finance** | Quants prototype algorithms in Python; engineers manually rewrite in C++ for low-latency execution. UEAS eliminates translation lag — write once, verify mathematically, transpile to production. |
 | **Aerospace & Defense** | DO-178C certification requires proving source code matches mathematical specification. UEAS ASTs carry explicit pre/post-conditions and invariants — enabling automated validation against formal requirements. |
-| **AI Agent Orchestration** | LLM-based coding agents struggle with syntax quirks and dependency management. UEAS provides a minimal logical grammar that reduces the agent's search space and enables sandboxed testing before code generation. |
 | **Academic Publishing** | Research papers publish algorithms as static text. With UEAS, readers can download, execute, profile, and transpile — ending the era of untestable pseudocode. |
 
 ---

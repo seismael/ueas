@@ -50,18 +50,43 @@ The standard ensures that any algorithm expressed in UEAS:
 UEAS targets domains where algorithmic correctness, auditability, and
 reproducibility are non-negotiable:
 
+- **AI Agent Orchestration:** Providing autonomous coding agents with a
+  minimal, logical target grammar that reduces token-space errors and enables
+  sandboxed testing before target-language code generation. Generated ASTs
+  can be mathematically verified to terminate and meet complexity bounds
+  before a single line of production code is emitted — directly addressing
+  the hallucination problem in AI code generation.
 - **Quantitative Finance:** Eliminating the translation lag between research
   prototypes (Python/MATLAB) and production execution (C++/Rust) while
   maintaining a verifiable validation trail.
 - **Aerospace & Defense:** Enabling DO-178C certification by embedding
   pre-conditions, post-conditions, and invariants directly in the algorithm
   definition, supporting automated validation against formal requirements.
-- **AI Agent Orchestration:** Providing autonomous coding agents with a
-  minimal, logical target grammar that reduces token-space errors and enables
-  sandboxed testing before target-language code generation.
 - **Scientific Computing & Academic Publishing:** Making published algorithms
   downloadable, executable, and auditable — ending the era of untestable
   paper pseudocode.
+
+### 1.4. Immutable Axioms
+
+The following constraints are foundational to the standard. They are not
+temporary limitations — they are the architectural guarantees that enable
+mathematical verification of algorithmic correctness.
+
+1. **Zero System I/O.** The abstract interpreter has no access to network
+   sockets, filesystem operations, or hardware interfaces. Algorithms execute
+   as pure state mutations within an isolated virtual heap. This guarantees
+   deterministic, environment-independent execution profiles.
+
+2. **Abstract Step-Counting.** Wall-clock time profiling is forbidden. Every
+   primitive operation carries a fixed, spec-defined step cost (Section 6.2).
+   Complexity contracts (`@Complexity`) are enforced by counting abstract
+   logical mutations, producing identical complexity curves on any hardware.
+
+3. **Specification Before Implementation.** The canonical JSON AST (Section 5)
+   is the normative source of truth. No implementation code may be written
+   for a specification change until the corresponding RFC is ratified and
+   this document is updated. Behavior not described in this specification has
+   no place in the reference implementation.
 
 ---
 
