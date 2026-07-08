@@ -6,11 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ## [0.1.0] — Unreleased (Epoch 1)
 
 ### Added
-- Formal specification (SPEC.md v1.0.0-draft, 962 lines)
+- Formal specification (SPEC.md v1.0.0-draft, 980 lines)
 - ANTLR4 grammar (UEAS.g4) with Modern Mathematical syntax
-- AST node types (33 kinds), Factory, Visitor, JSON serde
+- AST node types (32 kinds), Factory, Visitor, JSON serde
 - Type system: primitive types, composite types, type compatibility
-- Virtual heap: isolated bump-pointer allocation with 18 type tags
+- Virtual heap: isolated bump-pointer allocation with 16 type tags
 - Exit codes (0-11) per Section 6.5/6.6
 - Step counter and complexity profiler (all Big-O forms)
 - Abstract interpreter: expression evaluator, statement executor

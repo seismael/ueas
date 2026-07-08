@@ -48,7 +48,7 @@ pub struct ProfilingConfig {
     /// Default 10^4 per SPEC.md Section 6.4.
     pub c_max: u64,
     /// Global maximum step count before INFINITE_LOOP_DETECTED trap.
-    /// Default 10^12 per SPEC.md Section 6.5.
+    /// Default 10^12 per SPEC.md Section 6.6.
     pub global_max_steps: u64,
     /// Maximum recursion depth before STACK_OVERFLOW trap.
     /// Default 10^4.

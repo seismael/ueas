@@ -8,9 +8,9 @@
 
 ## Metrics
   Tests: 151 (116 kernel + 22 backend + 7 conformance + 6 fuzz)
-  Grammar: 15/15 parse tests (8 examples + 7 test files)
-  AST node kinds: 33
-  TypeTag variants: 18
+  Grammar: 10/10 parse tests (7 positive + 3 negative)
+  AST node kinds: 32
+  TypeTag variants: 16
   Builtins: 22+
   Exit codes: 12 (0-11)
   REPO: https://github.com/seismael/ueas

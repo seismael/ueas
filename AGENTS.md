@@ -688,7 +688,7 @@ ueas/
 │   │   ├── ast/mod.rs     AST node types, Factory, Visitor, Types, serde
 │   │   ├── interp/mod.rs  Expression evaluator, statement executor
 │   │   ├── heap/mod.rs    Virtual heap (bump-alloc, bounds-checked)
-│   │   ├── traps/mod.rs   Exit codes (0-10), trap register
+│   │   ├── traps/mod.rs   Exit codes (0-11), trap register
 │   │   ├── profiling/     Step counter, complexity profiler
 │   │   │   └── mod.rs
 │   │   └── invariants/    Invariant engine
@@ -711,6 +711,7 @@ ueas/
 │   ├── dijkstra.ueas      O((V+E) log V)
 │   ├── dfs.ueas           O(V+E)
 │   └── matrix_multiply.ueas  O(R*C*K)
+│   └── quicksort_randomized.ueas  O(N log N) with const + randInt
 ├── tools/                 CI, containers
 │   └── Dockerfile         Reproducible CI environment
 └── docs/

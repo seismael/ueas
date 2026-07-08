@@ -1,12 +1,12 @@
 //! Exit status codes and trap register for the UEAS abstract interpreter.
 //!
-//! The kernel produces exit status codes as defined in SPEC.md Section 6.5.
+//! The kernel produces exit status codes as defined in SPEC.md Section 6.6.
 //! Code 0 indicates successful completion. Non-zero codes are trap codes
 //! indicating controlled error halts.
 
 use serde::{Deserialize, Serialize};
 
-/// Exit status / trap code per SPEC.md Section 6.5.
+/// Exit status / trap code per SPEC.md Section 6.6.
 ///
 /// Code `0` (NO_ERROR) is a normal exit — not a trap.
 /// Codes `1` through `11` are trap codes indicating controlled error halts.

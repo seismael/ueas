@@ -97,7 +97,7 @@ To establish UEAS as an industry-standard algorithmic blueprint, the specificati
 ### Final Metrics
 - 151 tests: 116 kernel + 22 backend + 7 conformance + 6 fuzz
 - clippy clean, fmt clean
-- 33 AST node kinds
+- 32 AST node kinds
 - 20+ builtins
 - 16 heap TypeTag variants
 - 12 exit codes (0-11)

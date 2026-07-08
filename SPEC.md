@@ -863,7 +863,8 @@ An implementation is **UEAS-conformant** if and only if:
 1. It accepts the canonical JSON AST schema defined in Section 5.
 2. It produces semantically equivalent output as defined in Section 7.3.
 3. It passes 100% of the UEAS Conformance Test Suite (UCTS).
-4. It traps with the correct error code for every error condition in Section 6.5.
+4. It traps with the correct error code for every error condition in
+   Sections 6.5 and 6.6.
 
 ### 9.2. Conformance Test Suite (UCTS)
 
@@ -925,16 +926,16 @@ algorithm names:
 
 ```
 algorithm, function, procedure, return, if, elif, else, for, while,
-in, let, assert, invariant, complexity, import, true, false, and,
-or, not, mod, as, Integer, Real, Boolean, String, Void, Set, List,
-Map, Graph, Matrix, Option, Result, Tuple
+in, let, assert, invariant, complexity, import, and, or, not, mod,
+as, Integer, Real, Boolean, String, Void, Set, List, Map, Graph,
+Matrix, Option, Result, Tuple
 ```
 
 The following words may be used as identifiers despite appearing in
 syntactic contexts (they are handled by the `identifier` parser rule):
 
 ```
-graph, matrix, some, none
+graph, matrix, some, none, true, false, const, Directed, Undirected
 ```
 
 ---
