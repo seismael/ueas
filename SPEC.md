@@ -643,6 +643,7 @@ Code `0` indicates successful completion. Non-zero codes are termed
 | `8` | `ASSERTION_FAILURE` | Trap | An `assert` expression evaluated to `false`. |
 | `9` | `INFINITE_LOOP_DETECTED` | Trap | Step counter exceeded configurable global maximum (default 10^12). |
 | `10` | `INVALID_COMPLEXITY_BINDING` | Trap | The complexity string references a variable not bound by a `variableBinding`. |
+| `11` | `INVALID_OPERATION` | Trap | Unsupported operation, type mismatch, or unimplemented built-in function. |
 
 ### 6.6. Memory Model
 

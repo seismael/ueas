@@ -34,6 +34,8 @@ pub enum ExitCode {
     InfiniteLoopDetected = 9,
     /// The complexity string references a variable not bound by a variableBinding.
     InvalidComplexityBinding = 10,
+    /// Unsupported operation, type mismatch, or unimplemented built-in function.
+    InvalidOperation = 11,
 }
 
 impl ExitCode {
@@ -61,6 +63,7 @@ impl ExitCode {
             ExitCode::AssertionFailure => "ASSERTION_FAILURE",
             ExitCode::InfiniteLoopDetected => "INFINITE_LOOP_DETECTED",
             ExitCode::InvalidComplexityBinding => "INVALID_COMPLEXITY_BINDING",
+            ExitCode::InvalidOperation => "INVALID_OPERATION",
         }
     }
 
@@ -83,6 +86,9 @@ impl ExitCode {
             ExitCode::InfiniteLoopDetected => "Step counter exceeded configurable global maximum.",
             ExitCode::InvalidComplexityBinding => {
                 "The complexity string references a variable not bound by a variableBinding."
+            }
+            ExitCode::InvalidOperation => {
+                "Unsupported operation, type mismatch, or unimplemented built-in."
             }
         }
     }
@@ -185,6 +191,7 @@ mod tests {
             ExitCode::InvalidComplexityBinding.name(),
             "INVALID_COMPLEXITY_BINDING"
         );
+        assert_eq!(ExitCode::InvalidOperation.name(), "INVALID_OPERATION");
     }
 
     #[test]

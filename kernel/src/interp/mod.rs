@@ -152,12 +152,12 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
         AstNodeKind::IntegerLiteral
         | AstNodeKind::RealLiteral
         | AstNodeKind::StringLiteral
-        | AstNodeKind::BooleanLiteral => node.value.clone().ok_or(ExitCode::HeapExhaustion),
+        | AstNodeKind::BooleanLiteral => node.value.clone().ok_or(ExitCode::InvalidOperation),
         AstNodeKind::NoneLiteral => Ok(AstValue::None),
         AstNodeKind::Identifier => {
             let name = match &node.value {
                 Some(AstValue::String(s)) => s.as_str(),
-                _ => return Err(ExitCode::HeapExhaustion),
+                _ => return Err(ExitCode::InvalidOperation),
             };
             ctx.symbols
                 .lookup(name, &ctx.heap)
@@ -166,17 +166,17 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
         AstNodeKind::BinaryExpression => eval_binary(ctx, node),
         AstNodeKind::UnaryExpression => eval_unary(ctx, node),
         AstNodeKind::FunctionCall => eval_function_call(ctx, node),
-        _ => Err(ExitCode::HeapExhaustion),
+        _ => Err(ExitCode::InvalidOperation),
     }
 }
 
 fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     if node.children.len() < 3 {
-        return Err(ExitCode::HeapExhaustion);
+        return Err(ExitCode::InvalidOperation);
     }
     let op = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
-        _ => return Err(ExitCode::HeapExhaustion),
+        _ => return Err(ExitCode::InvalidOperation),
     };
     let left = evaluate(ctx, &node.children[1])?;
     let right = evaluate(ctx, &node.children[2])?;
@@ -199,7 +199,7 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
                     Ok(AstValue::Real(a / b))
                 }
             }
-            _ => Err(ExitCode::HeapExhaustion),
+            _ => Err(ExitCode::InvalidOperation),
         },
         "mod" => match (&left, &right) {
             (AstValue::Integer(a), AstValue::Integer(b)) => {
@@ -209,7 +209,7 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
                     Ok(AstValue::Integer(a % b))
                 }
             }
-            _ => Err(ExitCode::HeapExhaustion),
+            _ => Err(ExitCode::InvalidOperation),
         },
         "==" => Ok(AstValue::Boolean(left == right)),
         "!=" => Ok(AstValue::Boolean(left != right)),
@@ -231,7 +231,7 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
                 Ok(AstValue::Boolean(is_truthy(&right)))
             }
         }
-        _ => Err(ExitCode::HeapExhaustion),
+        _ => Err(ExitCode::InvalidOperation),
     }
 }
 
@@ -243,7 +243,7 @@ where
     match (l, r) {
         (AstValue::Integer(a), AstValue::Integer(b)) => Ok(AstValue::Integer(iop(*a, *b))),
         (AstValue::Real(a), AstValue::Real(b)) => Ok(AstValue::Real(rop(*a, *b))),
-        _ => Err(ExitCode::HeapExhaustion),
+        _ => Err(ExitCode::InvalidOperation),
     }
 }
 
@@ -259,34 +259,34 @@ where
         (AstValue::Boolean(a), AstValue::Boolean(b)) => {
             Ok(AstValue::Boolean(cmp(*a as u8 as f64, *b as u8 as f64)))
         }
-        _ => Err(ExitCode::HeapExhaustion),
+        _ => Err(ExitCode::InvalidOperation),
     }
 }
 
 fn eval_unary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     if node.children.len() < 2 {
-        return Err(ExitCode::HeapExhaustion);
+        return Err(ExitCode::InvalidOperation);
     }
     let op = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
-        _ => return Err(ExitCode::HeapExhaustion),
+        _ => return Err(ExitCode::InvalidOperation),
     };
     let operand = evaluate(ctx, &node.children[1])?;
     match op.as_str() {
         "-" => match &operand {
             AstValue::Integer(x) => Ok(AstValue::Integer(-x)),
             AstValue::Real(x) => Ok(AstValue::Real(-x)),
-            _ => Err(ExitCode::HeapExhaustion),
+            _ => Err(ExitCode::InvalidOperation),
         },
         "not" => Ok(AstValue::Boolean(!is_truthy(&operand))),
-        _ => Err(ExitCode::HeapExhaustion),
+        _ => Err(ExitCode::InvalidOperation),
     }
 }
 
 fn eval_function_call(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     let name = match node.children.first().and_then(|n| n.value.as_ref()) {
         Some(AstValue::String(s)) => s.clone(),
-        _ => return Err(ExitCode::HeapExhaustion),
+        _ => return Err(ExitCode::InvalidOperation),
     };
     let mut args = Vec::new();
     for child in node.children.iter().skip(1) {
@@ -304,21 +304,21 @@ fn dispatch_builtin(
     match name {
         "sqrt" => {
             if args.is_empty() {
-                return Err(ExitCode::HeapExhaustion);
+                return Err(ExitCode::InvalidOperation);
             }
             let x: f64 = match &args[0] {
                 AstValue::Integer(i) => *i as f64,
                 AstValue::Real(r) => *r,
-                _ => return Err(ExitCode::HeapExhaustion),
+                _ => return Err(ExitCode::InvalidOperation),
             };
             if x < 0.0 {
-                return Err(ExitCode::HeapExhaustion);
+                return Err(ExitCode::InvalidOperation);
             }
             Ok(AstValue::Real(x.sqrt()))
         }
         "length" | "cardinality" => {
             if args.is_empty() {
-                return Err(ExitCode::HeapExhaustion);
+                return Err(ExitCode::InvalidOperation);
             }
             match &args[0] {
                 AstValue::Integer(x) => Ok(AstValue::Integer(*x)),
@@ -333,23 +333,23 @@ fn dispatch_builtin(
         }
         "contains" => {
             if args.len() < 2 {
-                return Err(ExitCode::HeapExhaustion);
+                return Err(ExitCode::InvalidOperation);
             }
             Ok(AstValue::Boolean(args[1..].contains(&args[0])))
         }
         "append" => {
             if args.is_empty() {
-                return Err(ExitCode::HeapExhaustion);
+                return Err(ExitCode::InvalidOperation);
             }
             Ok(args[args.len() - 1].clone())
         }
         "pop" => {
             if args.is_empty() {
-                return Err(ExitCode::HeapExhaustion);
+                return Err(ExitCode::InvalidOperation);
             }
             Ok(args[0].clone())
         }
-        _ => Err(ExitCode::HeapExhaustion),
+        _ => Err(ExitCode::InvalidOperation),
     }
 }
 
@@ -366,7 +366,7 @@ fn is_truthy(value: &AstValue) -> bool {
 
 pub fn execute_program(ctx: &mut ExecContext, program: &AstNode) -> Result<AstValue, ExitCode> {
     if program.kind != AstNodeKind::Program {
-        return Err(ExitCode::HeapExhaustion);
+        return Err(ExitCode::InvalidOperation);
     }
     let mut last = AstValue::None;
     for algo in &program.children {
@@ -503,7 +503,7 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
 fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     let name = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
-        _ => return Err(ExitCode::HeapExhaustion),
+        _ => return Err(ExitCode::InvalidOperation),
     };
     let init = if node.children.len() > 2 {
         Some(evaluate(ctx, &node.children[2])?)
@@ -517,11 +517,11 @@ fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCod
 
 fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     if node.children.len() < 2 {
-        return Err(ExitCode::HeapExhaustion);
+        return Err(ExitCode::InvalidOperation);
     }
     let name = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
-        _ => return Err(ExitCode::HeapExhaustion),
+        _ => return Err(ExitCode::InvalidOperation),
     };
     let value = evaluate(ctx, &node.children[1])?;
     ctx.symbols.assign(&name, &value, &mut ctx.heap)
@@ -560,7 +560,7 @@ fn execute_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
     }
     let iter_name = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
-        _ => return Err(ExitCode::HeapExhaustion),
+        _ => return Err(ExitCode::InvalidOperation),
     };
     let n: i64 = match evaluate(ctx, &node.children[1])? {
         AstValue::Integer(x) => x,
