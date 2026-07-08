@@ -10,6 +10,8 @@
 //! to single-ownership semantics. Garbage-collected runtimes are exempt
 //! from explicit ownership mapping.
 
+pub mod mcp;
+
 use serde::{Deserialize, Serialize};
 
 /// Error returned when transpilation fails.

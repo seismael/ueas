@@ -14,8 +14,8 @@
 - [x] 8.2 Implement arithmetic evaluator (+, -, *, /, mod) with step counting
 - [x] 8.3 Implement comparison evaluator (==, !=, <, >, <=, >=)
 - [x] 8.4 Implement logical evaluator (and, or, not) with short-circuit
-- [ ] 8.5 Implement set operation evaluator (union, intersection, difference, contains)
-- [ ] 8.6 Implement list/map access evaluator (index, key lookup)
+- [x] 8.5 Implement set operation evaluator (union, intersection, difference, contains)
+- [x] 8.6 Implement list/map access evaluator (index, key lookup)
 - [x] 8.7 Implement function call dispatcher (builtins: sqrt, length, cardinality)
 - [x] 8.8 Write expression evaluator tests (happy path, edge cases, error traps)
 - [x] 9.1 Implement symbol table (stacked scopes)
