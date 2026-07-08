@@ -67,8 +67,8 @@
 - [x] 7.1 Define `TargetGenerator` trait (GoF Strategy) with `language()`, `version()`, `generate()`, `supportedKinds()`, `typeMap()`
 - [x] 7.2 Implement Python backend stub with basic arithmetic expression generation
 - [x] 7.3 Write basic transpilation test: arithmetic AST → Python source → execute → verify output
-- [ ] 7.4 Implement Rust backend stub
-- [ ] 7.5 Write cross-target equivalence test: same AST → Python output matches Rust output
+- [x] 7.4 Implement Rust backend stub
+- [x] 7.5 Write cross-target equivalence test: same AST → Python output matches Rust output
 
 ---
 

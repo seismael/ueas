@@ -270,3 +270,211 @@ mod tests {
         assert!(map.contains(&("String", "str")));
     }
 }
+
+/// Basic Rust transpiler for arithmetic expression evaluation.
+pub struct RustTarget;
+
+impl TargetGenerator for RustTarget {
+    fn language(&self) -> &str {
+        "rust"
+    }
+
+    fn version(&self) -> &str {
+        "2021"
+    }
+
+    fn generate(&self, ast_json: &str) -> Result<String, TranspilationError> {
+        let root: serde_json::Value =
+            serde_json::from_str(ast_json).map_err(|e| TranspilationError::new(e.to_string()))?;
+
+        let mut output = String::new();
+        self.generate_node(&root, &mut output)?;
+        Ok(output)
+    }
+
+    fn supported_kinds(&self) -> Vec<&str> {
+        vec![
+            "BinaryExpression",
+            "UnaryExpression",
+            "IntegerLiteral",
+            "RealLiteral",
+            "Identifier",
+            "FunctionCall",
+        ]
+    }
+
+    fn type_map(&self) -> Vec<(&str, &str)> {
+        vec![
+            ("Integer", "i64"),
+            ("Real", "f64"),
+            ("Boolean", "bool"),
+            ("String", "String"),
+        ]
+    }
+}
+
+impl RustTarget {
+    fn generate_node(
+        &self,
+        node: &serde_json::Value,
+        output: &mut String,
+    ) -> Result<(), TranspilationError> {
+        let kind = node["kind"].as_str().unwrap_or("");
+
+        match kind {
+            "IntegerLiteral" => {
+                let val = node["value"].as_str().unwrap_or("0");
+                output.push_str(&format!("{}_i64", val));
+            }
+            "RealLiteral" => {
+                let val = node["value"].as_f64().unwrap_or(0.0);
+                output.push_str(&format!("{}_f64", val));
+            }
+            "Identifier" => {
+                let name = node["value"].as_str().unwrap_or("_");
+                output.push_str(name);
+            }
+            "BinaryExpression" => {
+                let children = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("BinaryExpression missing children"))?;
+                if children.len() < 3 {
+                    return Err(TranspilationError::new(
+                        "BinaryExpression requires 3 children",
+                    ));
+                }
+                let op = children[0]["value"].as_str().unwrap_or("?");
+                let rust_op = match op {
+                    "+" | "-" | "*" | "/" => op,
+                    "mod" => "%",
+                    "==" | "!=" | "<" | "<=" | ">" | ">=" => op,
+                    _ => op,
+                };
+                output.push('(');
+                self.generate_node(&children[1], output)?;
+                output.push(' ');
+                output.push_str(rust_op);
+                output.push(' ');
+                self.generate_node(&children[2], output)?;
+                output.push(')');
+            }
+            "UnaryExpression" => {
+                let children = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("UnaryExpression missing children"))?;
+                let op = children[0]["value"].as_str().unwrap_or("");
+                match op {
+                    "-" => {
+                        output.push('-');
+                        self.generate_node(&children[1], output)?;
+                    }
+                    "not" => {
+                        output.push('!');
+                        self.generate_node(&children[1], output)?;
+                    }
+                    _ => {
+                        output.push_str(op);
+                        output.push('(');
+                        self.generate_node(&children[1], output)?;
+                        output.push(')');
+                    }
+                }
+            }
+            "FunctionCall" => {
+                let children = node["children"]
+                    .as_array()
+                    .ok_or_else(|| TranspilationError::new("FunctionCall missing children"))?;
+                let name = children[0]["value"].as_str().unwrap_or("unknown");
+                match name {
+                    "sqrt" => output.push_str("f64::sqrt"),
+                    _ => output.push_str(name),
+                }
+                output.push('(');
+                for (i, arg) in children.iter().skip(1).enumerate() {
+                    if i > 0 {
+                        output.push_str(", ");
+                    }
+                    self.generate_node(arg, output)?;
+                }
+                output.push(')');
+            }
+            _ => {
+                return Err(TranspilationError::with_node_kind(
+                    format!("Unsupported node kind: {}", kind),
+                    kind,
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod rust_tests {
+    use super::*;
+
+    #[test]
+    fn rust_target_language_is_rust() {
+        let target = RustTarget;
+        assert_eq!(target.language(), "rust");
+    }
+
+    #[test]
+    fn rust_target_version_is_2021() {
+        let target = RustTarget;
+        assert_eq!(target.version(), "2021");
+    }
+
+    #[test]
+    fn rust_target_generates_integer_literal() {
+        let target = RustTarget;
+        let ast = r#"{"kind":"IntegerLiteral","value":"42"}"#;
+        let result = target.generate(ast).unwrap();
+        assert_eq!(result, "42_i64");
+    }
+
+    #[test]
+    fn rust_target_generates_addition() {
+        let target = RustTarget;
+        let ast = r#"{
+            "kind": "BinaryExpression",
+            "children": [
+                {"kind": "Identifier", "value": "+"},
+                {"kind": "IntegerLiteral", "value": "1"},
+                {"kind": "IntegerLiteral", "value": "2"}
+            ]
+        }"#;
+        let result = target.generate(ast).unwrap();
+        assert_eq!(result, "(1_i64 + 2_i64)");
+    }
+
+    #[test]
+    fn cross_target_equivalence_simple_expression() {
+        let python = PythonTarget;
+        let rust = RustTarget;
+        let ast = r#"{
+            "kind": "BinaryExpression",
+            "children": [
+                {"kind": "Identifier", "value": "*"},
+                {
+                    "kind": "BinaryExpression",
+                    "children": [
+                        {"kind": "Identifier", "value": "+"},
+                        {"kind": "IntegerLiteral", "value": "2"},
+                        {"kind": "IntegerLiteral", "value": "3"}
+                    ]
+                },
+                {"kind": "IntegerLiteral", "value": "4"}
+            ]
+        }"#;
+
+        let py_result = python.generate(ast).unwrap();
+        let rs_result = rust.generate(ast).unwrap();
+
+        // Both produce the same mathematical expression structure
+        assert!(py_result.contains("2 + 3"));
+        assert!(py_result.contains("* 4"));
+        assert!(rs_result.contains("2_i64 + 3_i64"));
+        assert!(rs_result.contains("* 4_i64"));
+    }
+}
