@@ -5,8 +5,10 @@
 //! 2. Trap conditions are correctly detected
 //! 3. Cross-target transpilation yields identical results
 
-use ueas_kernel::ast::{AstNodeFactory, AstValue};
-use ueas_kernel::interp::{evaluate, execute_program, ExecContext};
+use ueas_kernel::ast::AstNodeFactory;
+use ueas_kernel::interp::{
+    evaluate, execute_assert, execute_invariant, execute_program, ExecContext,
+};
 use ueas_kernel::profiling::ProfilingConfig;
 use ueas_kernel::traps::ExitCode;
 

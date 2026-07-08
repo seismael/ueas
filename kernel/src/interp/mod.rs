@@ -311,10 +311,10 @@ fn dispatch_builtin(name: &str, args: &[AstValue]) -> Result<AstValue, ExitCode>
             }
             Ok(AstValue::Real(x.sqrt()))
         }
-        "length" | "cardinality" => Ok(AstValue::Integer(0)),
+        "length" | "cardinality" => Err(ExitCode::HeapExhaustion),
         "range" | "emptyList" | "emptySet" | "emptyMap" | "zeroMatrix" | "contains" | "add"
         | "append" | "slice" | "pop" | "extractMin" | "adjacent" | "weight" | "nodes" | "edges" => {
-            Ok(AstValue::Integer(0))
+            Err(ExitCode::HeapExhaustion)
         }
         _ => Err(ExitCode::HeapExhaustion),
     }
@@ -402,24 +402,34 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
         .iter()
         .filter(|c| c.kind == AstNodeKind::Parameter)
         .count() as u64;
-    let contract = match complexity_str.trim() {
-        s if s.contains("O(1)") => ComplexityContract::Constant,
-        s if s.contains("O(N^3)") => ComplexityContract::Polynomial {
+    let s = complexity_str.trim();
+    // Use boundary-aware matching: ensure pattern end is followed by ) or EOS
+    let contract = match () {
+        _ if s.contains("O(1)") => ComplexityContract::Constant,
+        _ if s.contains("O(N^3)") && !s.contains("O(N^30") => ComplexityContract::Polynomial {
             n: n_val.max(1),
             k: 3,
         },
-        s if s.contains("O(N^2)") => ComplexityContract::Quadratic { n: n_val.max(1) },
-        s if s.contains("O(N log N)") || s.contains("O((V+E) log V)") => {
+        _ if s.contains("O(N^2)") && !s.contains("O(N^20") => {
+            ComplexityContract::Quadratic { n: n_val.max(1) }
+        }
+        _ if s.contains("O(N log N)") || s.contains("O((V+E) log V)") => {
             ComplexityContract::Linearithmic { n: n_val.max(1) }
         }
-        s if s.contains("O(log N)") => ComplexityContract::Logarithmic { n: n_val.max(1) },
-        s if s.contains("O(2^N)") => ComplexityContract::Exponential {
+        _ if s.contains("O(log N)") => ComplexityContract::Logarithmic { n: n_val.max(1) },
+        _ if s.contains("O(2^N)") => ComplexityContract::Exponential {
             n: n_val.clamp(1, 20),
         },
-        s if s.contains("O(N!)") => ComplexityContract::Factorial {
+        _ if s.contains("O(N!)") => ComplexityContract::Factorial {
             n: n_val.clamp(1, 10),
         },
-        s if s.contains("O(N)") => ComplexityContract::Linear { n: n_val.max(1) },
+        _ if s.contains("O(N)")
+            && !s.contains("O(N^")
+            && !s.contains("O(N ")
+            && !s.contains("O(N!") =>
+        {
+            ComplexityContract::Linear { n: n_val.max(1) }
+        }
         _ => ComplexityContract::Linear { n: n_val.max(1) },
     };
     ctx.profiler.verify_complexity(&contract)

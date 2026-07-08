@@ -1,18 +1,17 @@
-# UEAS — Implementation Status (Final)
+# UEAS — Final Implementation Loop
 
-## All Completed
-- [x] Grammar: semicolon-free, no control parens, elif, import, matrix typevars
-- [x] AST: #[serde(untagged)] + Integer(i64) → flat JSON output
-- [x] SymbolTable → HeapHandle only (zero native Rust values)
-- [x] enforce_complexity() at algorithm termination
-- [x] 15+ built-ins in dispatch_builtin()
-- [x] Rust backend: full statement transpilation (if/while/for/var/assign/return)
-- [x] Python backend: full statement transpilation + prelude_map
-- [x] MCP endpoint (handle_transpile)
-- [x] conformance.rs: 7 tests (all exit codes verifiable)
-- [x] 136 tests: 101 kernel + 22 backend + 7 conformance + 6 fuzz
-- [x] examples/ with 7 benchmark .ueas files
-- [x] clippy -D warnings clean, cargo fmt clean
+## CRITICAL (spec drift)
+- [ ] 1. SPEC.md Section 4.2 EBNF stale — shows C-style syntax, UEAS.g4 is modern
+- [ ] 2. SPEC.md Section 5.1 says GraphLiteral "Reserved" but code implements it
 
-## Remaining
-- [ ] Delete REVIEW.md
+## MEDIUM (buggy/wrong behavior)
+- [ ] 3. dispatch_builtin() returns Integer(0) for 16 stubs — should trap with unimplemented
+- [ ] 4. invariants::re_evaluate_loop_invariants() — stub, never called
+- [ ] 5. enforce_complexity() fragile substring matching (O(N^20) matches O(N^2))
+- [ ] 6. Unused import in conformance.rs
+
+## LOW (infrastructure/quality)
+- [ ] 7. Doc comments on pub items: evaluate(), execute_program(), ExecContext, SymbolTable
+- [ ] 8. prelude_map() dead code in both backends — remove or integrate
+- [ ] 9. Quality gate commands reference non-existent targets (tools/, integration test)
+- [ ] 10. Missing .github/ directory (referenced in AGENTS.md)
