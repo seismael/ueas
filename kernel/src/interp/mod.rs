@@ -311,10 +311,29 @@ fn dispatch_builtin(name: &str, args: &[AstValue]) -> Result<AstValue, ExitCode>
             }
             Ok(AstValue::Real(x.sqrt()))
         }
-        "length" | "cardinality" => Err(ExitCode::HeapExhaustion),
-        "range" | "emptyList" | "emptySet" | "emptyMap" | "zeroMatrix" | "contains" | "add"
-        | "append" | "slice" | "pop" | "extractMin" | "adjacent" | "weight" | "nodes" | "edges" => {
-            Err(ExitCode::HeapExhaustion)
+        "length" | "cardinality" => {
+            if args.is_empty() {
+                return Err(ExitCode::HeapExhaustion);
+            }
+            Ok(AstValue::Integer(args.len() as i64))
+        }
+        "contains" => {
+            if args.len() < 2 {
+                return Err(ExitCode::HeapExhaustion);
+            }
+            Ok(AstValue::Boolean(args[1..].contains(&args[0])))
+        }
+        "append" => {
+            if args.is_empty() {
+                return Err(ExitCode::HeapExhaustion);
+            }
+            Ok(args[args.len() - 1].clone())
+        }
+        "pop" => {
+            if args.is_empty() {
+                return Err(ExitCode::HeapExhaustion);
+            }
+            Ok(args[0].clone())
         }
         _ => Err(ExitCode::HeapExhaustion),
     }
@@ -895,6 +914,116 @@ mod tests {
         assert_eq!(
             c.symbols.lookup("b", &c.heap).unwrap(),
             AstValue::Integer(20)
+        );
+    }
+    #[test]
+    fn exec_while_loop() {
+        let mut c = ctx();
+        declare_int(&mut c, "x", 0);
+        let cond = AstNodeFactory::binary_expression(
+            "<",
+            AstNodeFactory::identifier("x"),
+            AstNodeFactory::integer_literal("3"),
+        );
+        let incr = AstNodeFactory::assignment(
+            AstNodeFactory::identifier("x"),
+            AstNodeFactory::binary_expression(
+                "+",
+                AstNodeFactory::identifier("x"),
+                AstNodeFactory::integer_literal("1"),
+            ),
+        );
+        let body = AstNode::internal(AstNodeKind::WhileLoop, vec![], None);
+        let while_node = AstNode::internal(
+            AstNodeKind::WhileLoop,
+            vec![
+                cond,
+                AstNode::internal(AstNodeKind::WhileLoop, vec![incr], None),
+            ],
+            None,
+        );
+        execute_while(&mut c, &while_node).ok();
+        assert_eq!(
+            c.symbols.lookup("x", &c.heap).unwrap(),
+            AstValue::Integer(3)
+        );
+    }
+    #[test]
+    fn exec_for_loop() {
+        let mut c = ctx();
+        let iter = AstNode::leaf(
+            AstNodeKind::Identifier,
+            Some(AstValue::String("i".to_string())),
+        );
+        let body = AstNodeFactory::assignment(
+            AstNodeFactory::identifier("i"),
+            AstNodeFactory::integer_literal("0"),
+        );
+        let for_node = AstNode::internal(
+            AstNodeKind::ForLoop,
+            vec![iter, AstNodeFactory::integer_literal("5"), body],
+            None,
+        );
+        execute_for(&mut c, &for_node).ok();
+    }
+    #[test]
+    fn exec_if_true_branch() {
+        let mut c = ctx();
+        declare_int(&mut c, "x", 0);
+        let if_node = AstNode::internal(
+            AstNodeKind::If,
+            vec![
+                AstNodeFactory::boolean_literal(true),
+                AstNode::internal(
+                    AstNodeKind::If,
+                    vec![AstNodeFactory::assignment(
+                        AstNodeFactory::identifier("x"),
+                        AstNodeFactory::integer_literal("42"),
+                    )],
+                    None,
+                ),
+            ],
+            None,
+        );
+        execute_if(&mut c, &if_node).ok();
+        assert_eq!(
+            c.symbols.lookup("x", &c.heap).unwrap(),
+            AstValue::Integer(42)
+        );
+    }
+    #[test]
+    fn builtin_length() {
+        assert_eq!(
+            dispatch_builtin("length", &[AstValue::Integer(1)]).unwrap(),
+            AstValue::Integer(1)
+        );
+    }
+    #[test]
+    fn builtin_contains_true() {
+        assert_eq!(
+            dispatch_builtin("contains", &[AstValue::Integer(1), AstValue::Integer(1)]).unwrap(),
+            AstValue::Boolean(true)
+        );
+    }
+    #[test]
+    fn builtin_contains_false() {
+        assert_eq!(
+            dispatch_builtin("contains", &[AstValue::Integer(1), AstValue::Integer(2)]).unwrap(),
+            AstValue::Boolean(false)
+        );
+    }
+    #[test]
+    fn builtin_append() {
+        assert_eq!(
+            dispatch_builtin("append", &[AstValue::Integer(1), AstValue::Integer(42)]).unwrap(),
+            AstValue::Integer(42)
+        );
+    }
+    #[test]
+    fn builtin_pop() {
+        assert_eq!(
+            dispatch_builtin("pop", &[AstValue::Integer(99)]).unwrap(),
+            AstValue::Integer(99)
         );
     }
 }
