@@ -10,30 +10,22 @@
 //! - `execute(program)` — executes a full program node
 
 use crate::ast::{AstNode, AstNodeKind, AstValue};
-use crate::heap::{HeapHandle, TypeTag, VirtualHeap};
-use crate::profiling::{ComplexityContract, Profiler, ProfilingConfig};
+use crate::heap::VirtualHeap;
+use crate::profiling::{Profiler, ProfilingConfig};
 use crate::traps::{ExitCode, TrapRegister};
 use std::collections::HashMap;
 
 /// A value stored in the symbol table.
 #[derive(Debug, Clone)]
-enum SymbolValue {
+pub enum SymbolValue {
     Value(AstValue),
-    HeapHandle(HeapHandle),
+    HeapHandle(crate::heap::HeapHandle),
 }
 
 /// A stacked lexical scope.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct Scope {
     symbols: HashMap<String, SymbolValue>,
-}
-
-impl Default for Scope {
-    fn default() -> Self {
-        Self {
-            symbols: HashMap::new(),
-        }
-    }
 }
 
 /// Stack of lexical scopes for variable resolution.

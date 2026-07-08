@@ -37,29 +37,6 @@ impl TranspilationError {
     }
 }
 
-/// Helper: get array from a serde_json Value, returning error if not an array.
-fn as_array<'a>(
-    node: &'a serde_json::Value,
-) -> Result<&'a Vec<serde_json::Value>, TranspilationError> {
-    node.as_array()
-        .ok_or_else(|| TranspilationError::new("Expected JSON array"))
-}
-
-/// Helper: get string from a serde_json Value.
-fn as_str<'a>(node: &'a serde_json::Value, default: &'static str) -> &'a str {
-    node.as_str().unwrap_or(default)
-}
-
-/// Helper: get child value by index from arrays.
-fn child_val<'a>(node: &'a serde_json::Value, idx: usize) -> Option<&'a serde_json::Value> {
-    node.as_array().and_then(|a| a.get(idx))
-}
-
-/// Helper: get child count.
-fn child_count(node: &serde_json::Value) -> usize {
-    node.as_array().map(|a| a.len()).unwrap_or(0)
-}
-
 /// GoF Strategy — every transpilation target implements this trait.
 ///
 /// Each implementation translates the canonical UEAS AST into idiomatic
@@ -308,8 +285,8 @@ impl PythonTarget {
                 output.push_str(&format!("{}for {} in range(", prefix, iterator));
                 self.generate_node(&c[1], output, 0)?;
                 output.push_str("):\n");
-                for i in 2..c.len() {
-                    self.generate_statement(&c[i], output, indent + 1)?;
+                for child in &c[2..] {
+                    self.generate_statement(child, output, indent + 1)?;
                 }
                 Ok(())
             }
