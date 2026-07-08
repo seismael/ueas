@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 /// Exit status / trap code per SPEC.md Section 6.5.
 ///
 /// Code `0` (NO_ERROR) is a normal exit — not a trap.
-/// Codes `1` through `10` are trap codes indicating controlled error halts.
+/// Codes `1` through `11` are trap codes indicating controlled error halts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ExitCode {
     /// Normal termination (exit, not a trap).

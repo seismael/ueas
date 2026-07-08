@@ -1,0 +1,55 @@
+name: "[RFC] Request for Comments"
+description: Propose a new feature, syntax change, or architectural decision to the UEAS specification.
+title: "[RFC] <Short descriptive title>"
+labels: ["rfc: request for comments", "domain: compiler-theory"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing a change to the Universal Executable Algorithm Standard (UEAS)! 
+        Because UEAS is a formal mathematical specification, all language and syntax changes must go through this RFC process before implementation.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Executive Summary
+      description: Provide a high-level summary of the proposed change.
+      placeholder: "This RFC proposes adding..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this change necessary? What problem does it solve for algorithmic evaluation?
+    validations:
+      required: true
+
+  - type: textarea
+    id: grammar
+    attributes:
+      label: Grammar Impact (EBNF)
+      description: How does this change the `UEAS.g4` ANTLR grammar? (Provide proposed EBNF rules if applicable).
+      value: |
+        ```ebnf
+        // Your EBNF changes here
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: complexity
+    attributes:
+      label: Step-Cost / Profiler Impact
+      description: Does this introduce a new primitive operation? If so, what is its mathematical step cost?
+    validations:
+      required: false
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Backwards Compatibility
+      description: Will this break existing algorithms written in older versions of the standard?
+    validations:
+      required: true

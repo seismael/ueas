@@ -264,7 +264,7 @@ MUST pass. If any existing test fails, fix the regression before proceeding.
 - [ ] Error handling: Use `Result<T, E>` with `?` propagation. No bare
   `unwrap()`, `expect()`, or `panic!()` in production code paths. All
   failures route through the kernel trap handler.
-- [ ] Follow the coding conventions for the domain language (Section 7).
+- [ ] Follow the coding conventions for the domain language (Section 8).
 - [ ] No commented-out code. No TODO comments without a GitHub issue reference.
 - [ ] No dead code. Every code path must be exercised by at least one test.
 
@@ -789,7 +789,7 @@ cargo tarpaulin --fail-under 85
 | `ruff format --check` | Clean | **Yes** |
 | `mypy --strict` | Zero errors | **Yes** |
 | `cargo test` (unit) | 100% pass | **Yes** |
-| `cargo test --test integration` | 100% pass | **Yes** |
+| `cargo test --test conformance` | 100% pass | **Yes** |
 | `cargo test --test fuzz` | Zero panics, 10^6 inputs | **Yes** |
 | `cargo test --test cross_target` | 100% equivalence | **Yes** |
 | `cargo tarpaulin` | >= 85% overall | **Yes** |
@@ -810,7 +810,7 @@ The following decisions are intentional and non-negotiable.
 | **Three-domain decoupling** | Coupled domains cause "architecture drift" — the blueprint and implementation fall out of sync. The canonical JSON AST is the only interface contract. |
 | **Static explicit typing** | Removes ambiguity about author intent. Enables parser-level rejection of type-mismatch programs. |
 | **`unsafe` requires documented justification** | `unsafe` circumvents Rust's memory safety guarantees. Every usage must have a filed issue and a `// SAFETY:` comment. |
-| **Kernel never panics — all failures are trap codes** | Panics are uncontrolled crashes. Exit status `0` signals success; non-zero codes (1-10) are controlled, documented error halts that downstream tools can programmatically distinguish. |
+| **Kernel never panics — all failures are trap codes** | Panics are uncontrolled crashes. Exit status `0` signals success; non-zero codes (1-11) are controlled, documented error halts that downstream tools can programmatically distinguish. |
 | **RFC ratification before implementation** | Specification leads; reference implementation follows. Reversing this is how standards rot. |
 | **Documentation before code (Phase 2)** | Ensures specification-code alignment. Prevents "the code is the documentation" anti-pattern. |
 | **Design pattern enforcement** | Consistent patterns (Visitor, Strategy, Observer, Factory, Command) make the codebase navigable and predictable. |
@@ -858,7 +858,7 @@ Key terms (abbreviated reference):
 - **AST** — Abstract Syntax Tree
 - **Virtual Heap** — Isolated memory arena with zero external access
 - **Step Count** — Monotonic counter of primitive operations
-- **Trap Code** — Controlled error code (0 = success, 1-9 = error conditions)
+- **Trap Code** — Controlled error code (0 = success, 1-11 = trap conditions)
 - **Invariant** — Boolean predicate enforced by the kernel at runtime
 - **Complexity Contract** — `@Complexity` annotation with Big-O bound
 - **TargetGenerator** — Interface for transpilation backends

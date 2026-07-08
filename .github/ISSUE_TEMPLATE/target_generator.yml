@@ -1,0 +1,36 @@
+name: "[Target] Implement Target Generator"
+description: Propose or volunteer to build a new backend transpiler for UEAS (e.g., C++, Java, Go).
+title: "[Target] Implement <Language> TargetGenerator"
+labels: ["domain: transpiler", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping expand the UEAS ecosystem! 
+        Backend transpilers allow mathematical UEAS logic to be compiled directly into memory-safe production languages.
+
+  - type: input
+    id: language
+    attributes:
+      label: Target Language
+      description: What programming language will this generator transpile UEAS to?
+      placeholder: "e.g., C++, Java, Go, TypeScript"
+    validations:
+      required: true
+
+  - type: textarea
+    id: memory_model
+    attributes:
+      label: Memory Model / Type Mapping
+      description: How will you handle UEAS's composite types (Set, List, Graph)? For systems languages (Rust/C++), how will graph nodes map to memory?
+      placeholder: "e.g., I will use std::vector for List, and std::shared_ptr for Graph nodes."
+    validations:
+      required: true
+
+  - type: textarea
+    id: experience
+    attributes:
+      label: Domain Experience
+      description: Briefly describe your experience with this target language and writing code generators or AST visitors.
+    validations:
+      required: false

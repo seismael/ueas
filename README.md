@@ -71,10 +71,10 @@ Python, or C++. If you need to prove that your algorithm is correct, use UEAS.
                                                            |
                                              +-------------+-------------+
                                              |             |             |
-                                        +--------+   +--------+   +--------+
-                                        | Python |   |  Rust  |   |  C++   |
-                                        | Target |   | Target |   | Target |
-                                        +--------+   +--------+   +--------+
+                                        +--------+   +--------+
+                                        | Python |   |  Rust  |
+                                        | Target |   | Target |
+                                        +--------+   +--------+
 ```
 
 **Three decoupled domains, connected by the canonical JSON AST:**
@@ -90,8 +90,9 @@ Python, or C++. If you need to prove that your algorithm is correct, use UEAS.
    execution if declared complexity bounds are breached.
 
 3. **Back-End (Transpilation Engine)** — A plugin architecture maps the
-   verified AST to idiomatic source code. Each target language (Python, Rust,
-   C++, Java) implements the `TargetGenerator` interface. An MCP endpoint
+    verified AST to idiomatic source code. Each target language (Python, Rust)
+    implements the `TargetGenerator` interface. Additional targets (C++, Java)
+    are planned for future releases. An MCP endpoint
    enables AI agents to generate context-specific code directly from the AST.
 
 ---
@@ -179,13 +180,23 @@ The AST produced by this algorithm can be:
 
 ---
 
-## Roadmap
+## Roadmap & Status
 
-| Epoch | Timeline | Scope | Deliverable |
-|-------|----------|-------|-------------|
-| **1: Combinatorial Core** | Months 1-3 | ANTLR4 grammar, static type system, AST JSON schema | Parser with 100% accuracy on algorithmic benchmarks |
-| **2: Profiling Kernel** | Months 4-6 | Rust abstract interpreter, complexity-invariant engine, virtual heap, error traps | Kernel that flags infinite loops and complexity violations |
-| **3: Universal Bridge** | Months 7-9 | Transpiler plugin system, Python + Rust targets, MCP API, cross-target equivalence suite | Mathematically identical outputs across all targets |
+| Epoch | Timeline | Scope | Deliverable | Status |
+|-------|----------|-------|-------------|--------|
+| **1: Combinatorial Core** | Months 1-3 | ANTLR4 grammar, static type system, AST JSON schema | Parser with 100% accuracy on algorithmic benchmarks | ✅ **Completed** (v0.1.0) |
+| **2: Profiling Kernel** | Months 4-6 | Rust abstract interpreter, complexity-invariant engine, virtual heap, error traps | Kernel that flags infinite loops and complexity violations | ✅ **Completed** (v0.1.0) |
+| **3: Universal Bridge** | Months 7-9 | Transpiler plugin system, Python + Rust targets, MCP API, cross-target equivalence suite | Mathematically identical outputs across all targets | 🚧 **In Progress** |
+
+## 🚀 Call for Domain Experts (We Need You!)
+
+UEAS has reached v0.1.0, but to achieve a production-ready 1.0 standard, we need highly specialized domain experts. We have curated specific open issues where your expertise is desperately needed:
+
+- **🎓 Academic Researchers & PLT Experts:** Help us formalize the syntax for Generic Algorithms and Space Complexity annotations. (See our `rfc: request for comments` tags).
+- **⚙️ Systems Engineers (C++, Java, Go):** We need compiler engineers to implement the `TargetGenerator` interface for backend transpilation. (See our `domain: transpiler` tags).
+- **🛠️ Rust Tooling Engineers:** Help us wrap the ANTLR AST validation into a proper Language Server Protocol (LSP).
+
+**👉 Ready to jump in?** Visit our [Contribution Hub](https://github.com/seismael/ueas/contribute) or filter our issues by the `help wanted` and `good first issue` tags.
 
 ---
 

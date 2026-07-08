@@ -201,6 +201,14 @@ OR          ::= 'or'
 NOT         ::= 'not'
 MOD         ::= 'mod'
 AS          ::= 'as'
+BREAK       ::= 'break'
+CONTINUE    ::= 'continue'
+CONST       ::= 'const'
+DIRECTED    ::= 'Directed'
+UNDIRECTED  ::= 'Undirected'
+MEMORY      ::= 'Memory' | 'memory'
+INFINITY    ::= 'Infinity'
+NAN         ::= 'NaN'
 
 (* Literals *)
 IDENTIFIER  ::= [a-zA-Z_][a-zA-Z0-9_]*
@@ -232,8 +240,11 @@ LPAREN      ::= '('
 RPAREN      ::= ')'
 LBRACKET    ::= '['
 RBRACKET    ::= ']'
-LANGLE      ::= '<'
-RANGLE      ::= '>'
+AT          ::= '@'
+AMP         ::= '&'
+CARET       ::= '^'
+LSHIFT      ::= '<<'
+RSHIFT      ::= '>>'
 PIPE        ::= '|'
 
 (* Comments and Whitespace *)
@@ -255,6 +266,7 @@ algorithmDecl    ::= 'algorithm' IDENTIFIER
                      LPAREN (parameter (COMMA parameter)*)? RPAREN
                      (ARROW typeAnnotation)?
                      complexityAnnotation
+                     memoryAnnotation?
                      block
 
 parameter        ::= IDENTIFIER ':' typeAnnotation
@@ -262,10 +274,13 @@ parameter        ::= IDENTIFIER ':' typeAnnotation
 complexityAnnotation ::= '@Complexity' LPAREN STRING_LIT
                          (COMMA variableBinding)* RPAREN
 
+memoryAnnotation ::= '@Memory' LPAREN STRING_LIT RPAREN
+
 variableBinding  ::= IDENTIFIER '=' expression
 
 (* Statements *)
 statement        ::= variableDecl
+                   | constDecl
                    | assignment
                    | returnStmt
                    | ifStmt
@@ -273,7 +288,11 @@ statement        ::= variableDecl
                    | whileLoop
                    | assertStmt
                    | invariantStmt
+                   | BREAK
+                   | CONTINUE
                    | expression
+
+constDecl        ::= 'const' IDENTIFIER ':' typeAnnotation ASSIGN expression
 
 block            ::= LBRACE statement* RBRACE
 
@@ -311,7 +330,9 @@ equality         ::= comparison ((EQ | NEQ) comparison)*
 
 comparison       ::= additive ((LT | LE | GT | GE) additive)*
 
-additive         ::= multiplicative ((PLUS | MINUS) multiplicative)*
+additive         ::= bitwise ((PLUS | MINUS) bitwise)*
+
+bitwise          ::= multiplicative ((AMP | PIPE | CARET | LSHIFT | RSHIFT) multiplicative)*
 
 multiplicative   ::= unary ((STAR | SLASH | MOD) unary)*
 
@@ -322,6 +343,8 @@ primary          ::= INTEGER_LIT
                    | STRING_LIT
                    | TRUE
                    | FALSE
+                   | INFINITY
+                   | NAN
                    | 'none'
                    | 'some'
                    | compositeCall
@@ -408,6 +431,7 @@ The AST is serialized to JSON with a strict schema. Every node has a `"kind"` fi
 | `"Parameter"` | Algorithm parameter. Fields: `name: string`, `type: Type`. |
 | `"VariableBinding"` | Complexity variable binding. Fields: `variable: string`, `expression: Expression`. |
 | `"VariableDeclaration"` | A `let` binding. Fields: `name: string`, `type: Type`, `initializer?: Expression`. |
+| `"ConstDeclaration"` | A `const` binding. Fields: `name: string`, `type: Type`, `initializer: Expression`. |
 | `"Assignment"` | Mutation of an existing binding. Fields: `target: LValue`, `value: Expression`. |
 | `"Return"` | Return statement. Fields: `value?: Expression`. |
 | `"If"` | Conditional. Fields: `condition: Expression`, `consequent: Statement[]`, `alternate?: If | Statement[]`. |
@@ -430,6 +454,8 @@ The AST is serialized to JSON with a strict schema. Every node has a `"kind"` fi
 | `"MapLiteral"` | Map construction. Fields: `keyType: Type`, `valueType: Type`, `entries: {key: Expression, value: Expression}[]`. |
 | `"GraphLiteral"` | Graph construction. Fields: `nodeType: Type`, `edgeType: Type`, `nodes: Expression[]`, `edges: EdgeLiteral[]`. |
 | `"EdgeLiteral"` | Directed edge within a graph. Fields: `from: Expression`, `to: Expression`, `weight?: Expression`. |
+| `"InfinityLiteral"` | IEEE 754 positive infinity. Fields: `value: Infinity`. |
+| `"NanLiteral"` | IEEE 754 NaN (not-a-number). Fields: `value: NaN`. |
 | `"MatrixLiteral"` | Matrix construction. Fields: `rows: number`, `cols: number`, `elementType: Type`, `elements: Expression[]`. |
 | `"Type"` | Type annotation node per Section 5.2. Fields: `name: string`, `typeArguments: Type[]`. |
 
@@ -726,7 +752,7 @@ that verifies this property on a corpus of benchmark algorithms.
 
 The UEAS memory model defines a strictly hierarchical ownership regime: memory
 is freed when the declaring scope exits, and reference cycles are forbidden
-(Section 6.6). Transpilers targeting systems languages MUST map UEAS
+(Section 6.7). Transpilers targeting systems languages MUST map UEAS
 scope-based memory to single-ownership semantics:
 
 | Target Language | Recommended Mapping |
