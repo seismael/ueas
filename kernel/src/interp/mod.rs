@@ -117,8 +117,10 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
 
     match node.kind {
         AstNodeKind::IntegerLiteral => {
-            if let Some(AstValue::String(ref s)) = node.value {
-                Ok(AstValue::String(s.clone()))
+            if let Some(AstValue::Integer(s)) = &node.value {
+                Ok(AstValue::Integer(s.clone()))
+            } else if let Some(AstValue::String(s)) = &node.value {
+                Ok(AstValue::Integer(s.clone()))
             } else {
                 Err(ExitCode::HeapExhaustion)
             }
@@ -181,13 +183,21 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
         "-" => binary_arithmetic(&left, &right, |a, b| a - b, |a, b| a - b),
         "*" => binary_arithmetic(&left, &right, |a, b| a * b, |a, b| a * b),
         "/" => match (&left, &right) {
+            (AstValue::Integer(a), AstValue::Integer(b)) => {
+                let x: i64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+                let y: i64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+                if y == 0 {
+                    return Err(ExitCode::DivisionByZero);
+                }
+                Ok(AstValue::Integer((x / y).to_string()))
+            }
             (AstValue::String(a), AstValue::String(b)) => {
                 let x: i64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
                 let y: i64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
                 if y == 0 {
                     return Err(ExitCode::DivisionByZero);
                 }
-                Ok(AstValue::String((x / y).to_string()))
+                Ok(AstValue::Integer((x / y).to_string()))
             }
             (AstValue::Real(x), AstValue::Real(y)) => {
                 if *y == 0.0 {
@@ -198,13 +208,21 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
             _ => Err(ExitCode::HeapExhaustion),
         },
         "mod" => match (&left, &right) {
+            (AstValue::Integer(a), AstValue::Integer(b)) => {
+                let x: i64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+                let y: i64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+                if y == 0 {
+                    return Err(ExitCode::DivisionByZero);
+                }
+                Ok(AstValue::Integer((x % y).to_string()))
+            }
             (AstValue::String(a), AstValue::String(b)) => {
                 let x: i64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
                 let y: i64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
                 if y == 0 {
                     return Err(ExitCode::DivisionByZero);
                 }
-                Ok(AstValue::String((x % y).to_string()))
+                Ok(AstValue::Integer((x % y).to_string()))
             }
             _ => Err(ExitCode::HeapExhaustion),
         },
@@ -247,9 +265,13 @@ fn eval_unary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCod
 
     match op.as_str() {
         "-" => match &operand {
+            AstValue::Integer(s) => {
+                let x: i64 = s.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+                Ok(AstValue::Integer((-x).to_string()))
+            }
             AstValue::String(s) => {
                 let x: i64 = s.parse().map_err(|_| ExitCode::HeapExhaustion)?;
-                Ok(AstValue::String((-x).to_string()))
+                Ok(AstValue::Integer((-x).to_string()))
             }
             AstValue::Real(x) => Ok(AstValue::Real(-x)),
             _ => Err(ExitCode::HeapExhaustion),
@@ -327,10 +349,15 @@ where
     FR: Fn(f64, f64) -> f64,
 {
     match (left, right) {
+        (AstValue::Integer(a), AstValue::Integer(b)) => {
+            let x: i64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+            let y: i64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+            Ok(AstValue::Integer(int_op(x, y).to_string()))
+        }
         (AstValue::String(a), AstValue::String(b)) => {
             let x: i64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
             let y: i64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
-            Ok(AstValue::String(int_op(x, y).to_string()))
+            Ok(AstValue::Integer(int_op(x, y).to_string()))
         }
         (AstValue::Real(a), AstValue::Real(b)) => Ok(AstValue::Real(real_op(*a, *b))),
         _ => Err(ExitCode::HeapExhaustion),
@@ -343,6 +370,11 @@ where
     F: Fn(f64, f64) -> bool,
 {
     match (left, right) {
+        (AstValue::Integer(a), AstValue::Integer(b)) => {
+            let x: f64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+            let y: f64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
+            Ok(AstValue::Boolean(cmp(x, y)))
+        }
         (AstValue::String(a), AstValue::String(b)) => {
             let x: f64 = a.parse().map_err(|_| ExitCode::HeapExhaustion)?;
             let y: f64 = b.parse().map_err(|_| ExitCode::HeapExhaustion)?;
@@ -434,7 +466,37 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
         }
     }
     ctx.symbols.pop_scope();
+
+    // Enforce complexity contract
+    enforce_complexity(ctx, node)?;
+
     Ok(last_value)
+}
+
+/// Parse complexity string from algorithm node and verify the step count.
+fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+    use crate::profiling::ComplexityContract;
+    if node.children.len() < 2 {
+        return Ok(());
+    }
+    let complexity_str = match &node.children[1].value {
+        Some(AstValue::String(s)) => s.clone(),
+        _ => return Ok(()),
+    };
+    let contract = match complexity_str.trim() {
+        s if s.contains("O(1)") => ComplexityContract::Constant,
+        s if s.contains("O(N^3)") => ComplexityContract::Polynomial { n: 100, k: 3 },
+        s if s.contains("O(N^2)") => ComplexityContract::Quadratic { n: 100 },
+        s if s.contains("O(N log N)") || s.contains("O((V+E) log V)") => {
+            ComplexityContract::Linearithmic { n: 100 }
+        }
+        s if s.contains("O(log N)") => ComplexityContract::Logarithmic { n: 100 },
+        s if s.contains("O(2^N)") => ComplexityContract::Exponential { n: 20 },
+        s if s.contains("O(N!)") => ComplexityContract::Factorial { n: 10 },
+        s if s.contains("O(N)") => ComplexityContract::Linear { n: 100 },
+        _ => ComplexityContract::Linear { n: 100 },
+    };
+    ctx.profiler.verify_complexity(&contract)
 }
 
 fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
@@ -523,7 +585,7 @@ fn execute_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
     for i in 0..n {
         ctx.symbols.declare(
             &iterator_name,
-            SymbolValue::Value(AstValue::String(i.to_string())),
+            SymbolValue::Value(AstValue::Integer(i.to_string())),
         )?;
         for body_node in node.children.iter().skip(2) {
             last_value = execute_algorithm_body(ctx, body_node)?;
@@ -612,7 +674,7 @@ mod tests {
         let mut ctx = make_ctx();
         let node = AstNodeFactory::integer_literal("42");
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("42".to_string()));
+        assert_eq!(result, AstValue::Integer("42".to_string()));
     }
 
     #[test]
@@ -624,7 +686,7 @@ mod tests {
             AstNodeFactory::integer_literal("5"),
         );
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("15".to_string()));
+        assert_eq!(result, AstValue::Integer("15".to_string()));
     }
 
     #[test]
@@ -636,7 +698,7 @@ mod tests {
             AstNodeFactory::integer_literal("3"),
         );
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("7".to_string()));
+        assert_eq!(result, AstValue::Integer("7".to_string()));
     }
 
     #[test]
@@ -648,7 +710,7 @@ mod tests {
             AstNodeFactory::integer_literal("7"),
         );
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("42".to_string()));
+        assert_eq!(result, AstValue::Integer("42".to_string()));
     }
 
     #[test]
@@ -660,7 +722,7 @@ mod tests {
             AstNodeFactory::integer_literal("3"),
         );
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("3".to_string()));
+        assert_eq!(result, AstValue::Integer("3".to_string()));
     }
 
     #[test]
@@ -792,7 +854,7 @@ mod tests {
         let mut ctx = make_ctx();
         let node = AstNodeFactory::unary_expression("-", AstNodeFactory::integer_literal("42"));
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("-42".to_string()));
+        assert_eq!(result, AstValue::Integer("-42".to_string()));
     }
 
     #[test]
@@ -814,16 +876,16 @@ mod tests {
         let outer =
             AstNodeFactory::binary_expression("+", inner, AstNodeFactory::integer_literal("2"));
         let result = evaluate(&mut ctx, &outer).unwrap();
-        assert_eq!(result, AstValue::String("14".to_string()));
+        assert_eq!(result, AstValue::Integer("14".to_string()));
     }
 
     #[test]
     fn eval_identifier_lookup() {
         let mut ctx = make_ctx();
-        declare_var(&mut ctx, "x", AstValue::String("42".to_string()));
+        declare_var(&mut ctx, "x", AstValue::Integer("42".to_string()));
         let node = AstNodeFactory::identifier("x");
         let result = evaluate(&mut ctx, &node).unwrap();
-        assert_eq!(result, AstValue::String("42".to_string()));
+        assert_eq!(result, AstValue::Integer("42".to_string()));
     }
 
     #[test]
@@ -851,12 +913,12 @@ mod tests {
     #[test]
     fn exec_assignment() {
         let mut ctx = make_ctx();
-        declare_var(&mut ctx, "x", AstValue::String("0".to_string()));
+        declare_var(&mut ctx, "x", AstValue::Integer("0".to_string()));
         let target = AstNodeFactory::identifier("x");
         let value = AstNodeFactory::integer_literal("42");
         let assign = AstNodeFactory::assignment(target, value);
         execute_assignment(&mut ctx, &assign).unwrap();
-        if let Some(SymbolValue::Value(AstValue::String(s))) = ctx.symbols.lookup("x") {
+        if let Some(SymbolValue::Value(AstValue::Integer(s))) = ctx.symbols.lookup("x") {
             assert_eq!(s, "42");
         } else {
             panic!("x not found");

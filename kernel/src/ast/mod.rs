@@ -60,10 +60,10 @@ pub struct SourceLocation {
 /// Value types carried by AST nodes.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AstValue {
-    String(String),
     Integer(String),
     Real(f64),
     Boolean(bool),
+    String(String),
     None,
 }
 
@@ -242,7 +242,7 @@ impl AstNodeFactory {
     pub fn integer_literal(value: &str) -> AstNode {
         AstNode::leaf(
             AstNodeKind::IntegerLiteral,
-            Some(AstValue::String(value.to_string())),
+            Some(AstValue::Integer(value.to_string())),
         )
     }
 
@@ -591,7 +591,7 @@ mod tests {
     fn factory_integer_literal_creates_correct_node() {
         let node = AstNodeFactory::integer_literal("42");
         assert_eq!(node.kind, AstNodeKind::IntegerLiteral);
-        assert_eq!(node.value, Some(AstValue::String("42".to_string())));
+        assert_eq!(node.value, Some(AstValue::Integer("42".to_string())));
         assert!(node.children.is_empty());
     }
 
