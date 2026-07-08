@@ -131,6 +131,25 @@ impl TargetGenerator for PythonTarget {
 }
 
 impl PythonTarget {
+    /// Map UEAS standard prelude functions to Python equivalents.
+    fn prelude_map(&self) -> Vec<(&str, &str)> {
+        vec![
+            ("length", "len"),
+            ("cardinality", "len"),
+            ("contains", "in"),
+            ("append", "append"),
+            ("pop", "pop"),
+            ("slice", "slice"),
+            ("sqrt", "math.sqrt"),
+            ("emptyList", "list"),
+            ("emptySet", "set"),
+            ("emptyMap", "dict"),
+            ("range", "range"),
+        ]
+    }
+}
+
+impl PythonTarget {
     fn generate_program_impl(
         &self,
         node: &serde_json::Value,
@@ -517,6 +536,20 @@ impl TargetGenerator for RustTarget {
             ("Real", "f64"),
             ("Boolean", "bool"),
             ("String", "String"),
+        ]
+    }
+}
+
+impl RustTarget {
+    fn prelude_map(&self) -> Vec<(&str, &str)> {
+        vec![
+            ("length", "len"),
+            ("cardinality", "len"),
+            ("append", "push"),
+            ("sqrt", "f64::sqrt"),
+            ("emptyList", "Vec::new"),
+            ("emptySet", "HashSet::new"),
+            ("emptyMap", "HashMap::new"),
         ]
     }
 }

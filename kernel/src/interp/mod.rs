@@ -390,7 +390,16 @@ fn dispatch_builtin(
                 _ => Err(ExitCode::HeapExhaustion),
             }
         }
-        "length" | "cardinality" => Ok(AstValue::Integer("0".to_string())),
+        "length" | "cardinality" => {
+            if args.is_empty() {
+                return Err(ExitCode::HeapExhaustion);
+            }
+            let count = match &args[0] {
+                AstValue::Integer(s) | AstValue::String(s) => s.parse::<u64>().ok(),
+                _ => None,
+            };
+            Ok(AstValue::Integer(count.unwrap_or(0).to_string()))
+        }
         "range" => {
             if args.len() < 2 {
                 return Err(ExitCode::HeapExhaustion);
@@ -675,7 +684,7 @@ fn execute_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
     Ok(last)
 }
 
-fn execute_assert(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+pub fn execute_assert(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     if node.children.is_empty() {
         return Ok(());
     }
@@ -686,7 +695,7 @@ fn execute_assert(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode>
     Ok(())
 }
 
-fn execute_invariant(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+pub fn execute_invariant(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     if node.children.is_empty() {
         return Ok(());
     }

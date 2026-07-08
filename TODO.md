@@ -1,37 +1,38 @@
-# UEAS — Comprehensive Refactoring Plan
+# UEAS — Final Implementation Loop
 
-## Phase 1: Syntax Modernization (Grammar)
-- [ ] 1.1 Replace SEMICOLON statement terminator with NEWLINE (keep ; optional)
-- [ ] 1.2 Remove LPAREN/RPAREN from ifStmt, whileLoop, forLoop conditions
-- [ ] 1.3 Add `elif` keyword as `else if` shorthand
-- [ ] 1.4 Add `import IDENTIFIER` production rule (parse-only, no cross-file resolution)
-- [ ] 1.5 Add `range(start, end)` to primary expression list
-- [ ] 1.6 Add `emptyList()`, `emptySet()`, `emptyMap()` to built-in calls
-- [ ] 1.7 Update `.ueas` grammar test files to new syntax
-- [ ] 1.8 Update SPEC.md Section 4 (EBNF) and examples to new syntax
+## Phase I: Grammar & AST (Epoch 1) [95%]
+- [x] Remove semicolons, modernize control flow, add import rule
+- [x] Matrix dimensions accept type variables
+- [x] 14/14 grammar tests parse
+- [ ] 1.1 Complete Graph/Matrix literal grammar (remove "reserved" comments)
+- [ ] 1.2 Fix `#[serde(untagged)]` on AstValue with proper variant ordering
+- [ ] 1.3 Fix `count_collection_items()` placeholder — read actual heap metadata
 
-## Phase 2: Kernel Completeness (Rust)
-- [ ] 2.1 Refactor SymbolTable to store only HeapHandle (remove SymbolValue::Value)
-- [ ] 2.2 Implement heap-backed value lifecycle (allocate→write→read→deallocate)
-- [ ] 2.3 Implement implicit complexity binding: auto-bind N from first param
-- [ ] 2.4 Replace count_collection_items() with actual size computation
-- [ ] 2.5 Add builtins: length, cardinality, contains, append, slice, pop, range
-- [ ] 2.6 Add builtins: emptyList, emptySet, emptyMap
-- [ ] 2.7 Update enforce_complexity() for implicit + explicit binding
-- [ ] 2.8 Add integration tests for all 7 benchmark algorithms
+## Phase II: Microkernel (Epoch 2) [90%]
+- [x] SymbolTable → HeapHandle only
+- [x] Complexity enforcement at algorithm termination
+- [x] 15+ built-in functions in dispatcher
+- [x] 93 kernel tests pass
+- [ ] 2.1 Make complexity enforcement evaluate variableBinding expressions
+- [ ] 2.2 Add trap validation: ComplexityViolation, InfiniteLoopDetected, HeapExhaustion, IndexOutOfBounds
 
-## Phase 3: Transpilation & Quality (Backends + Docs)
-- [ ] 3.1 Rust backend: statement transpilation (if, while, for, return)
-- [ ] 3.2 Transpiler builtins: map kernel builtins to target-language equivalents
-- [ ] 3.3 E2E pipeline test: .ueas → parse → AST → kernel → transpile
-- [ ] 3.4 Create examples/ directory with 7 benchmark .ueas files
-- [ ] 3.5 Update README.md code examples to new syntax
-- [ ] 3.6 Update SPEC.md all algorithm examples to new syntax
-- [ ] 3.7 Full CI gate: test + clippy + fmt, all clean
+## Phase III: Transpilation (Epoch 3) [80%]
+- [x] Python + Rust expression transpilation
+- [x] Python statement transpilation (var, assign, return, if, while, for)
+- [x] MCP endpoint
+- [ ] 3.1 Rust backend: full statement transpilation
+- [ ] 3.2 Standard prelude mapping (length→len, cardinality→len, etc.)
+- [ ] 3.3 Memory lifecycle: Rust .clone() for composite types, Python deepcopy
 
-## Phase 4: Documentation Finalization
-- [ ] 4.1 SPEC.md Section 4 EBNF updated to match final grammar
-- [ ] 4.2 SPEC.md Section 5 AST examples updated
-- [ ] 4.3 AGENTS.md updated with new toolchain / quality gate commands
-- [ ] 4.4 REVIEW.md deleted (feedback incorporated)
-- [ ] 4.5 Final workspace CI gate: 100% pass, clippy clean, fmt clean
+## Phase IV: Conformance (UCTS) [10%]
+- [x] 7 benchmark .ueas examples parse
+- [ ] 4.1 Create conformance.rs: positive tests (7 benchmarks → ExitCode::NoError)
+- [ ] 4.2 Create trap tests: ComplexityViolation, InfiniteLoopDetected, HeapExhaustion, IndexOutOfBounds
+- [ ] 4.3 Create negative .ueas trap test files
+- [ ] 4.4 Cross-target equivalence on all 7 benchmarks
+
+## Definition of Done
+- [ ] All 10 ExitCode traps verifiable via automated harness
+- [ ] Property-based fuzz: 10^6 AST permutations, zero panics
+- [ ] Cross-target transpilation yields identical results
+- [ ] 100% SPEC.md Section 6.5 error semantics verifiable

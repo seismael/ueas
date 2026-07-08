@@ -235,20 +235,23 @@ PIPE        ::= '|'
 (* Comments and Whitespace *)
 LINE_COMMENT ::= '//' [^\n]*
 BLOCK_COMMENT ::= '/*' .* '*/'
-WS          ::= [ \t\r\n]+ -> skip
+NEWLINE     ::= '\r'? '\n' -> skip
+WS          ::= [ \t]+ -> skip
 ```
 
 ### 4.2. Production Rules
 
 ```ebnf
 (* Top-Level *)
-program          ::= algorithmDecl+
+program          ::= importDecl* algorithmDecl+
+
+importDecl       ::= 'import' IDENTIFIER
 
 algorithmDecl    ::= 'algorithm' IDENTIFIER
                      LPAREN (parameter (COMMA parameter)*)? RPAREN
                      (ARROW typeAnnotation)?
                      complexityAnnotation
-                     LBRACE statement* RBRACE
+                     block
 
 parameter        ::= IDENTIFIER ':' typeAnnotation
 
@@ -266,36 +269,35 @@ statement        ::= variableDecl
                    | whileLoop
                    | assertStmt
                    | invariantStmt
-                   | functionCall SEMICOLON
-                   | block
+                   | expression
 
 block            ::= LBRACE statement* RBRACE
 
 variableDecl     ::= 'let' IDENTIFIER ':' typeAnnotation
-                     (ASSIGN expression)? SEMICOLON
+                     (ASSIGN expression)?
 
 assignment       ::= IDENTIFIER
                      (DOT IDENTIFIER | LBRACKET expression RBRACKET)*
-                     ASSIGN expression SEMICOLON
+                     ASSIGN expression
 
-returnStmt       ::= 'return' expression? SEMICOLON
+returnStmt       ::= 'return' expression?
 
-ifStmt           ::= 'if' LPAREN expression RPAREN block
-                     ('else' 'if' LPAREN expression RPAREN block)*
+ifStmt           ::= 'if' expression block
+                     ('elif' expression block)*
                      ('else' block)?
 
 forLoop          ::= 'for' IDENTIFIER 'in' expression block
 
-whileLoop        ::= 'while' LPAREN expression RPAREN block
+whileLoop        ::= 'while' expression block
 
 assertStmt       ::= 'assert' LPAREN expression RPAREN
-                     (':' STRING_LIT)? SEMICOLON
+                     (':' STRING_LIT)?
 
 invariantStmt    ::= 'invariant' LPAREN expression RPAREN
-                     (':' STRING_LIT)? SEMICOLON
+                     (':' STRING_LIT)?
 
 (* Expressions *)
-expression       ::= logicalOr
+expression       ::= logicalOr (AS typeAnnotation)?
 
 logicalOr        ::= logicalAnd ('or' logicalAnd)*
 
@@ -316,12 +318,14 @@ primary          ::= INTEGER_LIT
                    | STRING_LIT
                    | TRUE
                    | FALSE
-                   | NONE
-                   | IDENTIFIER
-                   | functionCall
+                   | 'none'
+                   | 'some'
+                   | compositeCall
                    | LPAREN expression RPAREN
                    | compositeLiteral
-                   | castExpression
+
+compositeCall    ::= IDENTIFIER (DOT IDENTIFIER | LBRACKET expression RBRACKET)*
+                     (LPAREN (expression (COMMA expression)*)? RPAREN)?
 
 compositeLiteral ::= setLiteral
                    | listLiteral
@@ -329,33 +333,30 @@ compositeLiteral ::= setLiteral
                    | graphLiteral
                    | matrixLiteral
 
-setLiteral       ::= LBRACE expression (COMMA expression)* RBRACE
+setLiteral       ::= LBRACE (expression (COMMA expression)*)? RBRACE
 
 listLiteral      ::= LBRACKET expression (COMMA expression)* RBRACKET
 
 mapLiteral       ::= LBRACE (expression COLON expression
                      (COMMA expression COLON expression)*)? RBRACE
 
-graphLiteral     ::= 'graph' LANGLE typeAnnotation COMMA typeAnnotation RANGLE
-                     LPAREN (* nodes *) LPAREN expression (COMMA expression)* RPAREN COMMA
-                     (* edges *) LPAREN edgeLiteral (COMMA edgeLiteral)* RPAREN RPAREN
-                     (* reserved for Epoch 1 completion *)
+graphLiteral     ::= 'graph' LT typeAnnotation COMMA typeAnnotation GT
+                     LPAREN LPAREN expression (COMMA expression)* RPAREN COMMA
+                     LPAREN edgeLiteral (COMMA edgeLiteral)* RPAREN RPAREN
 
 edgeLiteral      ::= LPAREN expression COMMA expression
                      (COMMA expression)? RPAREN
 
-matrixLiteral    ::= 'matrix' LANGLE INTEGER_LIT COMMA INTEGER_LIT
-                     COMMA typeAnnotation RANGLE
+matrixLiteral    ::= 'matrix' LT matrixDim COMMA matrixDim
+                     COMMA typeAnnotation GT
                      LPAREN expression (COMMA expression)* RPAREN
 
-castExpression   ::= expression 'as' typeAnnotation
-
-functionCall     ::= IDENTIFIER LPAREN
-                     (expression (COMMA expression)*)? RPAREN
+matrixDim        ::= INTEGER_LIT | IDENTIFIER
 
 (* Types *)
 typeAnnotation   ::= primitiveType
                    | compositeType
+                   | IDENTIFIER
 
 primitiveType    ::= 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void'
 
