@@ -21,6 +21,20 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct HeapHandle(u64);
 
+impl HeapHandle {
+    /// Returns the raw u64 identifier for this heap handle.
+    /// Used internally by the interpreter for Pointer value tracking.
+    pub fn as_u64(self) -> u64 {
+        self.0
+    }
+
+    /// Reconstruct a HeapHandle from a raw u64 identifier.
+    /// Internal use only — never construct handles outside the heap module.
+    pub(crate) fn from_u64(id: u64) -> Self {
+        Self(id)
+    }
+}
+
 /// Metadata about the UEAS type stored at an allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TypeTag {

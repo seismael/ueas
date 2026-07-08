@@ -86,6 +86,7 @@ fn value_to_bytes(value: &AstValue) -> (Vec<u8>, crate::heap::TypeTag) {
             (d, TypeTag::String)
         }
         AstValue::None => (vec![0u8], TypeTag::Unknown),
+        AstValue::Pointer(id) => (id.to_be_bytes().to_vec(), TypeTag::HeapHandle),
     }
 }
 
@@ -117,7 +118,7 @@ fn read_value_from_heap(heap: &VirtualHeap, handle: HeapHandle) -> Result<AstVal
                 .trim_end_matches('\0')
                 .to_string(),
         ),
-        TypeTag::HeapHandle | TypeTag::Unknown => AstValue::None,
+        TypeTag::HeapHandle | TypeTag::Unknown => AstValue::Pointer(handle.as_u64()),
     })
 }
 
@@ -298,7 +299,7 @@ fn eval_function_call(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue,
 fn dispatch_builtin(
     name: &str,
     args: &[AstValue],
-    _heap: &VirtualHeap,
+    heap: &VirtualHeap,
 ) -> Result<AstValue, ExitCode> {
     match name {
         "sqrt" => {
@@ -322,6 +323,11 @@ fn dispatch_builtin(
             match &args[0] {
                 AstValue::Integer(x) => Ok(AstValue::Integer(*x)),
                 AstValue::Real(x) => Ok(AstValue::Integer(*x as i64)),
+                AstValue::Pointer(id) => {
+                    let handle = HeapHandle::from_u64(*id);
+                    let size = heap.allocation_size(handle).unwrap_or(0) as i64;
+                    Ok(AstValue::Integer(size))
+                }
                 _ => Ok(AstValue::Integer(0)),
             }
         }
@@ -354,6 +360,7 @@ fn is_truthy(value: &AstValue) -> bool {
         AstValue::String(s) => s != "0" && !s.is_empty(),
         AstValue::Real(x) => *x != 0.0,
         AstValue::None => false,
+        AstValue::Pointer(id) => *id != 0,
     }
 }
 

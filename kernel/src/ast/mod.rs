@@ -60,6 +60,9 @@ pub struct SourceLocation {
 /// Value types carried by AST nodes.
 /// Uses #[serde(untagged)] for flat JSON output:
 ///   Integer(42) → 42, Real(3.14) → 3.14, Boolean(true) → true
+///
+/// Pointer(u64) is internal-only (kernel heap references). It is
+/// #[serde(skip)] — never serialized across the JSON IPC boundary.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum AstValue {
@@ -68,6 +71,8 @@ pub enum AstValue {
     Boolean(bool),
     String(String),
     None,
+    #[serde(skip)]
+    Pointer(u64),
 }
 
 /// The core AST node structure. Every node has a kind discriminant and
