@@ -1,0 +1,38 @@
+# Rust
+kernel/target/
+**/*.rs.bk
+*.pdb
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# ANTLR4
+*.tokens
+*.interp
+*.class
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.out
+*.exe
+*.dll
+*.so
+*.dylib
