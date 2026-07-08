@@ -6,3 +6,5 @@
 //! trap register. All error conditions route through the trap system.
 
 pub mod ast;
+pub mod heap;
+pub mod traps;
