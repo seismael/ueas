@@ -1,16 +1,12 @@
-import ListUtils
-
 algorithm LinearSearch(data: List<Integer>, target: Integer) -> Integer
     @Complexity("O(N)")
 {
     let index: Integer := 0
-    
     for item in data {
         if item == target {
             return index
         }
         index := index + 1
     }
-    
     return -1
 }

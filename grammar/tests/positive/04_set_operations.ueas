@@ -1,9 +1,8 @@
 algorithm SetOps(a: Set<Integer>, b: Set<Integer>) -> Set<Integer>
-    @Complexity("O(N)", N = a.cardinality() + b.cardinality())
+    @Complexity("O(N)", N = cardinality(a) + cardinality(b))
 {
-    let union: Set<Integer> := a.union(b);
-    let intersection: Set<Integer> := a.intersection(b);
-    assert(intersection.cardinality() <= union.cardinality()):
-        "Intersection must be subset of union";
-    return union;
+    let union: Set<Integer> := a.union(b)
+    let intersection: Set<Integer> := a.intersection(b)
+    assert(cardinality(intersection) <= cardinality(union)): "Intersection must be subset of union"
+    return union
 }

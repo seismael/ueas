@@ -1,7 +1,10 @@
+import Math
+
 algorithm EuclideanDistance(x1: Real, y1: Real, x2: Real, y2: Real) -> Real
     @Complexity("O(1)")
 {
     let dx: Real := x2 - x1
     let dy: Real := y2 - y1
+    assert(dx * dx >= 0.0): "Square of real must be non-negative"
     return sqrt(dx * dx + dy * dy)
 }

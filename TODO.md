@@ -1,34 +1,37 @@
-# UEAS Development — Continuous Engineering Loop
+# UEAS — Comprehensive Refactoring Plan
 
-## Epoch 1 — Combinatorial Core [COMPLETE]
-- [x] AST foundation, type system, factory, visitor, JSON serde
-- [x] ANTLR4 grammar with 8 parse test files
-- [x] Virtual heap, exit codes, trap register
-- [x] Property-based fuzz (6 proptest + 200K batch)
-- [x] Backend plugin system (Python + Rust targets)
-- [x] 7 cross-target benchmark equivalence tests
-- [x] 132 tests, clippy clean, fmt clean
+## Phase 1: Syntax Modernization (Grammar)
+- [ ] 1.1 Replace SEMICOLON statement terminator with NEWLINE (keep ; optional)
+- [ ] 1.2 Remove LPAREN/RPAREN from ifStmt, whileLoop, forLoop conditions
+- [ ] 1.3 Add `elif` keyword as `else if` shorthand
+- [ ] 1.4 Add `import IDENTIFIER` production rule (parse-only, no cross-file resolution)
+- [ ] 1.5 Add `range(start, end)` to primary expression list
+- [ ] 1.6 Add `emptyList()`, `emptySet()`, `emptyMap()` to built-in calls
+- [ ] 1.7 Update `.ueas` grammar test files to new syntax
+- [ ] 1.8 Update SPEC.md Section 4 (EBNF) and examples to new syntax
 
-## Epoch 2 — Profiling Kernel [COMPLETE]
-- [x] 8.1-8.8 Expression evaluator, all operators, tests
-- [x] 9.1-9.9 Symbol table, statements, control flow, tests
-- [x] Complexity enforcement at algorithm termination
-- [x] Invariants module (standalone, with tests)
-- [x] Heap exit codes corrected (NullDereference for missing handles)
+## Phase 2: Kernel Completeness (Rust)
+- [ ] 2.1 Refactor SymbolTable to store only HeapHandle (remove SymbolValue::Value)
+- [ ] 2.2 Implement heap-backed value lifecycle (allocate→write→read→deallocate)
+- [ ] 2.3 Implement implicit complexity binding: auto-bind N from first param
+- [ ] 2.4 Replace count_collection_items() with actual size computation
+- [ ] 2.5 Add builtins: length, cardinality, contains, append, slice, pop, range
+- [ ] 2.6 Add builtins: emptyList, emptySet, emptyMap
+- [ ] 2.7 Update enforce_complexity() for implicit + explicit binding
+- [ ] 2.8 Add integration tests for all 7 benchmark algorithms
 
-## Epoch 3 — Universal Bridge [80%]
-- [x] TargetGenerator trait (GoF Strategy)
-- [x] Python backend: expressions + statements + control flow
-- [x] Rust backend: expressions (statements pending)
-- [x] MCP endpoint (handle_transpile, all tests pass)
-- [x] 7 cross-target benchmark equivalence tests
-- [ ] Full Rust backend statement transpilation
-- [ ] E2E pipeline: grammar parse → AST → kernel execute → transpile
+## Phase 3: Transpilation & Quality (Backends + Docs)
+- [ ] 3.1 Rust backend: statement transpilation (if, while, for, return)
+- [ ] 3.2 Transpiler builtins: map kernel builtins to target-language equivalents
+- [ ] 3.3 E2E pipeline test: .ueas → parse → AST → kernel → transpile
+- [ ] 3.4 Create examples/ directory with 7 benchmark .ueas files
+- [ ] 3.5 Update README.md code examples to new syntax
+- [ ] 3.6 Update SPEC.md all algorithm examples to new syntax
+- [ ] 3.7 Full CI gate: test + clippy + fmt, all clean
 
-## Known Issues / Future Work
-- [ ] Serde untagged redesign (AstValue Integer/String ambiguity)
-- [ ] SymbolTable → VirtualHeap for all values (currently stores values inline)
-- [ ] count_collection_items() placeholder (returns hardcoded 10)
-- [ ] Observer + Command GoF patterns
-- [ ] tools/Dockerfile
-- [ ] Property-based fuzz: 10^6 inputs (currently 200K)
+## Phase 4: Documentation Finalization
+- [ ] 4.1 SPEC.md Section 4 EBNF updated to match final grammar
+- [ ] 4.2 SPEC.md Section 5 AST examples updated
+- [ ] 4.3 AGENTS.md updated with new toolchain / quality gate commands
+- [ ] 4.4 REVIEW.md deleted (feedback incorporated)
+- [ ] 4.5 Final workspace CI gate: 100% pass, clippy clean, fmt clean

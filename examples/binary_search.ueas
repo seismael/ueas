@@ -1,0 +1,18 @@
+algorithm BinarySearch(data: List<Integer>, target: Integer) -> Integer
+    @Complexity("O(log N)")
+{
+    let low: Integer := 0
+    let high: Integer := length(data) - 1
+    while low <= high {
+        invariant(low >= 0 and high < length(data)): "Pointers must remain in bounds"
+        let mid: Integer := low + (high - low) / 2
+        if data[mid] == target {
+            return mid
+        } elif data[mid] < target {
+            low := mid + 1
+        } else {
+            high := mid - 1
+        }
+    }
+    return -1
+}

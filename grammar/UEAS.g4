@@ -2,8 +2,12 @@
 // Version 1.0.0-draft
 // License: Apache 2.0
 //
-// This grammar is the normative definition of valid UEAS syntax.
-// It corresponds to SPEC.md Section 4 (Grammar Specification).
+// Modern Mathematical Syntax:
+// - { } braces for explicit scope (immune to whitespace corruption)
+// - Newlines as statement terminators (semicolons removed)
+// - No parentheses around if/while/for conditions
+// - and/or/not operators (not &&/||/!)
+// - := for assignment, = for binding, == for equality
 
 grammar UEAS;
 
@@ -15,6 +19,7 @@ FUNCTION  : 'function';
 PROCEDURE : 'procedure';
 RETURN    : 'return';
 IF        : 'if';
+ELIF      : 'elif';
 ELSE      : 'else';
 FOR       : 'for';
 WHILE     : 'while';
@@ -23,6 +28,7 @@ LET       : 'let';
 ASSERT    : 'assert';
 INVARIANT : 'invariant';
 COMPLEXITY: 'Complexity' | 'complexity';
+IMPORT    : 'import';
 TRUE      : 'true';
 FALSE     : 'false';
 AND       : 'and';
@@ -51,7 +57,6 @@ GT        : '>';
 GE        : '>=';
 ARROW     : '->';
 COLON     : ':';
-SEMICOLON : ';';
 COMMA     : ',';
 DOT       : '.';
 LBRACE    : '{';
@@ -67,18 +72,21 @@ AS        : 'as';
 // Comments and Whitespace
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
-WS            : [ \t\r\n]+ -> skip;
+NEWLINE       : '\r'? '\n' -> skip;
+WS            : [ \t]+ -> skip;
 
 // ===== Parser Rules =====
 
 // Top-Level
-program : algorithmDecl+ EOF;
+program : importDecl* algorithmDecl+ EOF;
+
+importDecl : IMPORT identifier NEWLINE?;
 
 algorithmDecl : ALGORITHM identifier
                 LPAREN (parameter (COMMA parameter)*)? RPAREN
                 (ARROW typeAnnotation)?
-                complexityAnnotation
-                LBRACE statement* RBRACE;
+                NEWLINE? complexityAnnotation NEWLINE?
+                block;
 
 parameter : identifier COLON typeAnnotation;
 
@@ -86,9 +94,6 @@ complexityAnnotation : AT COMPLEXITY LPAREN STRING_LIT
                        (COMMA variableBinding)* RPAREN;
 
 variableBinding : identifier BIND expression;
-
-// Identifier — accepts keywords usable as variable names
-identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' | 'true' | 'false';
 
 // Statements
 statement : variableDecl
@@ -99,33 +104,32 @@ statement : variableDecl
           | whileLoop
           | assertStmt
           | invariantStmt
-          | compositeCall SEMICOLON
-          | block;
+          | expression;
 
 block : LBRACE statement* RBRACE;
 
 variableDecl : LET identifier COLON typeAnnotation
-               (ASSIGN expression)? SEMICOLON;
+               (ASSIGN expression)?;
 
 assignment : identifier
              (DOT identifier | LBRACKET expression RBRACKET)*
-             ASSIGN expression SEMICOLON;
+             ASSIGN expression;
 
-returnStmt : RETURN expression? SEMICOLON;
+returnStmt : RETURN expression?;
 
-ifStmt : IF LPAREN expression RPAREN block
-         (ELSE IF LPAREN expression RPAREN block)*
+ifStmt : IF expression block
+         (ELIF expression block)*
          (ELSE block)?;
 
 forLoop : FOR identifier IN expression block;
 
-whileLoop : WHILE LPAREN expression RPAREN block;
+whileLoop : WHILE expression block;
 
 assertStmt : ASSERT LPAREN expression RPAREN
-             (COLON STRING_LIT)? SEMICOLON;
+             (COLON STRING_LIT)?;
 
 invariantStmt : INVARIANT LPAREN expression RPAREN
-                (COLON STRING_LIT)? SEMICOLON;
+                (COLON STRING_LIT)?;
 
 // Expressions (ordered by precedence — lowest to highest)
 expression : logicalOr (AS typeAnnotation)?;
@@ -155,7 +159,8 @@ primary : INTEGER_LIT
         | LPAREN expression RPAREN
         | compositeLiteral;
 
-compositeCall : identifier ( DOT identifier | LBRACKET expression RBRACKET )* ( LPAREN (expression (COMMA expression)*)? RPAREN )?;
+compositeCall : identifier ( DOT identifier | LBRACKET expression RBRACKET )*
+               ( LPAREN (expression (COMMA expression)*)? RPAREN )?;
 
 compositeLiteral : setLiteral
                  | listLiteral
@@ -177,9 +182,11 @@ graphLiteral : 'graph' LT typeAnnotation COMMA typeAnnotation GT
 edgeLiteral : LPAREN expression COMMA expression
               (COMMA expression)? RPAREN;
 
-matrixLiteral : 'matrix' LT INTEGER_LIT COMMA INTEGER_LIT
+matrixLiteral : 'matrix' LT matrixDim COMMA matrixDim
                 COMMA typeAnnotation GT
                 LPAREN expression (COMMA expression)* RPAREN;
+
+matrixDim : INTEGER_LIT | identifier;
 
 // Types
 typeAnnotation : primitiveType
@@ -188,11 +195,14 @@ typeAnnotation : primitiveType
 
 primitiveType : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void';
 
-compositeType : 'Set'    LT typeAnnotation GT                                            # SetType
-              | 'List'   LT typeAnnotation GT                                            # ListType
-              | 'Map'    LT typeAnnotation COMMA typeAnnotation GT                       # MapType
-              | 'Graph'  LT typeAnnotation COMMA typeAnnotation GT                       # GraphType
-              | 'Matrix' LT INTEGER_LIT COMMA INTEGER_LIT COMMA typeAnnotation GT        # MatrixType
-              | 'Option' LT typeAnnotation GT                                            # OptionType
-              | 'Result' LT typeAnnotation COMMA typeAnnotation GT                       # ResultType
-              | 'Tuple'  LT typeAnnotation (COMMA typeAnnotation)* GT                    # TupleType;
+compositeType : 'Set'    LT typeAnnotation GT
+              | 'List'   LT typeAnnotation GT
+              | 'Map'    LT typeAnnotation COMMA typeAnnotation GT
+              | 'Graph'  LT typeAnnotation COMMA typeAnnotation GT
+              | 'Matrix' LT matrixDim COMMA matrixDim COMMA typeAnnotation GT
+              | 'Option' LT typeAnnotation GT
+              | 'Result' LT typeAnnotation COMMA typeAnnotation GT
+              | 'Tuple'  LT typeAnnotation (COMMA typeAnnotation)* GT;
+
+// Identifier — accepts keywords usable as variable names
+identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' | 'true' | 'false';

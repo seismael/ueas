@@ -41,8 +41,7 @@ fn evaluate_invariant_condition(node: &AstNode) -> Option<bool> {
             _ => None,
         },
         _ => {
-            // For complex expressions, delegate to the full interpreter
-            // by defaulting to "condition not evaluable at this level"
+            // Complex expressions delegated to full interpreter
             None
         }
     }

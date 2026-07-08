@@ -1,4 +1,4 @@
 algorithm BadAlgo(x: Integer) -> Integer
 {
-    return x;
+    return x
 }

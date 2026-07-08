@@ -1,15 +1,17 @@
+import MatrixMath
+
 algorithm MatrixScale(m: Matrix<3, 3, Real>, scalar: Real) -> Matrix<3, 3, Real>
     @Complexity("O(1)")
 {
-    let result: Matrix<3, 3, Real> := matrix<3, 3, Real>(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    let i: Integer := 0;
-    while (i < 3) {
-        let j: Integer := 0;
-        while (j < 3) {
-            result[i][j] := m[i][j] * scalar;
-            j := j + 1;
+    let result: Matrix<3, 3, Real> := zeroMatrix(3, 3)
+    let i: Integer := 0
+    while i < 3 {
+        let j: Integer := 0
+        while j < 3 {
+            result[i][j] := m[i][j] * scalar
+            j := j + 1
         }
-        i := i + 1;
+        i := i + 1
     }
-    return result;
+    return result
 }
