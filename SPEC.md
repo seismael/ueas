@@ -173,6 +173,7 @@ FUNCTION    ::= 'function'
 PROCEDURE   ::= 'procedure'
 RETURN      ::= 'return'
 IF          ::= 'if'
+ELIF        ::= 'elif'
 ELSE        ::= 'else'
 FOR         ::= 'for'
 WHILE       ::= 'while'
@@ -180,24 +181,15 @@ IN          ::= 'in'
 LET         ::= 'let'
 ASSERT      ::= 'assert'
 INVARIANT   ::= 'invariant'
-COMPLEXITY  ::= 'complexity'
-GRAPH       ::= 'graph'
-SET         ::= 'set'
-LIST        ::= 'list'
-MAP         ::= 'map'
-MATRIX      ::= 'matrix'
-OPTION      ::= 'option'
-RESULT      ::= 'result'
-SOME        ::= 'some'
-NONE        ::= 'none'
-OK          ::= 'ok'
-ERR         ::= 'err'
+COMPLEXITY  ::= 'Complexity' | 'complexity'
+IMPORT      ::= 'import'
 TRUE        ::= 'true'
 FALSE       ::= 'false'
 AND         ::= 'and'
 OR          ::= 'or'
 NOT         ::= 'not'
 MOD         ::= 'mod'
+AS          ::= 'as'
 
 (* Literals *)
 IDENTIFIER  ::= [a-zA-Z_][a-zA-Z0-9_]*
@@ -211,6 +203,7 @@ MINUS       ::= '-'
 STAR        ::= '*'
 SLASH       ::= '/'
 ASSIGN      ::= ':='
+BIND        ::= '='
 EQ          ::= '=='
 NEQ         ::= '!='
 LT          ::= '<'
@@ -388,7 +381,6 @@ The parser MUST reject programs for the following reasons:
 7. **Invalid complexity string** — the complexity annotation string does not match any supported form defined in Appendix C.
 8. **Complexity binding mismatch** — a variable in the complexity string appears in a form that requires a binding (e.g., `V` in `O((V+E) log V)`) but no corresponding `variableBinding` is provided; or a binding references an undeclared variable name.
 9. **Undefined complexity variable** — a `variableBinding` references an identifier that is not a declared parameter of the algorithm.
-10. **Graph literal without edge set** — reserved for future specification.
 
 ---
 
@@ -412,7 +404,7 @@ The AST is serialized to JSON with a strict schema. Every node has a `"kind"` fi
 | `"WhileLoop"` | Conditional loop. Fields: `condition: Expression`, `body: Statement[]`. |
 | `"Assert"` | Runtime assertion. Fields: `condition: Expression`, `message?: string`. |
 | `"Invariant"` | Loop/scoped invariant. Fields: `condition: Expression`, `message?: string`. |
-| `"IntegerLiteral"` | Integer constant. Fields: `value: string` (arbitrary precision). |
+| `"IntegerLiteral"` | Integer constant. Fields: `value: number` (i64). |
 | `"RealLiteral"` | Floating-point constant. Fields: `value: number`. |
 | `"StringLiteral"` | String constant. Fields: `value: string`. |
 | `"BooleanLiteral"` | Boolean constant. Fields: `value: boolean`. |
@@ -425,7 +417,10 @@ The AST is serialized to JSON with a strict schema. Every node has a `"kind"` fi
 | `"SetLiteral"` | Set construction. Fields: `elementType: Type`, `elements: Expression[]`. |
 | `"ListLiteral"` | List construction. Fields: `elementType: Type`, `elements: Expression[]`. |
 | `"MapLiteral"` | Map construction. Fields: `keyType: Type`, `valueType: Type`, `entries: {key: Expression, value: Expression}[]`. |
-| `"GraphLiteral"` | Graph construction. Reserved for Epoch 1 completion. |
+| `"GraphLiteral"` | Graph construction. Fields: `nodeType: Type`, `edgeType: Type`, `nodes: Expression[]`, `edges: EdgeLiteral[]`. |
+| `"EdgeLiteral"` | Directed edge within a graph. Fields: `from: Expression`, `to: Expression`, `weight?: Expression`. |
+| `"MatrixLiteral"` | Matrix construction. Fields: `rows: number`, `cols: number`, `elementType: Type`, `elements: Expression[]`. |
+| `"Type"` | Type annotation node per Section 5.2. Fields: `name: string`, `typeArguments: Type[]`. |
 
 ### 5.2. Type Node Schema
 
@@ -884,11 +879,17 @@ The following identifiers are reserved and MUST NOT be used as variable or
 algorithm names:
 
 ```
-algorithm, function, procedure, return, if, else, for, while, in, let,
-assert, invariant, complexity, graph, set, list, map, matrix, option,
-result, some, none, ok, err, true, false, and, or, not, mod, as,
-Integer, Real, Boolean, String, Void, Set, List, Map, Graph, Matrix,
-Option, Result, Tuple, None
+algorithm, function, procedure, return, if, elif, else, for, while,
+in, let, assert, invariant, complexity, import, true, false, and,
+or, not, mod, as, Integer, Real, Boolean, String, Void, Set, List,
+Map, Graph, Matrix, Option, Result, Tuple
+```
+
+The following words may be used as identifiers despite appearing in
+syntactic contexts (they are handled by the `identifier` parser rule):
+
+```
+graph, matrix, some, none
 ```
 
 ---
