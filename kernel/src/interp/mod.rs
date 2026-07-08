@@ -250,6 +250,21 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
                 Ok(AstValue::Boolean(is_truthy(&right)))
             }
         }
+        "|" => bitwise_op(&left, &right, |a, b| a | b),
+        "&" => bitwise_op(&left, &right, |a, b| a & b),
+        "^" => bitwise_op(&left, &right, |a, b| a ^ b),
+        "<<" => bitwise_op(&left, &right, |a, b| a << b),
+        ">>" => bitwise_op(&left, &right, |a, b| a >> b),
+        _ => Err(ExitCode::InvalidOperation),
+    }
+}
+
+fn bitwise_op<F>(left: &AstValue, right: &AstValue, op: F) -> Result<AstValue, ExitCode>
+where
+    F: Fn(i64, i64) -> i64,
+{
+    match (left, right) {
+        (AstValue::Integer(a), AstValue::Integer(b)) => Ok(AstValue::Integer(op(*a, *b))),
         _ => Err(ExitCode::InvalidOperation),
     }
 }
@@ -1162,5 +1177,45 @@ mod tests {
                 .0,
             AstValue::Integer(99)
         );
+    }
+    #[test]
+    fn eval_bitwise_and() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "&",
+            AstNodeFactory::integer_literal("6"),
+            AstNodeFactory::integer_literal("3"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(2));
+    }
+    #[test]
+    fn eval_bitwise_or() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "|",
+            AstNodeFactory::integer_literal("4"),
+            AstNodeFactory::integer_literal("1"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(5));
+    }
+    #[test]
+    fn eval_bitwise_xor() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "^",
+            AstNodeFactory::integer_literal("5"),
+            AstNodeFactory::integer_literal("3"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(6));
+    }
+    #[test]
+    fn eval_shift_left() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "<<",
+            AstNodeFactory::integer_literal("1"),
+            AstNodeFactory::integer_literal("3"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(8));
     }
 }
