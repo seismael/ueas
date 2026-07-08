@@ -47,6 +47,8 @@ pub enum AstNodeKind {
     GraphLiteral,
     MatrixLiteral,
     EdgeLiteral,
+    InfinityLiteral,
+    NanLiteral,
     Type,
 }
 
@@ -269,6 +271,17 @@ impl AstNodeFactory {
         AstNode::leaf(AstNodeKind::BooleanLiteral, Some(AstValue::Boolean(value)))
     }
 
+    pub fn infinity_literal() -> AstNode {
+        AstNode::leaf(
+            AstNodeKind::InfinityLiteral,
+            Some(AstValue::Real(f64::INFINITY)),
+        )
+    }
+
+    pub fn nan_literal() -> AstNode {
+        AstNode::leaf(AstNodeKind::NanLiteral, Some(AstValue::Real(f64::NAN)))
+    }
+
     pub fn none_literal() -> AstNode {
         AstNode::leaf(AstNodeKind::NoneLiteral, Some(AstValue::None))
     }
@@ -484,6 +497,8 @@ pub trait AstVisitor {
     fn visit_graph_literal(&mut self, _node: &AstNode) {}
     fn visit_matrix_literal(&mut self, _node: &AstNode) {}
     fn visit_edge_literal(&mut self, _node: &AstNode) {}
+    fn visit_infinity_literal(&mut self, _node: &AstNode) {}
+    fn visit_nan_literal(&mut self, _node: &AstNode) {}
     fn visit_type(&mut self, _node: &AstNode) {}
 
     /// Traverse an AST node by dispatching to the appropriate visit method,
@@ -518,6 +533,8 @@ pub trait AstVisitor {
             AstNodeKind::GraphLiteral => self.visit_graph_literal(node),
             AstNodeKind::MatrixLiteral => self.visit_matrix_literal(node),
             AstNodeKind::EdgeLiteral => self.visit_edge_literal(node),
+            AstNodeKind::InfinityLiteral => self.visit_infinity_literal(node),
+            AstNodeKind::NanLiteral => self.visit_nan_literal(node),
             AstNodeKind::Type => self.visit_type(node),
         }
         for child in &node.children {
@@ -579,6 +596,8 @@ mod tests {
             AstNodeKind::GraphLiteral,
             AstNodeKind::MatrixLiteral,
             AstNodeKind::EdgeLiteral,
+            AstNodeKind::InfinityLiteral,
+            AstNodeKind::NanLiteral,
             AstNodeKind::Type,
         ];
         for kind in kinds {

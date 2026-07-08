@@ -23,6 +23,8 @@ ELIF      : 'elif';
 ELSE      : 'else';
 FOR       : 'for';
 WHILE     : 'while';
+BREAK     : 'break';
+CONTINUE  : 'continue';
 IN        : 'in';
 LET       : 'let';
 ASSERT    : 'assert';
@@ -35,6 +37,8 @@ AND       : 'and';
 OR        : 'or';
 NOT       : 'not';
 MOD       : 'mod';
+INFINITY  : 'Infinity';
+NAN       : 'NaN';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -68,6 +72,10 @@ RBRACKET  : ']';
 PIPE      : '|';
 AT        : '@';
 AS        : 'as';
+AMP       : '&';
+CARET     : '^';
+LSHIFT    : '<<';
+RSHIFT    : '>>';
 
 // Comments and Whitespace
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
@@ -104,6 +112,8 @@ statement : variableDecl
           | whileLoop
           | assertStmt
           | invariantStmt
+          | BREAK
+          | CONTINUE
           | expression;
 
 block : LBRACE statement* RBRACE;
@@ -142,9 +152,11 @@ equality : comparison ((EQ | NEQ) comparison)*;
 
 comparison : additive ((LT | LE | GT | GE) additive)*;
 
-additive : multiplicative ((PLUS | MINUS) multiplicative)*;
+additive : bitwise ((PLUS | MINUS) bitwise)*;
 
 multiplicative : unary ((STAR | SLASH | MOD) unary)*;
+
+bitwise : multiplicative ((AMP | PIPE | CARET | LSHIFT | RSHIFT) multiplicative)*;
 
 unary : (NOT | MINUS)? primary;
 
@@ -155,6 +167,8 @@ primary : INTEGER_LIT
         | FALSE
         | 'none'
         | 'some'
+        | INFINITY
+        | NAN
         | compositeCall
         | LPAREN expression RPAREN
         | compositeLiteral;

@@ -163,6 +163,8 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
         | AstNodeKind::StringLiteral
         | AstNodeKind::BooleanLiteral => node.value.clone().ok_or(ExitCode::InvalidOperation),
         AstNodeKind::NoneLiteral => Ok(AstValue::None),
+        AstNodeKind::InfinityLiteral => Ok(AstValue::Real(f64::INFINITY)),
+        AstNodeKind::NanLiteral => Ok(AstValue::Real(f64::NAN)),
         AstNodeKind::Identifier => {
             let name = match &node.value {
                 Some(AstValue::String(s)) => s.as_str(),
@@ -1041,7 +1043,7 @@ mod tests {
                 AstNodeFactory::integer_literal("1"),
             ),
         );
-        let body = AstNode::internal(AstNodeKind::WhileLoop, vec![], None);
+        let _body = AstNode::internal(AstNodeKind::WhileLoop, vec![], None);
         let while_node = AstNode::internal(
             AstNodeKind::WhileLoop,
             vec![

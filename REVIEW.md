@@ -39,7 +39,7 @@ While the foundation of the UEAS project is solid, an exhaustive audit against t
 ## 3. Specification & Ecosystem Maturity Gaps (Path to 1.0)
 To establish UEAS as an industry-standard algorithmic blueprint, the specification and surrounding tooling require significant maturation beyond the current baseline.
 
-### 3.1. Language Features & Standard Library
+### 3.1. Fatal Language Feature Gaps (Pre-1.0 Blockers)
 - [ ] **Generic Algorithms:** The grammar allows generic variables (e.g., `Set<T>`), but it lacks syntax to declare generic algorithms (e.g., `algorithm sort<T>(items: List<T>)`). Without generic algorithm declarations, the standard cannot define universally reusable logic.
 - [ ] **Control Flow (Break/Continue):** The `statement` grammar completely omits `break` and `continue`. Early loop exits are a foundational requirement for search algorithms and optimization.
 - [ ] **Constants & Immutability:** There is no `const` keyword. Mathematical algorithms heavily rely on immutable configurations, but all variables introduced via `let` are implicitly mutable.
