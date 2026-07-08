@@ -419,6 +419,51 @@ fn dispatch_builtin(
             };
             Ok((AstValue::Pointer(0), cost.max(1)))
         }
+        "substring" => {
+            if args.len() < 3 {
+                return Err(ExitCode::InvalidOperation);
+            }
+            let s = match &args[0] {
+                AstValue::String(s) => s.clone(),
+                _ => return Err(ExitCode::InvalidOperation),
+            };
+            let start: usize = match &args[1] {
+                AstValue::Integer(x) => *x as usize,
+                _ => 0,
+            };
+            let end: usize = match &args[2] {
+                AstValue::Integer(x) => *x as usize,
+                _ => s.len(),
+            };
+            let r: String = s
+                .chars()
+                .skip(start)
+                .take(end.saturating_sub(start))
+                .collect();
+            Ok((AstValue::String(r), 1))
+        }
+        "concat" => {
+            let r: String = args
+                .iter()
+                .map(|v| match v {
+                    AstValue::String(s) => s.clone(),
+                    AstValue::Integer(x) => x.to_string(),
+                    _ => String::new(),
+                })
+                .collect::<Vec<_>>()
+                .join("");
+            Ok((AstValue::String(r), args.len() as u64))
+        }
+        "strlen" => {
+            if args.is_empty() {
+                return Err(ExitCode::InvalidOperation);
+            }
+            let n = match &args[0] {
+                AstValue::String(s) => s.len() as i64,
+                _ => 0,
+            };
+            Ok((AstValue::Integer(n), 1))
+        }
         "prepend" | "slice" | "adjacent" | "neighbors" | "addNode" | "addEdge" | "removeNode"
         | "extractMin" | "weight" | "multiply" | "determinant" | "range" | "emptyList"
         | "emptySet" | "emptyMap" | "zeroMatrix" | "add" => Ok((AstValue::Pointer(0), 1)),
@@ -972,6 +1017,42 @@ mod tests {
             c.symbols.lookup("x", &c.heap).unwrap(),
             AstValue::Integer(8)
         );
+    }
+    #[test]
+    fn builtin_substring() {
+        let heap = VirtualHeap::with_default_config();
+        let (v, _) = dispatch_builtin(
+            "substring",
+            &[
+                AstValue::String("hello".to_string()),
+                AstValue::Integer(1),
+                AstValue::Integer(4),
+            ],
+            &heap,
+        )
+        .unwrap();
+        assert_eq!(v, AstValue::String("ell".to_string()));
+    }
+    #[test]
+    fn builtin_concat() {
+        let heap = VirtualHeap::with_default_config();
+        let (v, _) = dispatch_builtin(
+            "concat",
+            &[
+                AstValue::String("a".to_string()),
+                AstValue::String("b".to_string()),
+            ],
+            &heap,
+        )
+        .unwrap();
+        assert_eq!(v, AstValue::String("ab".to_string()));
+    }
+    #[test]
+    fn builtin_strlen() {
+        let heap = VirtualHeap::with_default_config();
+        let (v, _) =
+            dispatch_builtin("strlen", &[AstValue::String("hello".to_string())], &heap).unwrap();
+        assert_eq!(v, AstValue::Integer(5));
     }
     #[test]
     fn exec_assert_pass() {
