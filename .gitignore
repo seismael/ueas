@@ -36,3 +36,8 @@ dist/
 *.dll
 *.so
 *.dylib
+
+# AI Loop Workspace
+.loop/
+.opencode/
+.ralph-rlm/
