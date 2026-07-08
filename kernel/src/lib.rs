@@ -7,4 +7,5 @@
 
 pub mod ast;
 pub mod heap;
+pub mod profiling;
 pub mod traps;
