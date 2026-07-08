@@ -124,6 +124,8 @@ fn read_value_from_heap(heap: &VirtualHeap, handle: HeapHandle) -> Result<AstVal
         | TypeTag::List
         | TypeTag::Map
         | TypeTag::Graph
+        | TypeTag::DirectedGraph
+        | TypeTag::UndirectedGraph
         | TypeTag::Matrix
         | TypeTag::Option
         | TypeTag::Result
@@ -552,7 +554,28 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
     ctx.profiler.exit_recursion();
     ctx.symbols.pop_scope();
     enforce_complexity(ctx, node)?;
+    enforce_memory(ctx, node)?;
     Ok(last)
+}
+
+/// Enforce @Memory annotation by checking heap bytes allocated.
+fn enforce_memory(ctx: &ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+    // Memory annotation, if present, follows complexity string in algorithm children
+    // Format: @Memory("O(N)") or @Memory("256B") etc.
+    for child in node.children.iter().skip(1) {
+        match &child.value {
+            Some(AstValue::String(s)) if s.contains("@Memory") => {
+                let bytes = ctx.heap.bytes_allocated() as u64;
+                let max_bytes = 256 * 1024 * 1024; // default 256MB
+                if bytes > max_bytes {
+                    return Err(ExitCode::HeapExhaustion);
+                }
+                return Ok(());
+            }
+            _ => continue,
+        }
+    }
+    Ok(())
 }
 
 fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {

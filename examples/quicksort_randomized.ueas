@@ -1,0 +1,23 @@
+import Math
+
+algorithm QuickSortRandomized(data: List<Integer>) -> List<Integer>
+    @Complexity("O(N log N)")
+    @Memory("O(N)")
+{
+    const pivotIndex: Integer := randInt(0, length(data) - 1)
+    let pivot: Integer := data[pivotIndex]
+    let less: List<Integer> := emptyList()
+    let greater: List<Integer> := emptyList()
+
+    for item in data {
+        if item < pivot {
+            append(less, item)
+        } elif item > pivot {
+            append(greater, item)
+        }
+    }
+
+    assert(cardinality(less) + cardinality(greater) <= cardinality({})): "Partitions must not exceed input"
+
+    return concat(QuickSortRandomized(less), [pivot], QuickSortRandomized(greater))
+}

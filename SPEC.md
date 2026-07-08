@@ -155,6 +155,17 @@ No type inference is performed by the parser or kernel.
 3. Generic type parameters are invariant by default. Covariance and contravariance are NOT supported in version 1.0.
 4. Recursive type definitions (e.g., `Graph<Node, Edge>` where `Node` contains a `Graph`) are permitted but MUST terminate in a primitive type.
 5. All internal representations of `Set<T>` and `Map<K, V>` within the Virtual Heap MUST maintain deterministic insertion-order traversal to guarantee reproducible step-count profiles across hardware architectures and kernel implementations.
+6. `Graph<N, E>` is undirected by default. The keywords `Directed` and `Undirected` MAY be used as type modifiers to declare graph directedness explicitly. Directed graphs treat edges as ordered pairs; undirected graphs treat edges as unordered.
+7. Variables declared with `const` are immutable. Once bound, their value SHALL NOT be reassigned. Attempting to assign to a `const` variable MUST be rejected at compile time.
+
+### 3.4. Randomization
+
+The standard provides two built-in functions for non-deterministic algorithm specification:
+
+- `randInt(min: Integer, max: Integer) -> Integer` — Returns a value in the range [min, max].
+- `randReal() -> Real` — Returns a value in the range [0.0, 1.0).
+
+Randomization is provided for algorithmic completeness (e.g., Randomized QuickSort, Monte Carlo simulations). The kernel's random number generator is implementation-defined and does NOT guarantee cryptographic security.
 
 ---
 
@@ -624,7 +635,14 @@ If the complexity string contains variables that are not bound by a
 `variableBinding`, the kernel MUST trap with `INVALID_COMPLEXITY_BINDING`
 before execution begins.
 
-### 6.5. Exit Status Codes
+### 6.5. Memory Complexity Enforcement
+
+The optional `@Memory` annotation declares an asymptotic memory bound. The
+kernel tracks the total bytes allocated on the Virtual Heap (`heap.bytes_allocated()`)
+and verifies the allocation does not exceed the configured maximum (default 256 MiB).
+If the maximum is exceeded, the kernel traps with `HEAP_EXHAUSTION` (code 7).
+
+### 6.6. Exit Status Codes
 
 The kernel produces a non-negative integer exit status at termination.
 Code `0` indicates successful completion. Non-zero codes are termed
@@ -645,7 +663,7 @@ Code `0` indicates successful completion. Non-zero codes are termed
 | `10` | `INVALID_COMPLEXITY_BINDING` | Trap | The complexity string references a variable not bound by a `variableBinding`. |
 | `11` | `INVALID_OPERATION` | Trap | Unsupported operation, type mismatch, or unimplemented built-in function. |
 
-### 6.6. Memory Model
+### 6.7. Memory Model
 
 - The virtual heap is a contiguous byte array of configurable size (default
   256 MiB).

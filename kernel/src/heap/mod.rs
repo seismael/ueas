@@ -46,6 +46,8 @@ pub enum TypeTag {
     List,
     Map,
     Graph,
+    DirectedGraph,
+    UndirectedGraph,
     Matrix,
     Option,
     Result,

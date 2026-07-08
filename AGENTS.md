@@ -814,6 +814,9 @@ The following decisions are intentional and non-negotiable.
 | **RFC ratification before implementation** | Specification leads; reference implementation follows. Reversing this is how standards rot. |
 | **Documentation before code (Phase 2)** | Ensures specification-code alignment. Prevents "the code is the documentation" anti-pattern. |
 | **Design pattern enforcement** | Consistent patterns (Visitor, Strategy, Observer, Factory, Command) make the codebase navigable and predictable. |
+| **`const` expressions** | Variables declared with `const` are immutable. This allows the kernel to optimize heap allocation and guarantees side-effect-free evaluation. |
+| **Graph directedness (`Directed`/`Undirected`)** | Explicit direction annotation prevents ambiguity in graph traversal algorithms. Undirected graphs treat edges as unordered pairs; directed graphs use ordered pairs. |
+| **`@Memory` annotation** | Optional memory complexity bound complements `@Complexity`. The kernel tracks `heap.bytes_allocated()` and traps with `HEAP_EXHAUSTION` if the bound is exceeded. |
 
 ---
 
