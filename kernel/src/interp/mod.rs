@@ -5,7 +5,7 @@
 //! counter, and enforces invariants and complexity contracts.
 
 use crate::ast::{AstNode, AstNodeKind, AstValue};
-use crate::heap::{HeapHandle, VirtualHeap};
+use crate::heap::{HeapHandle, TypeTag, VirtualHeap};
 use crate::profiling::{ComplexityContract, Profiler, ProfilingConfig};
 use crate::traps::{ExitCode, TrapRegister};
 use std::collections::HashMap;
@@ -118,7 +118,16 @@ fn read_value_from_heap(heap: &VirtualHeap, handle: HeapHandle) -> Result<AstVal
                 .trim_end_matches('\0')
                 .to_string(),
         ),
-        TypeTag::HeapHandle | TypeTag::Unknown => AstValue::Pointer(handle.as_u64()),
+        TypeTag::HeapHandle
+        | TypeTag::Unknown
+        | TypeTag::Set
+        | TypeTag::List
+        | TypeTag::Map
+        | TypeTag::Graph
+        | TypeTag::Matrix
+        | TypeTag::Option
+        | TypeTag::Result
+        | TypeTag::Tuple => AstValue::Pointer(handle.as_u64()),
     })
 }
 
@@ -166,6 +175,14 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
         AstNodeKind::BinaryExpression => eval_binary(ctx, node),
         AstNodeKind::UnaryExpression => eval_unary(ctx, node),
         AstNodeKind::FunctionCall => eval_function_call(ctx, node),
+        AstNodeKind::SetLiteral | AstNodeKind::ListLiteral | AstNodeKind::MapLiteral => {
+            Ok(AstValue::Pointer(
+                ctx.heap
+                    .allocate(node.children.len() * 8, TypeTag::Unknown)
+                    .map_err(|_| ExitCode::HeapExhaustion)?
+                    .as_u64(),
+            ))
+        }
         _ => Err(ExitCode::InvalidOperation),
     }
 }
@@ -293,14 +310,16 @@ fn eval_function_call(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue,
         args.push(evaluate(ctx, child)?);
     }
     ctx.profiler.step()?;
-    dispatch_builtin(&name, &args, &ctx.heap)
+    let (result, weight) = dispatch_builtin(&name, &args, &ctx.heap)?;
+    ctx.profiler.step_weighted(weight)?;
+    Ok(result)
 }
 
 fn dispatch_builtin(
     name: &str,
     args: &[AstValue],
     heap: &VirtualHeap,
-) -> Result<AstValue, ExitCode> {
+) -> Result<(AstValue, u64), ExitCode> {
     match name {
         "sqrt" => {
             if args.is_empty() {
@@ -314,41 +333,78 @@ fn dispatch_builtin(
             if x < 0.0 {
                 return Err(ExitCode::InvalidOperation);
             }
-            Ok(AstValue::Real(x.sqrt()))
+            Ok((AstValue::Real(x.sqrt()), 1))
         }
         "length" | "cardinality" => {
             if args.is_empty() {
                 return Err(ExitCode::InvalidOperation);
             }
             match &args[0] {
-                AstValue::Integer(x) => Ok(AstValue::Integer(*x)),
-                AstValue::Real(x) => Ok(AstValue::Integer(*x as i64)),
+                AstValue::Integer(x) => Ok((AstValue::Integer(*x), 1)),
+                AstValue::Real(x) => Ok((AstValue::Integer(*x as i64), 1)),
                 AstValue::Pointer(id) => {
                     let handle = HeapHandle::from_u64(*id);
                     let size = heap.allocation_size(handle).unwrap_or(0) as i64;
-                    Ok(AstValue::Integer(size))
+                    Ok((AstValue::Integer(size), 1))
                 }
-                _ => Ok(AstValue::Integer(0)),
+                _ => Ok((AstValue::Integer(0), 1)),
             }
         }
         "contains" => {
             if args.len() < 2 {
                 return Err(ExitCode::InvalidOperation);
             }
-            Ok(AstValue::Boolean(args[1..].contains(&args[0])))
+            Ok((
+                AstValue::Boolean(args[1..].contains(&args[0])),
+                args.len() as u64,
+            ))
         }
         "append" => {
             if args.is_empty() {
                 return Err(ExitCode::InvalidOperation);
             }
-            Ok(args[args.len() - 1].clone())
+            Ok((args[args.len() - 1].clone(), 1))
         }
         "pop" => {
             if args.is_empty() {
                 return Err(ExitCode::InvalidOperation);
             }
-            Ok(args[0].clone())
+            Ok((args[0].clone(), 1))
         }
+        "union" | "intersection" | "difference" => {
+            if args.len() < 2 {
+                return Err(ExitCode::InvalidOperation);
+            }
+            let w = args.len() as u64;
+            Ok((AstValue::Pointer(0), w))
+        }
+        "get" | "put" | "containsKey" => {
+            if args.len() < 2 {
+                return Err(ExitCode::InvalidOperation);
+            }
+            Ok((args.last().cloned().unwrap_or(AstValue::None), 1))
+        }
+        "keys" | "values" | "nodes" | "edges" => {
+            if args.is_empty() {
+                return Err(ExitCode::InvalidOperation);
+            }
+            Ok((AstValue::Pointer(0), 1))
+        }
+        "transpose" => {
+            if args.is_empty() {
+                return Err(ExitCode::InvalidOperation);
+            }
+            let cost = match &args[0] {
+                AstValue::Pointer(id) => {
+                    heap.allocation_size(HeapHandle::from_u64(*id)).unwrap_or(1) as u64
+                }
+                _ => 1,
+            };
+            Ok((AstValue::Pointer(0), cost.max(1)))
+        }
+        "prepend" | "slice" | "adjacent" | "neighbors" | "addNode" | "addEdge" | "removeNode"
+        | "extractMin" | "weight" | "multiply" | "determinant" | "range" | "emptyList"
+        | "emptySet" | "emptyMap" | "zeroMatrix" | "add" => Ok((AstValue::Pointer(0), 1)),
         _ => Err(ExitCode::InvalidOperation),
     }
 }
@@ -377,6 +433,7 @@ pub fn execute_program(ctx: &mut ExecContext, program: &AstNode) -> Result<AstVa
 
 fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     ctx.symbols.push_scope();
+    ctx.profiler.enter_recursion()?;
     let mut last = AstValue::None;
     for (i, child) in node.children.iter().enumerate() {
         if i < 2 {
@@ -393,6 +450,7 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
                 if !child.children.is_empty() {
                     last = evaluate(ctx, &child.children[0])?;
                 }
+                ctx.profiler.exit_recursion();
                 ctx.symbols.pop_scope();
                 return Ok(last);
             }
@@ -418,6 +476,7 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
             }
         }
     }
+    ctx.profiler.exit_recursion();
     ctx.symbols.pop_scope();
     enforce_complexity(ctx, node)?;
     Ok(last)
@@ -567,14 +626,17 @@ fn execute_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
         _ => 1,
     };
     ctx.symbols.push_scope();
+    ctx.profiler.enter_recursion()?;
     let mut last = AstValue::None;
     for i in 0..n.max(1) {
+        ctx.profiler.step()?;
         ctx.symbols
             .declare(&iter_name, &AstValue::Integer(i), &mut ctx.heap)?;
         for body_node in node.children.iter().skip(2) {
             last = exec_stmt(ctx, body_node)?;
         }
     }
+    ctx.profiler.exit_recursion();
     ctx.symbols.pop_scope();
     Ok(last)
 }
@@ -1041,7 +1103,9 @@ mod tests {
     fn builtin_length() {
         let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("length", &[AstValue::Integer(5)], &heap).unwrap(),
+            dispatch_builtin("length", &[AstValue::Integer(5)], &heap)
+                .unwrap()
+                .0,
             AstValue::Integer(5)
         );
     }
@@ -1054,7 +1118,8 @@ mod tests {
                 &[AstValue::Integer(1), AstValue::Integer(1)],
                 &heap
             )
-            .unwrap(),
+            .unwrap()
+            .0,
             AstValue::Boolean(true)
         );
     }
@@ -1067,7 +1132,8 @@ mod tests {
                 &[AstValue::Integer(1), AstValue::Integer(2)],
                 &heap
             )
-            .unwrap(),
+            .unwrap()
+            .0,
             AstValue::Boolean(false)
         );
     }
@@ -1080,7 +1146,8 @@ mod tests {
                 &[AstValue::Integer(1), AstValue::Integer(42)],
                 &heap
             )
-            .unwrap(),
+            .unwrap()
+            .0,
             AstValue::Integer(42)
         );
     }
@@ -1088,7 +1155,9 @@ mod tests {
     fn builtin_pop() {
         let heap = VirtualHeap::with_default_config();
         assert_eq!(
-            dispatch_builtin("pop", &[AstValue::Integer(99)], &heap).unwrap(),
+            dispatch_builtin("pop", &[AstValue::Integer(99)], &heap)
+                .unwrap()
+                .0,
             AstValue::Integer(99)
         );
     }
