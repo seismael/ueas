@@ -64,7 +64,7 @@ conflicts with this policy must be declined with a reference to this section.
 1. [Project Identity](#project-identity)
 2. [Architecture & Documentation Stability](#architecture--documentation-stability)
 3. [Domain Boundaries](#domain-boundaries)
-4. [The Development Pipeline](#the-development-pipeline)
+4. [Development Principles](#development-principles)
 5. [Architecture & Design Enforcement](#architecture--design-enforcement)
 6. [Documentation Enforcement](#documentation-enforcement)
 7. [Testing Enforcement](#testing-enforcement)
@@ -127,264 +127,51 @@ does not depend on `backends/`. Communication is via the canonical JSON AST.
 
 ---
 
-## The Development Pipeline
+## Development Principles
 
-**Every change, without exception, MUST follow this pipeline in order.**
+These principles govern all development work. Process details (task sequencing,
+checklists) are managed by `.loop/LOOP_AGENTS.md` and `TODO.md`.
 
-```
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│ PHASE 1  │───>│ PHASE 2  │───>│ PHASE 3  │───>│ PHASE 4  │
-│ ANALYZE  │    │ DOCUMENT │    │  TEST    │    │IMPLEMENT │
-│ & DESIGN │    │          │    │  (RED)   │    │ (GREEN)  │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘
-                                                     │
-                                                     v
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│ PHASE 8  │<───│ PHASE 7  │<───│ PHASE 6  │<───│ PHASE 5  │
-│  REVIEW  │    │ DOCUMENT │    │  VERIFY  │    │ REFACTOR │
-│          │    │  FINAL   │    │          │    │          │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘
-```
+### Core Rules (Non-Negotiable)
 
-**No phase may be skipped. No phase may be executed out of order.**
-A phase is complete only when its checklist is fully satisfied.
+1. **Specification before implementation.** Code is never written before the
+   corresponding SPEC.md update. If the change alters specification semantics,
+   a ratified RFC is required.
 
----
+2. **Tests before code (TDD).** Every new feature or bug fix begins with a
+   failing test. Implementation follows to make the test pass.
 
-### Phase 1 — Analyze & Design
+3. **Documentation alongside code.** Every `pub` item carries a doc comment.
+   Module-level documentation (`//!`) explains architectural role. SPEC.md
+   is updated BEFORE implementation.
 
-**Purpose:** Understand the problem completely before writing anything.
+4. **Quality gate before commit.** Every commit passes:
+   ```
+   cargo test --workspace
+   cargo clippy --workspace -- -D warnings
+   cargo fmt --all -- --check
+   ```
 
-**Mandatory Outputs:**
+5. **Refactor while green.** After tests pass, eliminate duplication, improve
+   naming, reduce complexity. Never refactor with failing tests.
 
-- [ ] **Task Analysis:** Restate the problem in your own words. Identify the
-  domain(s) affected: `grammar/`, `kernel/`, `backends/`, `tools/`, `docs/`.
-- [ ] **Spec Compliance Check:** Is this change covered by SPEC.md? If it
-  changes the specification, an RFC is required. Stop here and initiate the
-  RFC workflow if no ratified RFC exists.
-- [ ] **Impact Analysis:** List every file, class, and interface that will
-  be created, modified, or deleted. No "discovery during implementation."
-- [ ] **Design Sketch:** Define the classes, their responsibilities (SRP),
-  their dependencies (DIP), their interfaces (ISP), and how they extend
-  existing code (OCP). Use class diagrams or structured comments.
-- [ ] **Error Scenario Mapping:** Enumerate every failure mode: null inputs,
-  empty collections, boundary values, overflow, underflow, division by zero,
-  invalid AST node kinds, unsupported type combinations.
-- [ ] **Complexity Analysis:** If this change modifies the kernel, estimate
-  the step-cost impact. Does it introduce new primitive operations? Document
-  their proposed step costs.
+6. **Verify completely.** Run fuzz tests, cross-target equivalence, and
+   grammar benchmarks for any change touching those domains.
 
-**Gate:** Do not proceed to Phase 2 until all items are checked and the
-design is coherent.
+7. **Review required.** Every PR needs maintainer approval. CI must be green.
+   Squash-merge with Conventional Commits.
 
----
+8. **Error handling through traps.** No bare `unwrap()`, `expect()`, or
+   `panic!()` in production code. All failures route through kernel trap codes.
 
-### Phase 2 — Document First
-
-**Purpose:** Update documentation to reflect the intended change BEFORE
-writing code.
-
-**Mandatory Outputs (all that apply):**
-
-- [ ] **SPEC.md:** If the change alters the grammar, AST schema, kernel
-  semantics, or transpiler contract, update SPEC.md now. The specification
-  leads; code follows.
-- [ ] **ADR:** If the change introduces a new architectural decision
-  (technology choice, pattern adoption, domain boundary shift), write an
-  Architecture Decision Record in `docs/adr/NNNN-title.md`.
-- [ ] **Domain Spec:** If the change has cross-domain implications, create
-  or update a file in `docs/specs/`.
-- [ ] **API Documentation:** If the change adds or modifies a public
-  interface (Rust `pub` items, `TargetGenerator` methods, ANTLR4 grammar
-  rules), write the doc comments NOW — before the implementation exists.
-- [ ] **README.md:** If the change affects the project overview, architecture
-  diagram, or quick-start instructions, update README.md now.
-
-**Gate:** Documentation changes committed. Do not proceed to Phase 3 until
-documentation is in place.
-
----
-
-### Phase 3 — Test (Red)
-
-**Purpose:** Write all tests. Every test MUST fail before implementation
-begins. This is the TDD Red phase.
-
-**Mandatory Test Categories (all that apply):**
-
-- [ ] **Unit Tests:** One test per public function, per AST node evaluator,
-  per code path. Tests must cover:
-  - Happy path (normal input)
-  - Empty / null / none inputs
-  - Single-element inputs
-  - Maximum-size inputs (where bounded)
-  - Boundary values (zero, negative, max integer)
-  - Error conditions (division by zero, index out of bounds, type mismatch)
-  - Concurrency invariants (where applicable)
-- [ ] **Integration Tests:** For any change that crosses domain boundaries
-  (parse → execute, execute → transpile), write an end-to-end test.
-- [ ] **Property-Based Tests:** For every kernel evaluator that operates on
-  variable-size inputs (sets, lists, graphs, matrices), write a `proptest`
-  strategy. Assert zero panics on random valid inputs.
-- [ ] **Complexity Violation Tests:** If the change introduces a new
-  complexity class or modifies step-cost accounting, write a test that
-  deliberately exceeds the bound and asserts trap code
-  `COMPLEXITY_VIOLATION`.
-- [ ] **Cross-Target Equivalence Tests:** For new transpiler features, write
-  a test that transpiles to all supported targets and asserts identical
-  outputs on identical inputs.
-
-**Test Naming Convention:**
+### Coding Flow
 
 ```
-<unit_under_test>_<scenario>_<expected_behavior>
+Analyze → Test (Red) → Implement (Green) → Refactor → Verify → Commit
 ```
 
-Examples:
-- `set_union_empty_sets_returns_empty`
-- `matrix_transpose_non_square_panics`
-- `invariant_in_loop_body_evaluates_every_iteration`
-- `complexity_o_n_squared_exceeded_traps`
-
-**Gate:** Run the test suite. Every new test MUST fail. All existing tests
-MUST pass. If any existing test fails, fix the regression before proceeding.
-
----
-
-### Phase 4 — Implement (Green)
-
-**Purpose:** Write the minimum code to make all tests pass.
-
-**Mandatory Rules:**
-
-- [ ] Implement exactly what the tests demand. No more.
-- [ ] Every `pub` item MUST have the doc comment written in Phase 2.
-- [ ] Every `unsafe` block (kernel only) MUST carry a `// SAFETY:` comment
-  and a reference to a filed GitHub issue justifying its necessity.
-- [ ] Error handling: Use `Result<T, E>` with `?` propagation. No bare
-  `unwrap()`, `expect()`, or `panic!()` in production code paths. All
-  failures route through the kernel trap handler.
-- [ ] Follow the coding conventions for the domain language (Section 8).
-- [ ] No commented-out code. No TODO comments without a GitHub issue reference.
-- [ ] No dead code. Every code path must be exercised by at least one test.
-
-**Gate:** Run the full test suite. Every test (new and existing) MUST pass.
-If any test fails, return to implementation. Do not proceed.
-
----
-
-### Phase 5 — Refactor
-
-**Purpose:** Improve the internal structure without changing behavior.
-
-**Mandatory Checks:**
-
-- [ ] **Eliminate duplication:** Extract repeated logic into shared
-  functions. DRY principle.
-- [ ] **Improve naming:** Every identifier must communicate its purpose
-  unambiguously. No abbreviations except domain-standard ones (AST, TSP).
-- [ ] **Reduce complexity:** Functions longer than 30 lines must be
-  decomposed. Cyclomatic complexity above 10 must be justified.
-- [ ] **Enforce patterns:** Visitor for AST traversal. Strategy for
-  transpilation targets. Factory for AST node construction. Observer for
-  complexity profiling events. Validate that the pattern is applied correctly.
-- [ ] **SOLID audit:**
-  - Single Responsibility: Does each class/module do exactly one thing?
-  - Open/Closed: Can behavior be extended without modifying existing code?
-  - Liskov Substitution: Can any implementation be substituted without
-    breaking callers?
-  - Interface Segregation: Are interfaces minimal? No unused methods?
-  - Dependency Inversion: Do high-level modules depend on abstractions,
-    not concretions?
-
-**Gate:** Run the full test suite after every refactoring step. Tests MUST
-remain green throughout. If any test fails, revert the last refactoring
-step and fix before continuing.
-
----
-
-### Phase 6 — Verify
-
-**Purpose:** Run every quality check. Nothing bypasses this phase.
-
-**Mandatory Verification (all that apply to the changed domain):**
-
-- [ ] **Rust (kernel/):**
-  ```
-  cargo test
-  cargo clippy -- -D warnings
-  cargo fmt --check
-  cargo test --test fuzz -- --ignored
-  ```
-- [ ] **Python (tools/):**
-  ```
-  ruff check --fix
-  ruff format --check
-  ```
-- [ ] **ANTLR4 (grammar/):**
-  - Parse all benchmark algorithms with 100% success rate.
-  - Verify generated AST matches the canonical JSON schema.
-- [ ] **Coverage:**
-  - Kernel (`interp/`): >= 95% line coverage
-  - Kernel (`ast/`): >= 90% line coverage
-  - Kernel (utilities): >= 85% line coverage
-  - Backends (each target): >= 80% line coverage
-- [ ] **Fuzzing:** Run `cargo test --test fuzz -- --ignored` with at least
-  10^6 random inputs. Zero panics, zero crashes.
-- [ ] **Cross-Target Equivalence:** All supported targets produce identical
-  outputs on the benchmark algorithm corpus.
-
-**Gate:** ALL checks must be green. A single warning, a single failing test,
-a single uncovered line that should be covered — blocks this phase.
-
----
-
-### Phase 7 — Document Final
-
-**Purpose:** Ensure every document reflects the merged reality.
-
-**Mandatory Checks:**
-
-- [ ] **SPEC.md:** Every grammar rule, AST node kind, kernel semantic, and
-  transpiler contract described in SPEC.md matches the implemented behavior
-  exactly. No drift.
-- [ ] **Doc Comments:** Every `pub` item has a doc comment. Every doc comment
-  is accurate (review against implementation). No stale parameter names or
-  return type descriptions.
-- [ ] **Module Documentation:** Every `src/` module has a `//!` comment
-  explaining its purpose and role in the architecture.
-- [ ] **ADR:** If an ADR was written in Phase 2, update its status to
-  `Accepted`. Add an implementation note referencing the commit.
-- [ ] **RFC:** If this change implements a ratified RFC, update the RFC
-  status from `Ratified` to `Implemented`.
-- [ ] **CONTRIBUTORS.md:** If this is the author's first contribution, add
-  them to the contributors list.
-- [ ] **CHANGELOG:** Add an entry under the appropriate version header
-  following the Keep a Changelog format.
-
-**Gate:** Documentation committed. Every document link in the repository
-must resolve to the correct location.
-
----
-
-### Phase 8 — Review
-
-**Purpose:** Submit for human or automated architectural review.
-
-**Mandatory Steps:**
-
-- [ ] **Self-Review:** Re-read the entire diff. Verify:
-  - No stray debug prints, `dbg!()`, or `println!()` remain.
-  - No commented-out code blocks remain.
-  - No TODO comments without `TODO(#issue_number)` format.
-  - Commit messages follow Conventional Commits.
-- [ ] **PR Description:** Complete all sections of the pull request template.
-- [ ] **CI Gates:** All automated checks on the PR must be green.
-- [ ] **Reviewer Assignment:** At least one maintainer must approve.
-- [ ] **Review Response:** Address every review comment. Do not resolve
-  conversations — let the reviewer resolve them.
-- [ ] **Merge:** Squash and merge. The squash commit message follows the
-  Conventional Commits format.
+Each step gates the next. No step is skipped. For the full phase-by-phase
+checklist, see `.loop/LOOP_AGENTS.md`.
 
 ---
 
