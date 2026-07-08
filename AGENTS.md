@@ -751,7 +751,7 @@ The following decisions are intentional and non-negotiable.
 | **Three-domain decoupling** | Coupled domains cause "architecture drift" — the blueprint and implementation fall out of sync. The canonical JSON AST is the only interface contract. |
 | **Static explicit typing** | Removes ambiguity about author intent. Enables parser-level rejection of type-mismatch programs. |
 | **`unsafe` requires documented justification** | `unsafe` circumvents Rust's memory safety guarantees. Every usage must have a filed issue and a `// SAFETY:` comment. |
-| **Kernel never panics — all failures are trap codes** | Panics are uncontrolled crashes. Trap codes are controlled, documented errors that downstream tools can programmatically distinguish. |
+| **Kernel never panics — all failures are trap codes** | Panics are uncontrolled crashes. Exit status `0` signals success; non-zero codes (1-10) are controlled, documented error halts that downstream tools can programmatically distinguish. |
 | **RFC ratification before implementation** | Specification leads; reference implementation follows. Reversing this is how standards rot. |
 | **Documentation before code (Phase 2)** | Ensures specification-code alignment. Prevents "the code is the documentation" anti-pattern. |
 | **Design pattern enforcement** | Consistent patterns (Visitor, Strategy, Observer, Factory, Command) make the codebase navigable and predictable. |

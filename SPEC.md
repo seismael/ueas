@@ -109,9 +109,9 @@ No type inference is performed by the parser or kernel.
 
 | Type | Description |
 |------|-------------|
-| `Set<T>` | Unordered collection of distinct elements of type `T`. Operations: `union`, `intersection`, `difference`, `cardinality`, `contains`. |
+| `Set<T>` | Unordered collection of distinct elements of type `T`. Iteration order MUST be deterministic (insertion order). Operations: `union`, `intersection`, `difference`, `cardinality`, `contains`. |
 | `List<T>` | Ordered, indexable sequence of elements of type `T`. Operations: `get`, `append`, `prepend`, `length`, `slice`. |
-| `Map<K, V>` | Associative mapping from keys of type `K` to values of type `V`. Operations: `get`, `put`, `containsKey`, `keys`, `values`. |
+| `Map<K, V>` | Associative mapping from keys of type `K` to values of type `V`. Iteration order MUST be deterministic (insertion order of keys). Operations: `get`, `put`, `containsKey`, `keys`, `values`. |
 | `Graph<N, E>` | A directed or undirected graph with nodes of type `N` and edges of type `E`. Edges carry an optional weight of type `Real`. Operations: `adjacent`, `neighbors`, `addNode`, `addEdge`, `removeNode`. |
 | `Matrix<R, C, T>` | A fixed-size `R` × `C` matrix of elements of type `T`. Indexing is 0-based. Operations: `get`, `set`, `transpose`, `multiply`, `determinant` (square matrices only). |
 | `Tuple<T1, T2, ...>` | Fixed-length heterogeneous ordered collection. Elements accessed by position. |
@@ -124,6 +124,7 @@ No type inference is performed by the parser or kernel.
 2. The parser MUST reject any program that contains a type mismatch at compile time.
 3. Generic type parameters are invariant by default. Covariance and contravariance are NOT supported in version 1.0.
 4. Recursive type definitions (e.g., `Graph<Node, Edge>` where `Node` contains a `Graph`) are permitted but MUST terminate in a primitive type.
+5. All internal representations of `Set<T>` and `Map<K, V>` within the Virtual Heap MUST maintain deterministic insertion-order traversal to guarantee reproducible step-count profiles across hardware architectures and kernel implementations.
 
 ---
 
@@ -214,10 +215,17 @@ WS          ::= [ \t\r\n]+ -> skip
 program          ::= algorithmDecl+
 
 algorithmDecl    ::= 'algorithm' IDENTIFIER
+                     LPAREN (parameter (COMMA parameter)*)? RPAREN
+                     (ARROW typeAnnotation)?
                      complexityAnnotation
                      LBRACE statement* RBRACE
 
-complexityAnnotation ::= '@Complexity' LPAREN STRING_LIT RPAREN
+parameter        ::= IDENTIFIER ':' typeAnnotation
+
+complexityAnnotation ::= '@Complexity' LPAREN STRING_LIT
+                         (COMMA variableBinding)* RPAREN
+
+variableBinding  ::= IDENTIFIER '=' expression
 
 (* Statements *)
 statement        ::= variableDecl
@@ -346,8 +354,10 @@ The parser MUST reject programs for the following reasons:
 4. **Type mismatch in unary operation** — operand to `-` is not `Integer` or `Real`; operand to `not` is not `Boolean`.
 5. **Invalid cast** — the cast target type is incompatible with the source type per the type compatibility matrix (Appendix A).
 6. **Missing complexity annotation** — an `algorithmDecl` lacks a `complexityAnnotation`.
-7. **Invalid complexity string** — the complexity annotation string does not match the pattern defined in Appendix C.
-8. **Graph literal without edge set** — reserved for future specification.
+7. **Invalid complexity string** — the complexity annotation string does not match any supported form defined in Appendix C.
+8. **Complexity binding mismatch** — a variable in the complexity string appears in a form that requires a binding (e.g., `V` in `O((V+E) log V)`) but no corresponding `variableBinding` is provided; or a binding references an undeclared variable name.
+9. **Undefined complexity variable** — a `variableBinding` references an identifier that is not a declared parameter of the algorithm.
+10. **Graph literal without edge set** — reserved for future specification.
 
 ---
 
@@ -360,7 +370,9 @@ The AST is serialized to JSON with a strict schema. Every node has a `"kind"` fi
 | `"kind"` | Description |
 |-----------|-------------|
 | `"Program"` | Root node. Contains `algorithms: Algorithm[]`. |
-| `"Algorithm"` | Top-level algorithm. Fields: `name: string`, `complexity: string`, `body: Statement[]`. |
+| `"Algorithm"` | Top-level algorithm. Fields: `name: string`, `parameters: Parameter[]`, `returnType?: Type`, `complexity: string`, `bindings: VariableBinding[]`, `body: Statement[]`. |
+| `"Parameter"` | Algorithm parameter. Fields: `name: string`, `type: Type`. |
+| `"VariableBinding"` | Complexity variable binding. Fields: `variable: string`, `expression: Expression`. |
 | `"VariableDeclaration"` | A `let` binding. Fields: `name: string`, `type: Type`, `initializer?: Expression`. |
 | `"Assignment"` | Mutation of an existing binding. Fields: `target: LValue`, `value: Expression`. |
 | `"Return"` | Return statement. Fields: `value?: Expression`. |
@@ -403,7 +415,7 @@ Every `Type` node has `"kind": "Type"` and a `"name"` field:
 For the algorithm:
 
 ```
-algorithm EuclideanDistance
+algorithm EuclideanDistance(x1: Real, y1: Real, x2: Real, y2: Real) -> Real
     @Complexity("O(1)")
 {
     let dx: Real := x2 - x1;
@@ -421,7 +433,15 @@ The canonical JSON AST MUST output:
     {
       "kind": "Algorithm",
       "name": "EuclideanDistance",
+      "parameters": [
+        { "kind": "Parameter", "name": "x1", "type": { "kind": "Type", "name": "Real", "typeArguments": [] } },
+        { "kind": "Parameter", "name": "y1", "type": { "kind": "Type", "name": "Real", "typeArguments": [] } },
+        { "kind": "Parameter", "name": "x2", "type": { "kind": "Type", "name": "Real", "typeArguments": [] } },
+        { "kind": "Parameter", "name": "y2", "type": { "kind": "Type", "name": "Real", "typeArguments": [] } }
+      ],
+      "returnType": { "kind": "Type", "name": "Real", "typeArguments": [] },
       "complexity": "O(1)",
+      "bindings": [],
       "body": [
         {
           "kind": "VariableDeclaration",
@@ -541,35 +561,62 @@ An `invariant` statement declares a boolean expression that MUST evaluate to
 
 ### 6.4. Complexity Contract Enforcement
 
-The `@Complexity` annotation declares an asymptotic bound. The kernel
-periodically samples the step counter `s` against the input size `n` (the
-declared parameter cardinality) and checks:
+The `@Complexity` annotation declares an asymptotic bound. The complexity
+string `S` describes the Big-O form (e.g., `"O(N^2)"`, `"O((V+E) log V)"`).
+Optional `variableBinding` entries (`V = expression`) map each abstract variable
+in `S` to a concrete expression evaluated at algorithm entry.
 
-- For `O(1)`: `s <= C_max` for some configurable constant `C_max` (default 10^6).
-- For `O(N)`: `s / n <= C_max` at termination.
-- For `O(N^2)`: `s / (n^2) <= C_max` at termination.
-- For `O(N log N)`: `s / (n * ceil(log2(n))) <= C_max` at termination.
-- For `O(log N)`: `s / ceil(log2(n)) <= C_max` at termination.
-- For `O(2^N)`: `log2(s) / n <= C_max` at termination.
-- For `O(N!)`: `log2(s) / (n * log2(n)) <= C_max` at termination.
+**Evaluation Procedure:**
 
-If the bound is breached, the kernel MUST set the trap register to
-`COMPLEXITY_VIOLATION` and halt immediately.
+1. At algorithm entry, evaluate each `variableBinding` expression in declaration
+   order to produce concrete integer values `n_1, n_2, ..., n_k`.
+2. At algorithm termination, let `s` be the final step count.
+3. Substitute the concrete values into the complexity formula and compute the
+   expected asymptotic cost `E(n_1, ..., n_k)`.
+4. Verify `s <= C_max * E` where `C_max` is a configurable constant (default 10^4).
 
-### 6.5. Error Semantics
+**Supported Complexity Forms and Their Cost Functions:**
 
-| Trap Code | Name | Cause |
-|-----------|------|-------|
-| `0` | `NO_ERROR` | Normal termination. |
-| `1` | `DIVISION_BY_ZERO` | Division or modulo by zero. |
-| `2` | `INDEX_OUT_OF_BOUNDS` | List, Tuple, or Matrix access beyond declared bounds. |
-| `3` | `NULL_DEREFERENCE` | Access on an `Option` of `None`. |
-| `4` | `INVARIANT_VIOLATION` | An `invariant` expression evaluated to `false`. |
-| `5` | `COMPLEXITY_VIOLATION` | Step count breached the declared complexity contract. |
-| `6` | `STACK_OVERFLOW` | Recursion depth exceeded configurable limit (default 10^4). |
-| `7` | `HEAP_EXHAUSTION` | Virtual heap allocation failed (configured size exceeded). |
-| `8` | `ASSERTION_FAILURE` | An `assert` expression evaluated to `false`. |
-| `9` | `INFINITE_LOOP_DETECTED` | Step counter exceeded configurable global maximum (default 10^12). |
+| Form | Cost `E(s)` | Example Binding |
+|------|------------|-----------------|
+| `O(1)` | 1 | (none needed) |
+| `O(N)` | `n` | `N = length(items)` |
+| `O(N^2)` | `n^2` | `N = rows` |
+| `O(N^3)` | `n^3` | `N = dimension` |
+| `O(N^k)` | `n^k` | `N = size` |
+| `O(log N)` | `ceil(log2(n))` | `N = nodeCount` |
+| `O(N log N)` | `n * ceil(log2(n))` | `N = elements` |
+| `O((V+E) log V)` | `(v+e) * ceil(log2(v))` | `V = length(graph.nodes)`, `E = length(graph.edges)` |
+| `O(V+E)` | `v + e` | `V = length(graph.nodes)`, `E = length(graph.edges)` |
+| `O(2^N)` | `2^n` | `N = cities` |
+| `O(N!)` | factorial of `n` | `N = cities` |
+
+If the bound is breached — i.e., `s > C_max * E(n_1, ..., n_k)` — the kernel
+MUST set the trap register to `COMPLEXITY_VIOLATION` and halt immediately.
+
+If the complexity string contains variables that are not bound by a
+`variableBinding`, the kernel MUST trap with `INVALID_COMPLEXITY_BINDING`
+before execution begins.
+
+### 6.5. Exit Status Codes
+
+The kernel produces a non-negative integer exit status at termination.
+Code `0` indicates successful completion. Non-zero codes are termed
+**trap codes** and indicate controlled error halts.
+
+| Code | Name | Type | Cause |
+|------|------|------|-------|
+| `0` | `NO_ERROR` | Exit | Normal termination. |
+| `1` | `DIVISION_BY_ZERO` | Trap | Division or modulo by zero. |
+| `2` | `INDEX_OUT_OF_BOUNDS` | Trap | List, Tuple, or Matrix access beyond declared bounds. |
+| `3` | `NULL_DEREFERENCE` | Trap | Access on an `Option` of `None`. |
+| `4` | `INVARIANT_VIOLATION` | Trap | An `invariant` expression evaluated to `false`. |
+| `5` | `COMPLEXITY_VIOLATION` | Trap | Step count breached the declared complexity contract. |
+| `6` | `STACK_OVERFLOW` | Trap | Recursion depth exceeded configurable limit (default 10^4). |
+| `7` | `HEAP_EXHAUSTION` | Trap | Virtual heap allocation failed (configured size exceeded). |
+| `8` | `ASSERTION_FAILURE` | Trap | An `assert` expression evaluated to `false`. |
+| `9` | `INFINITE_LOOP_DETECTED` | Trap | Step counter exceeded configurable global maximum (default 10^12). |
+| `10` | `INVALID_COMPLEXITY_BINDING` | Trap | The complexity string references a variable not bound by a `variableBinding`. |
 
 ### 6.6. Memory Model
 
@@ -598,7 +645,7 @@ interface TargetGenerator {
     version(): String
 
     /// Transpile a validated AST node into a string of target source code.
-    /// The input AST MUST have passed kernel validation with trap code 0.
+    /// The input AST MUST have passed kernel validation with exit code 0.
     generate(ast: Program): Result<String, TranspilationError>
 
     /// Returns the set of UEAS AST node kinds this target supports.
@@ -630,7 +677,24 @@ inputs, `P_a(input)` and `P_b(input)` produce mathematically identical outputs.
 The reference implementation MUST include a cross-target equivalence test suite
 that verifies this property on a corpus of benchmark algorithms.
 
-### 7.4. MCP (Model Context Protocol) Interface
+### 7.4. Memory Lifecycle Mapping
+
+The UEAS memory model defines a strictly hierarchical ownership regime: memory
+is freed when the declaring scope exits, and reference cycles are forbidden
+(Section 6.6). Transpilers targeting systems languages MUST map UEAS
+scope-based memory to single-ownership semantics:
+
+| Target Language | Recommended Mapping |
+|-----------------|-------------------|
+| **Rust** | Pass by value or move semantics. For shared substructures (e.g., a `Graph` node referenced from multiple scopes), use explicit deep copies. |
+| **C++** | Pass by value or `std::unique_ptr`. `std::shared_ptr` MUST NOT be generated as the default because it violates UEAS's deterministic scope-based deallocation. |
+| **Python / Java** | Garbage-collected runtimes are exempt from explicit ownership mapping but SHOULD generate copy-on-write semantics for mutable composite types (List, Map, Matrix) to preserve the illusion of isolation between scopes. |
+
+This policy ensures that transpiled code does not introduce aliasing bugs,
+use-after-free errors, or memory leaks that are absent from the UEAS abstract
+model.
+
+### 7.5. MCP (Model Context Protocol) Interface
 
 The transpilation back-end MUST expose a standard MCP API endpoint to allow
 autonomous AI agents to ingest a canonical AST and produce target-language
@@ -800,28 +864,39 @@ Option, Result, Tuple, None
 
 ## Appendix C: Complexity Annotation Pattern
 
-Valid complexity strings match the regular expression:
+The complexity string in `@Complexity` MUST match one of the supported forms.
+The grammar of complexity strings is:
 
 ```
-^O\((1|[A-Z](\^[0-9]+)?|log [A-Z]|[A-Z] log [A-Z]|2\^[A-Z]|[A-Z]!)\)$
+Form ::= 'O(' Term ')'
+Term ::= '1'
+       | Variable ('^' Exponent)?
+       | Term '+' Term | Term '*' Term
+       | Term 'log' Variable | 'log' Variable
+       | '2^' Variable
+       | Variable '!'
+
+Variable ::= [A-Z]+
+Exponent ::= [0-9]+
 ```
 
-Supported forms include:
+Where `Variable` corresponds to variable names bound in `variableBinding`
+entries. A subset of idiomatic forms is shown below:
 
-| Form | Meaning |
-|------|---------|
-| `O(1)` | Constant time |
-| `O(N)` | Linear time |
-| `O(N^2)` | Quadratic time |
-| `O(N^3)` | Cubic time |
-| `O(N^k)` | Polynomial time of degree k |
-| `O(log N)` | Logarithmic time |
-| `O(N log N)` | Linearithmic time |
-| `O(2^N)` | Exponential time |
-| `O(N!)` | Factorial time |
+| Form | Name | Requires Bindings |
+|------|------|-------------------|
+| `O(1)` | Constant | No |
+| `O(N)` | Linear | `N` |
+| `O(N^2)` | Quadratic | `N` |
+| `O(N^3)` | Cubic | `N` |
+| `O(log N)` | Logarithmic | `N` |
+| `O(N log N)` | Linearithmic | `N` |
+| `O(V+E)` | Sum (e.g., graph) | `V`, `E` |
+| `O((V+E) log V)` | Mixed (e.g., Dijkstra) | `V`, `E` |
+| `O(2^N)` | Exponential | `N` |
+| `O(N!)` | Factorial | `N` |
 
-Where `N` is a placeholder for the input size parameter. The exponent is
-an unsigned integer. `log` without an explicit base is assumed base-2.
+`log` without explicit base is assumed base-2.
 
 ---
 

@@ -105,10 +105,9 @@ pure logic as a first-class asset.
 A traveling salesman algorithm in UEAS:
 
 ```
-algorithm MultilevelTSP
-    @Complexity("O(N^2)")
+algorithm MultilevelTSP(cities: List<City>, initialUpperBound: Real) -> Tour
+    @Complexity("O(N^2)", N = length(cities))
 {
-    let cities: List<City> := input;
     let clusters: List<Set<City>> := partitionIntoClusters(cities, 10);
 
     invariant(length(cities) > 0):
