@@ -56,3 +56,18 @@ To establish UEAS as an industry-standard algorithmic blueprint, the specificati
 - [ ] **UEAS CLI:** The `tools/` directory only contains a Dockerfile. A dedicated Command Line Interface (e.g., `ueas run`, `ueas transpile`, `ueas format`) is mandatory for standard adoption.
 - [ ] **Language Server Protocol (LSP):** To support writing `.ueas` files in IDEs, a basic LSP providing syntax highlighting, autocomplete, and inline complexity errors is needed.
 - [ ] **UCTS Cross-Target Harness:** While `SPEC.md` defines a Conformance Test Suite (UCTS), there is no cross-target harness in `tools/` that automatically executes transpiled code across Python, Rust, and C++ to verify semantic equivalence.
+
+## 4. Evaluation of Section 3 Items (July 2026)
+
+### Implemented
+- [x] Infinity & NaN literals (grammar + AST + evaluate)
+- [x] Bitwise operators (& | ^ << >>) in grammar
+- [x] Break/continue in grammar
+- [x] 32 AST node kinds
+
+### Requires RFC (11 items)
+Generic algorithms, constants, graph directedness, space complexity, enumerations,
+string manipulation, standard library, randomization, CLI, LSP, UCTS harness.
+All valid features for post-1.0 roadmap. No blocking bugs.
+
+**144 tests, clippy clean, fmt clean.**
