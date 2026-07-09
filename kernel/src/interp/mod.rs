@@ -419,7 +419,7 @@ fn dispatch_builtin(
             if args.is_empty() {
                 return Err(ExitCode::InvalidOperation);
             }
-            Ok((AstValue::Pointer(0), 1))
+            Err(ExitCode::InvalidOperation)
         }
         "transpose" => {
             if args.is_empty() {
@@ -480,7 +480,7 @@ fn dispatch_builtin(
         }
         "prepend" | "slice" | "adjacent" | "neighbors" | "addNode" | "addEdge" | "removeNode"
         | "extractMin" | "weight" | "multiply" | "determinant" | "range" | "emptyList"
-        | "emptySet" | "emptyMap" | "zeroMatrix" | "add" => Ok((AstValue::Pointer(0), 1)),
+        | "emptySet" | "emptyMap" | "zeroMatrix" | "add" => Err(ExitCode::InvalidOperation),
         "randInt" => {
             let min: i64 = match args.first() {
                 Some(AstValue::Integer(x)) => *x,
@@ -1392,5 +1392,122 @@ mod tests {
             AstNodeFactory::integer_literal("3"),
         );
         assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(8));
+    }
+    // Critical tests
+    #[test]
+    fn eval_infinity_literal() {
+        let mut c = ctx();
+        let v = evaluate(&mut c, &AstNodeFactory::infinity_literal()).unwrap();
+        assert_eq!(v, AstValue::Real(f64::INFINITY));
+    }
+    #[test]
+    fn eval_nan_literal() {
+        let mut c = ctx();
+        let v = evaluate(&mut c, &AstNodeFactory::nan_literal()).unwrap();
+        assert!(matches!(v, AstValue::Real(x) if x.is_nan()));
+    }
+    #[test]
+    fn eval_le_true() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "<=",
+            AstNodeFactory::integer_literal("5"),
+            AstNodeFactory::integer_literal("5"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Boolean(true));
+    }
+    #[test]
+    fn eval_ge_false() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            ">=",
+            AstNodeFactory::integer_literal("3"),
+            AstNodeFactory::integer_literal("5"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Boolean(false));
+    }
+    #[test]
+    fn eval_neg_i64_min_traps() {
+        let mut c = ctx();
+        let n = AstNodeFactory::unary_expression(
+            "-",
+            AstNodeFactory::integer_literal(&i64::MIN.to_string()),
+        );
+        assert_eq!(
+            evaluate(&mut c, &n).unwrap_err(),
+            ExitCode::InvalidOperation
+        );
+    }
+    #[test]
+    fn eval_real_div_zero() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "/",
+            AstNodeFactory::real_literal(1.0),
+            AstNodeFactory::real_literal(0.0),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap_err(), ExitCode::DivisionByZero);
+    }
+    #[test]
+    fn eval_and_with_non_bool() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "and",
+            AstNodeFactory::integer_literal("1"),
+            AstNodeFactory::integer_literal("0"),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Boolean(false));
+    }
+    #[test]
+    fn eval_bitwise_real_traps() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "&",
+            AstNodeFactory::real_literal(1.0),
+            AstNodeFactory::integer_literal("2"),
+        );
+        assert_eq!(
+            evaluate(&mut c, &n).unwrap_err(),
+            ExitCode::InvalidOperation
+        );
+    }
+    #[test]
+    fn exec_var_undeclared_assignment_traps() {
+        assert_eq!(
+            execute_assignment(
+                &mut ctx(),
+                &AstNodeFactory::assignment(
+                    AstNodeFactory::identifier("novar"),
+                    AstNodeFactory::integer_literal("1"),
+                )
+            )
+            .unwrap_err(),
+            ExitCode::NullDereference
+        );
+    }
+    #[test]
+    fn exec_while_empty_children() {
+        let mut c = ctx();
+        let n = AstNode::internal(AstNodeKind::WhileLoop, vec![], None);
+        let v = execute_while(&mut c, &n).unwrap();
+        assert_eq!(v, AstValue::None);
+    }
+    #[test]
+    fn exec_if_false_no_else() {
+        let mut c = ctx();
+        let n = AstNode::internal(
+            AstNodeKind::If,
+            vec![AstNodeFactory::boolean_literal(false)],
+            None,
+        );
+        let v = execute_if(&mut c, &n).unwrap();
+        assert_eq!(v, AstValue::None);
+    }
+    #[test]
+    fn exec_if_empty_children() {
+        let mut c = ctx();
+        let n = AstNode::internal(AstNodeKind::If, vec![], None);
+        let v = execute_if(&mut c, &n).unwrap();
+        assert_eq!(v, AstValue::None);
     }
 }

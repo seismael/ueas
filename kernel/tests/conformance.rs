@@ -5,11 +5,12 @@
 //! 2. Trap conditions are correctly detected
 //! 3. Cross-target transpilation yields identical results
 
-use ueas_kernel::ast::AstNodeFactory;
+use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind, AstValue};
+use ueas_kernel::heap::{HeapConfig, TypeTag, VirtualHeap};
 use ueas_kernel::interp::{
     evaluate, execute_assert, execute_invariant, execute_program, ExecContext,
 };
-use ueas_kernel::profiling::ProfilingConfig;
+use ueas_kernel::profiling::{ComplexityContract, Profiler, ProfilingConfig};
 use ueas_kernel::traps::ExitCode;
 
 #[test]
@@ -83,29 +84,89 @@ fn conformance_infinite_loop_detected() {
 fn conformance_complexity_violation() {
     let config = ProfilingConfig {
         c_max: 1,
+        global_max_steps: 100000,
         ..Default::default()
     };
     let mut ctx = ExecContext::new(config);
-    let algo = AstNodeFactory::algorithm(
-        "Test",
-        vec![],
-        None,
-        "O(1)",
-        vec![],
-        vec![
-            // Execute many operations to breach O(1) with c_max=1
-            AstNodeFactory::return_stmt(Some(AstNodeFactory::binary_expression(
-                "+",
-                AstNodeFactory::integer_literal("1"),
-                AstNodeFactory::integer_literal("2"),
-            ))),
-        ],
+    // O(1) allows 1*c_max=1 step. Running >1 step should violate.
+    for i in 0..8000u64 {
+        ctx.profiler.step().ok();
+    }
+    let contract = ComplexityContract::Constant;
+    assert_eq!(
+        ctx.profiler.verify_complexity(&contract).unwrap_err(),
+        ExitCode::ComplexityViolation
     );
-    // The enforce_complexity call inside execute_algorithm should detect violation
-    let program = AstNodeFactory::program(vec![algo]);
-    let result = execute_program(&mut ctx, &program);
-    assert!(result.is_ok()); // Small operations won't breach
-    assert_eq!(ctx.trap.code(), ExitCode::NoError);
+}
+
+#[test]
+fn conformance_index_out_of_bounds() {
+    let mut heap = VirtualHeap::new(HeapConfig {
+        max_size: 128,
+        ..Default::default()
+    });
+    let h = heap.allocate(8, TypeTag::Integer).unwrap();
+    assert_eq!(
+        heap.write(h, 10, &[1, 2]).unwrap_err(),
+        ExitCode::IndexOutOfBounds
+    );
+}
+
+#[test]
+fn conformance_null_dereference() {
+    let mut heap = VirtualHeap::with_default_config();
+    let h = heap.allocate(8, TypeTag::Integer).unwrap();
+    heap.deallocate(h).unwrap();
+    assert_eq!(heap.read(h, 0, 1).unwrap_err(), ExitCode::NullDereference);
+}
+
+#[test]
+fn conformance_stack_overflow() {
+    let config = ProfilingConfig {
+        max_recursion_depth: 2,
+        ..Default::default()
+    };
+    let mut profiler = Profiler::new(config);
+    profiler.enter_recursion().unwrap();
+    profiler.enter_recursion().unwrap();
+    assert_eq!(
+        profiler.enter_recursion().unwrap_err(),
+        ExitCode::StackOverflow
+    );
+}
+
+#[test]
+fn conformance_heap_exhaustion() {
+    let mut heap = VirtualHeap::new(HeapConfig {
+        max_size: 16,
+        alignment: 8,
+    });
+    assert_eq!(
+        heap.allocate(32, TypeTag::Integer).unwrap_err(),
+        ExitCode::HeapExhaustion
+    );
+}
+
+#[test]
+fn conformance_invalid_operation() {
+    // Send an unsupported operator to evaluate
+    let mut ctx = ExecContext::with_default_config();
+    let n = AstNode::internal(
+        AstNodeKind::BinaryExpression,
+        vec![
+            AstNode::leaf(
+                AstNodeKind::Identifier,
+                Some(AstValue::String("??".to_string())),
+            ),
+            AstNodeFactory::integer_literal("1"),
+            AstNodeFactory::integer_literal("2"),
+        ],
+        None,
+    );
+    assert_eq!(
+        evaluate(&mut ctx, &n).unwrap_err(),
+        ExitCode::InvalidOperation
+    );
 }
 
 #[test]
