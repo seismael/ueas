@@ -23,8 +23,8 @@ pub struct HeapHandle(u64);
 
 impl HeapHandle {
     /// Returns the raw u64 identifier for this heap handle.
-    /// Used internally by the interpreter for Pointer value tracking.
-    pub fn as_u64(self) -> u64 {
+    /// Internal use only — not exposed outside the kernel crate.
+    pub(crate) fn as_u64(self) -> u64 {
         self.0
     }
 
@@ -386,5 +386,26 @@ mod tests {
         heap.write(h2, 0, &[5, 6, 7, 8]).unwrap();
         assert_eq!(heap.read(h1, 0, 4).unwrap(), &[1, 2, 3, 4]);
         assert_eq!(heap.read(h2, 0, 4).unwrap(), &[5, 6, 7, 8]);
+    }
+    #[test]
+    fn allocate_exact_capacity() {
+        let mut heap = VirtualHeap::new(HeapConfig {
+            max_size: 64,
+            alignment: 8,
+        });
+        let h = heap.allocate(64, TypeTag::Integer).unwrap();
+        assert_eq!(heap.allocation_size(h), Some(64));
+    }
+    #[test]
+    fn write_zero_bytes() {
+        let mut heap = VirtualHeap::new(test_config());
+        let h = heap.allocate(8, TypeTag::Integer).unwrap();
+        heap.write(h, 0, &[]).unwrap();
+    }
+    #[test]
+    fn read_zero_bytes() {
+        let mut heap = VirtualHeap::new(test_config());
+        let h = heap.allocate(8, TypeTag::Integer).unwrap();
+        assert_eq!(heap.read(h, 0, 0).unwrap().len(), 0);
     }
 }

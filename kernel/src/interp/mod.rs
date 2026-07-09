@@ -310,7 +310,10 @@ fn eval_unary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCod
     let operand = evaluate(ctx, &node.children[1])?;
     match op.as_str() {
         "-" => match &operand {
-            AstValue::Integer(x) => Ok(AstValue::Integer(-x)),
+            AstValue::Integer(x) => {
+                let v = x.checked_neg().ok_or(ExitCode::InvalidOperation)?;
+                Ok(AstValue::Integer(v))
+            }
             AstValue::Real(x) => Ok(AstValue::Real(-x)),
             _ => Err(ExitCode::InvalidOperation),
         },
@@ -1221,7 +1224,12 @@ mod tests {
             vec![iter, AstNodeFactory::integer_literal("5"), body],
             None,
         );
+        let steps_before = c.profiler.step_count();
         execute_for(&mut c, &for_node).ok();
+        assert!(
+            c.profiler.step_count() > steps_before,
+            "for-loop should increment step counter"
+        );
     }
     #[test]
     fn exec_if_true_branch() {
@@ -1339,6 +1347,32 @@ mod tests {
             AstNodeFactory::integer_literal("3"),
         );
         assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(6));
+
+        #[test]
+        fn while_false_never_executes() {
+            let mut c = ctx();
+            declare_int(&mut c, "x", 0);
+            let w = AstNode::internal(
+                AstNodeKind::WhileLoop,
+                vec![
+                    AstNodeFactory::boolean_literal(false),
+                    AstNode::internal(
+                        AstNodeKind::WhileLoop,
+                        vec![AstNodeFactory::assignment(
+                            AstNodeFactory::identifier("x"),
+                            AstNodeFactory::integer_literal("99"),
+                        )],
+                        None,
+                    ),
+                ],
+                None,
+            );
+            execute_while(&mut c, &w).ok();
+            assert_eq!(
+                c.symbols.lookup("x", &c.heap).unwrap(),
+                AstValue::Integer(0)
+            );
+        }
     }
     #[test]
     fn eval_shift_left() {

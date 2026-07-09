@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 /// Every operation that advances algorithm state increments this counter
 /// by a defined weight per SPEC.md Section 6.2.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StepCount(pub u64);
+pub struct StepCount(u64);
 
 impl StepCount {
     /// Create a new step counter at zero.

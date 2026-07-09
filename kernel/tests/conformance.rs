@@ -109,7 +109,7 @@ fn conformance_complexity_violation() {
 }
 
 #[test]
-fn conformance_all_10_exit_codes_defined() {
+fn conformance_all_12_exit_codes_defined() {
     let codes = [
         ExitCode::NoError,
         ExitCode::DivisionByZero,
@@ -122,8 +122,9 @@ fn conformance_all_10_exit_codes_defined() {
         ExitCode::AssertionFailure,
         ExitCode::InfiniteLoopDetected,
         ExitCode::InvalidComplexityBinding,
+        ExitCode::InvalidOperation,
     ];
-    assert_eq!(codes.len(), 11);
+    assert_eq!(codes.len(), 12);
     for code in &codes {
         assert!(!code.name().is_empty());
     }

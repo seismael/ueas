@@ -1,78 +1,47 @@
 //! Invariant engine for the UEAS abstract interpreter.
-//
-//! The invariant engine evaluates boolean predicates at specified program
-//! points. When an invariant evaluates to `false`, execution traps with
-//! `InvariantViolation` (ExitCode 4).
+//!
+//! Invariants are boolean predicates enforced at runtime. The actual
+//! enforcement is performed by `execute_invariant()` in the interpreter
+//! module, which evaluates conditions against the execution context.
 //!
 //! Per SPEC.md Section 6.3:
 //! - On first encounter, the kernel evaluates the invariant expression.
 //! - If false, the kernel sets the trap register to `INVARIANT_VIOLATION`
 //!   and halts immediately.
-//! - The kernel re-evaluates the invariant at every loop iteration if
-//!   the invariant appears inside a loop body.
+//! - The kernel re-evaluates the invariant at every loop iteration.
 
-use crate::ast::{AstNode, AstValue};
+use crate::ast::AstValue;
 use crate::traps::ExitCode;
 
-/// Check an invariant expression and return an error if violated.
-///
-/// This function is a pure logical check — it does not modify kernel state.
-/// The caller is responsible for setting the trap register and halting
-/// execution if this returns `Err`.
-pub fn check_invariant(condition: &AstNode) -> Result<(), ExitCode> {
-    let result = evaluate_invariant_condition(condition);
-    if result == Some(false) {
-        Err(ExitCode::InvariantViolation)
-    } else {
-        Ok(())
+/// Check a literal boolean invariant condition.
+/// Complex expressions are evaluated by the interpreter directly.
+pub fn check_literal_condition(value: &AstValue) -> Result<(), ExitCode> {
+    match value {
+        AstValue::Boolean(false) => Err(ExitCode::InvariantViolation),
+        _ => Ok(()),
     }
-}
-
-/// Evaluate a simple boolean condition for invariant checking.
-///
-/// Handles literal booleans, simple comparisons, and identifier lookups
-/// that result in boolean values. More complex expressions should be
-/// evaluated by the full interpreter.
-fn evaluate_invariant_condition(node: &AstNode) -> Option<bool> {
-    use crate::ast::AstNodeKind;
-    match node.kind {
-        AstNodeKind::BooleanLiteral => match &node.value {
-            Some(AstValue::Boolean(b)) => Some(*b),
-            _ => None,
-        },
-        _ => {
-            // Complex expressions delegated to full interpreter
-            None
-        }
-    }
-}
-
-/// Re-evaluate invariants within a loop body.
-///
-/// This is a stub for the loop-body invariant re-evaluation required
-/// by SPEC.md Section 6.3. Full implementation requires access to
-/// the interpreter's execution context and symbol table.
-pub fn re_evaluate_loop_invariants(_body: &[AstNode]) -> Result<(), ExitCode> {
-    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::AstNodeFactory;
+    use crate::ast::AstValue;
 
     #[test]
-    fn invariant_check_true_condition() {
-        let condition = AstNodeFactory::boolean_literal(true);
-        assert!(check_invariant(&condition).is_ok());
+    fn check_true_condition() {
+        assert!(check_literal_condition(&AstValue::Boolean(true)).is_ok());
     }
 
     #[test]
-    fn invariant_check_false_condition() {
-        let condition = AstNodeFactory::boolean_literal(false);
+    fn check_false_condition() {
         assert_eq!(
-            check_invariant(&condition).unwrap_err(),
+            check_literal_condition(&AstValue::Boolean(false)).unwrap_err(),
             ExitCode::InvariantViolation
         );
+    }
+
+    #[test]
+    fn check_integer_condition() {
+        assert!(check_literal_condition(&AstValue::Integer(1)).is_ok());
     }
 }

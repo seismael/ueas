@@ -239,6 +239,7 @@ mod tests {
             ExitCode::AssertionFailure,
             ExitCode::InfiniteLoopDetected,
             ExitCode::InvalidComplexityBinding,
+            ExitCode::InvalidOperation,
         ];
         for code in &codes {
             assert!(!code.name().is_empty());
