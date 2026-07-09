@@ -1,34 +1,40 @@
-# UEAS — Final Implementation Status
+# UEAS — Implementation Status
 
-## All Goals Met — 0 Deferred Items
+## Core Components
 
-### Grammar V2.0 (Iceberg Architecture)
-- [x] INDENT/DEDENT, Pythonic control flow, in/not-in, pass, method chaining
-- [x] Simplified composite literals, decorator annotations
-- [x] ANTLR4 grammar compiles clean
+| Layer | Status | Tests |
+|-------|--------|-------|
+| Grammar (UEAS.g4) | V2.0 Iceberg Architecture | 15/15 parse |
+| Semantic Engine (infer/) | Type inference + desugaring | 6 |
+| Microkernel (7 modules) | VirtualHeap, exits 0-11, 20+ builtins | 126 |
+| Transpilation (Python + Rust) | Full statement support + MCP | 22 |
+| Conformance (UCTS) | All exit codes verifiable | 7 |
+| Fuzz (proptest) | 200K batch, zero panics | 6 |
+| **Total** | | **161** |
 
-### Semantic Engine
-- [x] kernel/src/infer/mod.rs — type inference + desugaring
-- [x] 6 infer unit tests
+## Documentation
 
-### Microkernel
-- [x] 7 modules: ast, heap, infer, interp, invariants, profiling, traps
-- [x] 12 exit codes, 32 AST node kinds, 16 TypeTags, 20+ builtins
+| File | Purpose |
+|------|---------|
+| `SPEC.md` | Formal specification (957 lines) |
+| `README.md` | Project overview, architecture |
+| `AGENTS.md` | Development governance (728 lines) |
+| `CONTRIBUTING.md` | Contributor lifecycle |
+| `LICENSE` | Apache 2.0 |
+| `NOTICE` | Copyright notice |
+| `SECURITY.md` | Vulnerability reporting |
+| `CODE_OF_CONDUCT.md` | Apache Foundation CoC |
+| `GOVERNANCE.md` | BDFL → TSC transition |
+| `CLA.md` | Contributor License Agreement |
+| `docs/rfcs/README.md` | RFC process |
+| `docs/adr/README.md` | Architecture decisions |
 
-### Transpilation
-- [x] Python + Rust targets, MCP endpoint, 7 cross-target benchmarks
+## Quality Gates
 
-### Documentation
-- [x] SPEC.md, README.md, AGENTS.md, CHANGELOG.md, REVIEW.md
-- [x] CONTRIBUTING.md, CLA.md, GOVERNANCE.md, SECURITY.md, CODE_OF_CONDUCT.md
+- `cargo test --workspace`: 161/161 pass
+- `cargo clippy --workspace -- -D warnings`: clean
+- `cargo fmt --all -- --check`: clean
 
-### Quality
-- [x] 161 tests (126 kernel + 22 backend + 7 conformance + 6 fuzz)
-- [x] clippy clean, fmt clean
-- [x] Apache 2.0 complete compliance
+## Repository
 
-## Final Metrics
-  Tests: 161/161 pass
-  Clippy: clean
-  Format: clean
-  Repo: https://github.com/seismael/ueas
+https://github.com/seismael/ueas

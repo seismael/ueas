@@ -1,14 +1,7 @@
 # Universal Executable Algorithm Standard (UEAS)
 
-**Version:** 1.0.0-draft  
-**Status:** Working Draft  
 **License:** Apache License 2.0  
-**Copyright:** UEAS Contributors
-
-> **Stability:** This specification is sealed as of the v1.0.0-draft baseline.
-> No changes to grammar rules, AST schema, kernel semantics, or transpiler
-> contracts are permitted without a ratified RFC. See the
-> [RFC Process](#8-rfc-process-and-governance) for the full procedure.  
+**Copyright:** UEAS Contributors  
 
 ---
 
@@ -262,65 +255,64 @@ program          ::= importDecl* algorithmDecl+
 
 importDecl       ::= 'import' IDENTIFIER
 
-algorithmDecl    ::= 'algorithm' IDENTIFIER
+algorithmDecl    ::= complexityDecorator?
+                     memoryDecorator?
+                     'algorithm' IDENTIFIER
                      LPAREN (parameter (COMMA parameter)*)? RPAREN
-                     (ARROW typeAnnotation)?
-                     complexityAnnotation
-                     memoryAnnotation?
+                     (ARROW typeAnnotation)? COLON? NEWLINE?
                      block
 
 parameter        ::= IDENTIFIER ':' typeAnnotation
 
-complexityAnnotation ::= '@Complexity' LPAREN STRING_LIT
+complexityDecorator ::= '@Complexity' LPAREN STRING_LIT
                          (COMMA variableBinding)* RPAREN
 
-memoryAnnotation ::= '@Memory' LPAREN STRING_LIT RPAREN
+memoryDecorator  ::= '@Memory' LPAREN STRING_LIT RPAREN
 
 variableBinding  ::= IDENTIFIER '=' expression
 
 (* Statements *)
-statement        ::= variableDecl
-                   | constDecl
-                   | assignment
-                   | returnStmt
+statement        ::= assignmentOrCall NEWLINE
+                   | returnStmt NEWLINE
                    | ifStmt
                    | forLoop
                    | whileLoop
-                   | assertStmt
-                   | invariantStmt
-                   | BREAK
-                   | CONTINUE
-                   | expression
+                   | assertStmt NEWLINE
+                   | invariantStmt NEWLINE
+                   | BREAK NEWLINE
+                   | CONTINUE NEWLINE
+                   | PASS NEWLINE
 
 constDecl        ::= 'const' IDENTIFIER ':' typeAnnotation ASSIGN expression
 
-block            ::= LBRACE statement* RBRACE
+block            ::= INDENT statement+ DEDENT
 
-variableDecl     ::= 'let' IDENTIFIER ':' typeAnnotation
-                     (ASSIGN expression)?
+assignmentOrCall ::= target ASSIGN expression
+                   | expression
 
-assignment       ::= IDENTIFIER
-                     (DOT IDENTIFIER | LBRACKET expression RBRACKET)*
-                     ASSIGN expression
+target           ::= IDENTIFIER
+                   | target LBRACKET expression RBRACKET
+                   | target DOT IDENTIFIER
 
 returnStmt       ::= 'return' expression?
 
-ifStmt           ::= 'if' expression block
-                     ('elif' expression block)*
-                     ('else' block)?
-
-forLoop          ::= 'for' IDENTIFIER 'in' expression block
-
-whileLoop        ::= 'while' expression block
-
 assertStmt       ::= 'assert' LPAREN expression RPAREN
-                     (':' STRING_LIT)?
+                     (COMMA STRING_LIT)?
 
 invariantStmt    ::= 'invariant' LPAREN expression RPAREN
-                     (':' STRING_LIT)?
+                     (COMMA STRING_LIT)?
+
+(* Control Flow — Pythonic: condition ':' NEWLINE block *)
+ifStmt           ::= 'if' expression ':' NEWLINE block
+                     ('elif' expression ':' NEWLINE block)*
+                     ('else' ':' NEWLINE block)?
+
+forLoop          ::= 'for' IDENTIFIER 'in' expression ':' NEWLINE block
+
+whileLoop        ::= 'while' expression ':' NEWLINE block
 
 (* Expressions *)
-expression       ::= logicalOr (AS typeAnnotation)?
+expression       ::= logicalOr
 
 logicalOr        ::= logicalAnd ('or' logicalAnd)*
 
@@ -328,13 +320,13 @@ logicalAnd       ::= equality ('and' equality)*
 
 equality         ::= comparison ((EQ | NEQ) comparison)*
 
-comparison       ::= additive ((LT | LE | GT | GE) additive)*
+comparison       ::= additive ((LT | LE | GT | GE | IN) additive)*
 
-additive         ::= bitwise ((PLUS | MINUS) bitwise)*
-
-bitwise          ::= multiplicative ((AMP | PIPE | CARET | LSHIFT | RSHIFT) multiplicative)*
+additive         ::= multiplicative ((PLUS | MINUS) multiplicative)*
 
 multiplicative   ::= unary ((STAR | SLASH | MOD) unary)*
+
+bitwise          ::= multiplicative ((AMP | CARET | LSHIFT | RSHIFT) multiplicative)*
 
 unary            ::= (NOT | MINUS)? primary
 
@@ -345,38 +337,22 @@ primary          ::= INTEGER_LIT
                    | FALSE
                    | INFINITY
                    | NAN
-                   | 'none'
-                   | 'some'
-                   | compositeCall
                    | LPAREN expression RPAREN
-                   | compositeLiteral
+                   | dataStructure
+                   | methodCallOrId
 
-compositeCall    ::= IDENTIFIER (DOT IDENTIFIER | LBRACKET expression RBRACKET)*
-                     (LPAREN (expression (COMMA expression)*)? RPAREN)?
+(* Composite Data Structures *)
+dataStructure    ::= LBRACKET (expression (COMMA expression)*)? RBRACKET
+                   | LBRACE (expression (COMMA expression)*)? RBRACE
+                   | LBRACE (expression COLON expression
+                       (COMMA expression COLON expression)*)? RBRACE
 
-compositeLiteral ::= setLiteral
-                   | listLiteral
-                   | mapLiteral
-                   | graphLiteral
-                   | matrixLiteral
-
-setLiteral       ::= LBRACE (expression (COMMA expression)*)? RBRACE
-
-listLiteral      ::= LBRACKET expression (COMMA expression)* RBRACKET
-
-mapLiteral       ::= LBRACE (expression COLON expression
-                     (COMMA expression COLON expression)*)? RBRACE
-
-graphLiteral     ::= 'graph' LT typeAnnotation COMMA typeAnnotation GT
-                     LPAREN LPAREN expression (COMMA expression)* RPAREN COMMA
-                     LPAREN edgeLiteral (COMMA edgeLiteral)* RPAREN RPAREN
-
-edgeLiteral      ::= LPAREN expression COMMA expression
-                     (COMMA expression)? RPAREN
-
-matrixLiteral    ::= 'matrix' LT matrixDim COMMA matrixDim
-                     COMMA typeAnnotation GT
-                     LPAREN expression (COMMA expression)* RPAREN
+(* Method Chaining *)
+methodCallOrId   ::= IDENTIFIER
+                   | methodCallOrId DOT IDENTIFIER
+                       LPAREN (expression (COMMA expression)*)? RPAREN
+                   | methodCallOrId LBRACKET expression RBRACKET
+                   | IDENTIFIER LPAREN (expression (COMMA expression)*)? RPAREN
 
 matrixDim        ::= INTEGER_LIT | IDENTIFIER
 
@@ -978,4 +954,4 @@ entries. A subset of idiomatic forms is shown below:
 
 ---
 
-*End of Specification — Version 1.0.0-draft*
+*End of Specification*

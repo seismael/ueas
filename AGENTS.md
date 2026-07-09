@@ -259,7 +259,7 @@ in Phase 2. This is non-negotiable.
 | New error condition | SPEC.md Section 6.5 updated (new trap code, description, cause) |
 | Public API change | Module doc comments updated, README.md updated if user-facing |
 | Architectural decision | ADR written in `docs/adr/NNNN-title.md` |
-| RFC implementation | RFC status updated, SPEC.md updated, CHANGELOG entry added |
+| RFC implementation | RFC status updated, SPEC.md updated |
 
 ### Doc Comment Standard (Rust)
 
@@ -664,7 +664,6 @@ ueas/
 ├── LICENSE                Apache License 2.0
 ├── NOTICE                 Apache copyright notice
 ├── CONTRIBUTORS.md        List of contributors (All Contributors spec)
-├── CHANGELOG.md           Release history (Keep a Changelog)
 ├── TODO.md                Current task list
 ├── SECURITY.md            Vulnerability reporting policy
 ├── CODE_OF_CONDUCT.md     Apache Foundation CoC

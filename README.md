@@ -1,8 +1,7 @@
 # Universal Executable Algorithm Standard (UEAS)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Spec Version](https://img.shields.io/badge/Spec-1.0.0--draft-orange)](SPEC.md)
-[![Tests](https://img.shields.io/badge/Tests-151-brightgreen)](kernel/)
+[![Tests](https://img.shields.io/badge/Tests-161-brightgreen)](kernel/)
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](kernel/)
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](grammar/)
 
