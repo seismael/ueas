@@ -181,21 +181,11 @@ The AST produced by this algorithm can be:
 
 ## Roadmap & Status
 
-| Epoch | Timeline | Scope | Deliverable | Status |
-|-------|----------|-------|-------------|--------|
-| **1: Combinatorial Core** | Months 1-3 | ANTLR4 grammar, static type system, AST JSON schema | Parser with 100% accuracy on algorithmic benchmarks | ✅ **Completed** (v0.1.0) |
-| **2: Profiling Kernel** | Months 4-6 | Rust abstract interpreter, complexity-invariant engine, virtual heap, error traps | Kernel that flags infinite loops and complexity violations | ✅ **Completed** (v0.1.0) |
-| **3: Universal Bridge** | Months 7-9 | Transpiler plugin system, Python + Rust targets, MCP API, cross-target equivalence suite | Mathematically identical outputs across all targets | 🚧 **In Progress** |
-
-## 🚀 Call for Domain Experts (We Need You!)
-
-UEAS has reached v0.1.0, but to achieve a production-ready 1.0 standard, we need highly specialized domain experts. We have curated specific open issues where your expertise is desperately needed:
-
-- **🎓 Academic Researchers & PLT Experts:** Help us formalize the syntax for Generic Algorithms and Space Complexity annotations. (See our `rfc: request for comments` tags).
-- **⚙️ Systems Engineers (C++, Java, Go):** We need compiler engineers to implement the `TargetGenerator` interface for backend transpilation. (See our `domain: transpiler` tags).
-- **🛠️ Rust Tooling Engineers:** Help us wrap the ANTLR AST validation into a proper Language Server Protocol (LSP).
-
-**👉 Ready to jump in?** Visit our [Contribution Hub](https://github.com/seismael/ueas/contribute) or filter our issues by the `help wanted` and `good first issue` tags.
+| Epoch | Scope | Status |
+|-------|-------|--------|
+| **1: Combinatorial Core** | ANTLR4 grammar, type system, AST JSON schema | ✅ Complete |
+| **2: Profiling Kernel** | Abstract interpreter, complexity engine, virtual heap | ✅ Complete |
+| **3: Universal Bridge** | Transpiler plugins, Python + Rust targets, MCP API | ✅ Complete |
 
 ---
 

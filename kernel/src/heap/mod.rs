@@ -408,4 +408,16 @@ mod tests {
         let h = heap.allocate(8, TypeTag::Integer).unwrap();
         assert_eq!(heap.read(h, 0, 0).unwrap().len(), 0);
     }
+    #[test]
+    fn type_tag_boolean_round_trip() {
+        let mut heap = VirtualHeap::new(test_config());
+        let h = heap.allocate(1, TypeTag::Boolean).unwrap();
+        heap.write(h, 0, &[1]).unwrap();
+        assert_eq!(heap.allocation_type(h), Some(TypeTag::Boolean));
+    }
+    #[test]
+    fn default_heap_config() {
+        let heap = VirtualHeap::with_default_config();
+        assert_eq!(heap.capacity(), 256 * 1024 * 1024);
+    }
 }

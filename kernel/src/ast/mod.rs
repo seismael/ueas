@@ -870,4 +870,111 @@ mod tests {
         let restored: AstNode = serde_json::from_str(&json).unwrap();
         assert_eq!(typ, restored);
     }
+    #[test]
+    fn factory_const_declaration() {
+        let node = AstNodeFactory::const_declaration(
+            "PI",
+            AstNodeFactory::type_node("Real", vec![]),
+            AstNodeFactory::real_literal(3.14159),
+        );
+        assert_eq!(node.kind, AstNodeKind::ConstDeclaration);
+    }
+    #[test]
+    fn factory_if_stmt() {
+        let node = AstNodeFactory::if_stmt(
+            AstNodeFactory::boolean_literal(true),
+            vec![AstNodeFactory::return_stmt(Some(
+                AstNodeFactory::integer_literal("1"),
+            ))],
+            None,
+        );
+        assert_eq!(node.kind, AstNodeKind::If);
+    }
+    #[test]
+    fn factory_map_literal() {
+        let node = AstNodeFactory::map_literal(vec![(
+            AstNodeFactory::integer_literal("1"),
+            AstNodeFactory::string_literal("a"),
+        )]);
+        assert_eq!(node.kind, AstNodeKind::MapLiteral);
+    }
+    #[test]
+    fn factory_infinity_nan_literals() {
+        assert_eq!(
+            AstNodeFactory::infinity_literal().kind,
+            AstNodeKind::InfinityLiteral
+        );
+        assert_eq!(AstNodeFactory::nan_literal().kind, AstNodeKind::NanLiteral);
+    }
+    #[test]
+    fn visitor_covers_all_kinds() {
+        struct AllVisitor {
+            count: usize,
+        }
+        impl AstVisitor for AllVisitor {
+            fn visit_program(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_algorithm(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_parameter(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_variable_declaration(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_assignment(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_return(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_if(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_for_loop(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_while_loop(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_integer_literal(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+        }
+        let algo = AstNodeFactory::algorithm(
+            "Test",
+            vec![AstNodeFactory::parameter(
+                "x",
+                AstNodeFactory::type_node("Integer", vec![]),
+            )],
+            None,
+            "O(1)",
+            vec![],
+            vec![
+                AstNodeFactory::variable_declaration(
+                    "y",
+                    AstNodeFactory::type_node("Integer", vec![]),
+                    Some(AstNodeFactory::integer_literal("1")),
+                ),
+                AstNodeFactory::assignment(
+                    AstNodeFactory::identifier("y"),
+                    AstNodeFactory::integer_literal("2"),
+                ),
+                AstNodeFactory::return_stmt(Some(AstNodeFactory::integer_literal("0"))),
+            ],
+        );
+        let mut v = AllVisitor { count: 0 };
+        v.traverse(&algo);
+        assert!(
+            v.count >= 8,
+            "Visitor should cover at least 8 node kinds, got {}",
+            v.count
+        );
+    }
+    #[test]
+    fn primitive_type_as_str_void() {
+        assert_eq!(crate::ast::PrimitiveType::Void.as_str(), "Void");
+    }
 }

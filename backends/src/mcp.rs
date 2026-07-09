@@ -195,4 +195,13 @@ mod tests {
         let restored: McpTranspileRequest = serde_json::from_str(&json).unwrap();
         assert_eq!(restored.target, "python");
     }
+    #[test]
+    fn mcp_transpile_unsupported_node_kind() {
+        let request = McpTranspileRequest {
+            ast: serde_json::json!({"kind": "InvalidNodeKind", "children": []}),
+            target: "python".to_string(),
+            options: McpTranspileOptions::default(),
+        };
+        assert!(handle_transpile(&request).is_err());
+    }
 }
