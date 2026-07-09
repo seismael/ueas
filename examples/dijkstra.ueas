@@ -1,28 +1,25 @@
-import GraphUtils
+@Complexity("O((V+E) log V)", V = g.nodes.length, E = g.edges.length)
+algorithm DijkstraShortestPath(g: Graph, source: Integer) -> Map:
 
-algorithm DijkstraShortestPath(g: Graph<Integer, Real>, source: Integer) -> Map<Integer, Real>
-    @Complexity("O((V+E) log V)", V = cardinality(nodes(g)), E = cardinality(edges(g)))
-{
-    let distances: Map<Integer, Real> := emptyMap()
-    let unvisited: Set<Integer> := nodes(g)
-    for node in unvisited {
-        if node == source {
-            distances[node] := 0.0
-        } else {
-            distances[node] := 999999.0
-        }
-    }
-    while cardinality(unvisited) > 0 {
-        invariant(cardinality(unvisited) <= V): "Unvisited cannot exceed total nodes"
-        let current: Integer := extractMin(unvisited, distances)
-        let neighbors: Set<Integer> := adjacent(g, current)
-        for neighbor in neighbors {
-            let edgeWeight: Real := weight(g, current, neighbor)
-            let newDist: Real := distances[current] + edgeWeight
-            if newDist < distances[neighbor] {
-                distances[neighbor] := newDist
-            }
-        }
-    }
+    distances = {}
+    unvisited = g.nodes
+
+    for node in unvisited:
+        if node == source:
+            distances[node] = 0.0
+        else:
+            distances[node] = 999999.0
+
+    while unvisited.length > 0:
+        invariant(unvisited.length <= V, "Unvisited cannot exceed total nodes")
+        current = extractMin(unvisited, distances)
+        neighbors = g.adjacent(current)
+
+        for neighbor in neighbors:
+            edgeWeight = g.weight(current, neighbor)
+            newDist = distances[current] + edgeWeight
+
+            if newDist < distances[neighbor]:
+                distances[neighbor] = newDist
+
     return distances
-}

@@ -1,12 +1,8 @@
-algorithm LinearSearch(data: List<Integer>, target: Integer) -> Integer
-    @Complexity("O(N)")
-{
-    let index: Integer := 0
-    for item in data {
-        if item == target {
-            return index
-        }
-        index := index + 1
-    }
+@Complexity("O(N)")
+algorithm LinearSearch(data: List, target: Integer) -> Integer:
+
+    for item in data:
+        if item == target:
+            return item
+
     return -1
-}

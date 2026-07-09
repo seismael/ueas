@@ -1,39 +1,37 @@
-import ListUtils
+@Complexity("O(N log N)")
+algorithm MergeSort(data: List) -> List:
 
-algorithm MergeSort(data: List<Integer>) -> List<Integer>
-    @Complexity("O(N log N)")
-{
-    if length(data) <= 1 {
+    if data.length <= 1:
         return data
-    }
-    let mid: Integer := length(data) / 2
-    let left: List<Integer> := slice(data, 0, mid)
-    let right: List<Integer> := slice(data, mid, length(data))
-    return Merge(MergeSort(left), MergeSort(right))
-}
 
-algorithm Merge(left: List<Integer>, right: List<Integer>) -> List<Integer>
-    @Complexity("O(N)")
-{
-    let result: List<Integer> := emptyList()
-    let i: Integer := 0
-    let j: Integer := 0
-    while i < length(left) and j < length(right) {
-        if left[i] <= right[j] {
-            append(result, left[i])
-            i := i + 1
-        } else {
-            append(result, right[j])
-            j := j + 1
-        }
-    }
-    while i < length(left) {
-        append(result, left[i])
-        i := i + 1
-    }
-    while j < length(right) {
-        append(result, right[j])
-        j := j + 1
-    }
+    mid = data.length / 2
+    left = data[0:mid]
+    right = data[mid:data.length]
+
+    return Merge(MergeSort(left), MergeSort(right))
+
+
+@Complexity("O(N)")
+algorithm Merge(left: List, right: List) -> List:
+
+    result = []
+    i = 0
+    j = 0
+
+    while i < left.length and j < right.length:
+        if left[i] <= right[j]:
+            result.append(left[i])
+            i = i + 1
+        else:
+            result.append(right[j])
+            j = j + 1
+
+    while i < left.length:
+        result.append(left[i])
+        i = i + 1
+
+    while j < right.length:
+        result.append(right[j])
+        j = j + 1
+
     return result
-}

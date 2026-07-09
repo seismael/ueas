@@ -1,17 +1,15 @@
-import MatrixMath
+@Complexity("O(R * C * K)")
+algorithm MatrixMultiply(A: Matrix, B: Matrix) -> Matrix:
 
-algorithm MatrixMultiply(A: Matrix<R, C, Real>, B: Matrix<C, K, Real>) -> Matrix<R, K, Real>
-    @Complexity("O(R * C * K)")
-{
-    let result: Matrix<R, K, Real> := zeroMatrix(R, K)
-    for i in range(0, R) {
-        for j in range(0, K) {
-            let sum: Real := 0.0
-            for k in range(0, C) {
-                sum := sum + A[i][k] * B[k][j]
-            }
-            result[i][j] := sum
-        }
-    }
+    result = zeroMatrix(R, K)
+
+    for i in range(0, R):
+        for j in range(0, K):
+            sum = 0.0
+
+            for k in range(0, C):
+                sum = sum + A[i][k] * B[k][j]
+
+            result[i][j] = sum
+
     return result
-}
