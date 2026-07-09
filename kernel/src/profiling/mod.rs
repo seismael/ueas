@@ -412,4 +412,30 @@ mod tests {
             ExitCode::ComplexityViolation
         );
     }
+    #[test]
+    fn exit_recursion_at_zero_no_panic() {
+        Profiler::new(ProfilingConfig::default()).exit_recursion();
+    }
+    #[test]
+    fn is_violated_cmax_zero() {
+        assert!(ComplexityContract::Constant.is_violated(1, 0));
+    }
+    #[test]
+    fn expected_cost_exp_overflow() {
+        assert_eq!(
+            ComplexityContract::Exponential { n: 64 }.expected_cost(),
+            u64::MAX
+        );
+        assert_eq!(
+            ComplexityContract::Exponential { n: 63 }.expected_cost(),
+            1u64 << 63
+        );
+    }
+    #[test]
+    fn default_profiling_config() {
+        let c = ProfilingConfig::default();
+        assert_eq!(c.c_max, 10000);
+        assert_eq!(c.global_max_steps, 1_000_000_000_000);
+        assert_eq!(c.max_recursion_depth, 10000);
+    }
 }

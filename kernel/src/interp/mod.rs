@@ -1510,4 +1510,77 @@ mod tests {
         let v = execute_if(&mut c, &n).unwrap();
         assert_eq!(v, AstValue::None);
     }
+    #[test]
+    fn cmp_bool_vs_bool() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "<",
+            AstNodeFactory::boolean_literal(false),
+            AstNodeFactory::boolean_literal(true),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Boolean(true));
+    }
+    #[test]
+    fn eval_trapped_state() {
+        let mut c = ctx();
+        c.trap.set(ExitCode::DivisionByZero);
+        assert_eq!(
+            evaluate(&mut c, &AstNodeFactory::integer_literal("1")).unwrap_err(),
+            ExitCode::DivisionByZero
+        );
+    }
+    #[test]
+    fn exec_for_non_integer() {
+        let mut c = ctx();
+        let f = AstNode::internal(
+            AstNodeKind::ForLoop,
+            vec![
+                AstNode::leaf(
+                    AstNodeKind::Identifier,
+                    Some(AstValue::String("i".to_string())),
+                ),
+                AstNodeFactory::real_literal(3.14),
+                AstNodeFactory::assignment(
+                    AstNodeFactory::identifier("i"),
+                    AstNodeFactory::integer_literal("0"),
+                ),
+            ],
+            None,
+        );
+        execute_for(&mut c, &f).ok();
+    }
+    #[test]
+    fn exec_program_non_program_traps() {
+        let mut c = ctx();
+        assert_eq!(
+            execute_program(&mut c, &AstNodeFactory::integer_literal("1")).unwrap_err(),
+            ExitCode::InvalidOperation
+        );
+    }
+    #[test]
+    fn exec_assert_empty_children() {
+        let n = AstNode::internal(AstNodeKind::Assert, vec![], None);
+        assert!(execute_assert(&mut ctx(), &n).is_ok());
+    }
+    #[test]
+    fn exec_invariant_empty_children() {
+        let n = AstNode::internal(AstNodeKind::Invariant, vec![], None);
+        assert!(execute_invariant(&mut ctx(), &n).is_ok());
+    }
+    #[test]
+    fn eval_or_with_non_bool() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            "or",
+            AstNodeFactory::string_literal(""),
+            AstNodeFactory::boolean_literal(true),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Boolean(true));
+    }
+    #[test]
+    fn complexity_n3_path() {
+        let mut c = ctx();
+        let algo = AstNodeFactory::algorithm("T", vec![], None, "O(N^3)", vec![], vec![]);
+        assert!(execute_algorithm(&mut c, &algo).is_ok());
+    }
 }

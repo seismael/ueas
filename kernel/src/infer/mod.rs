@@ -316,4 +316,58 @@ mod tests {
         let result = analyzer2.transform(&second, &mut declared);
         assert_eq!(result.kind, AstNodeKind::Assignment);
     }
+    #[test]
+    fn desugar_notin_operator() {
+        let analyzer = SemanticAnalyzer::with_default_config();
+        let node = AstNode::internal(
+            AstNodeKind::BinaryExpression,
+            vec![
+                AstNode::leaf(
+                    AstNodeKind::Identifier,
+                    Some(AstValue::String("notin".to_string())),
+                ),
+                AstNodeFactory::identifier("x"),
+                AstNodeFactory::identifier("s"),
+            ],
+            None,
+        );
+        let result = analyzer.analyze(&node);
+        assert_eq!(result.kind, AstNodeKind::UnaryExpression);
+    }
+    #[test]
+    fn infer_string_type() {
+        let analyzer = SemanticAnalyzer::with_default_config();
+        let node = AstNodeFactory::string_literal("hello");
+        assert_eq!(
+            analyzer.infer_type_from_value(&node),
+            Type::Primitive(crate::ast::PrimitiveType::String)
+        );
+    }
+    #[test]
+    fn infer_set_literal_type() {
+        let analyzer = SemanticAnalyzer::with_default_config();
+        let node = AstNode::internal(AstNodeKind::SetLiteral, vec![], None);
+        assert!(matches!(
+            analyzer.infer_type_from_value(&node),
+            Type::Composite(_)
+        ));
+    }
+    #[test]
+    fn transform_binary_non_in() {
+        let analyzer = SemanticAnalyzer::with_default_config();
+        let node = AstNode::internal(
+            AstNodeKind::BinaryExpression,
+            vec![
+                AstNode::leaf(
+                    AstNodeKind::Identifier,
+                    Some(AstValue::String("+".to_string())),
+                ),
+                AstNodeFactory::integer_literal("1"),
+                AstNodeFactory::integer_literal("2"),
+            ],
+            None,
+        );
+        let result = analyzer.analyze(&node);
+        assert_eq!(result.kind, AstNodeKind::BinaryExpression);
+    }
 }

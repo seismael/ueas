@@ -44,4 +44,16 @@ mod tests {
     fn check_integer_condition() {
         assert!(check_literal_condition(&AstValue::Integer(1)).is_ok());
     }
+    #[test]
+    fn check_real_condition() {
+        assert!(check_literal_condition(&AstValue::Real(1.0)).is_ok());
+    }
+    #[test]
+    fn check_string_condition() {
+        assert!(check_literal_condition(&AstValue::String("x".to_string())).is_ok());
+    }
+    #[test]
+    fn check_none_condition() {
+        assert!(check_literal_condition(&AstValue::None).is_ok());
+    }
 }

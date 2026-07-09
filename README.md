@@ -7,7 +7,7 @@
 
 > The Universal Executable Algorithm Standard (UEAS). An executable, language-agnostic pseudocode specification. UEAS allows algorithms to be written universally, mathematically verified, and natively tested, eliminating language-specific syntax constraints for technical evaluations, research, and core engineering.
 
-**Topics:** `executable-pseudocode`, `language-agnostic`, `algorithm-standard`, `algorithmic-blueprint`, `algorithm-verification`, `deterministic-testing`, `complexity-analysis`, `formal-verification`, `technical-interviews`, `computer-science-education`, `ai-orchestration`, `core-logic`
+**Topics:** `executable-pseudocode`, `algorithm-standard`, `algorithm-verification`, `complexity-analysis`
 
 ---
 
