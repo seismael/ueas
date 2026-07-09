@@ -23,7 +23,31 @@
 
 ---
 
-## New Review Items
+## Review Status: V2.0 Iceberg Architecture — Implemented
+
+### Phase 1: Grammar Modernization — COMPLETE
+- [x] INDENT/DEDENT tokens in lexer
+- [x] Pythonic control flow (if expr :, while expr :, for x in expr :)
+- [x] `in`/`not in` operators
+- [x] `pass` statement
+- [x] Method chaining support (target.method(args))
+- [x] Simplified composite literals ([] for List, {} for Set/Map)
+- [x] @Complexity decorator above algorithm
+
+### Phase 2: Semantic Engine — COMPLETE
+- [x] kernel/src/infer/mod.rs — SemanticAnalyzer
+- [x] Type inference for primitives
+- [x] `in`/`not in` desugaring (x in s → contains(s, x))
+- [x] Implicit variable declaration
+- [x] 6 infer unit tests
+
+### Phase 3: V2.0 Examples — COMPLETE
+- [x] dfs.ueas, bfs.ueas, binary_search.ueas, quicksort.ueas
+- [x] All use Iceberg Architecture syntax
+
+### Metrics
+Tests: 161 (126 kernel + 22 backend + 7 conformance + 6 fuzz)
+clippy: clean | fmt: clean
 
 ## 1. The Core Philosophy: The Iceberg Architecture
 

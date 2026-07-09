@@ -1,0 +1,15 @@
+@Complexity("O(V + E)", V = g.nodes.length, E = g.edges.length)
+algorithm BreadthFirstSearch(g: Graph, start: Integer) -> Set:
+
+    visited = {start}
+    queue = [start]
+
+    while queue.length > 0:
+        current = queue.pop(0)
+
+        for neighbor in g.adjacent(current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    return visited

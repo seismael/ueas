@@ -1,0 +1,17 @@
+@Complexity("O(N log N)")
+algorithm QuickSort(data: List) -> List:
+
+    if data.length <= 1:
+        return data
+
+    pivot = data[0]
+    left = []
+    right = []
+
+    for item in data[1:]:
+        if item <= pivot:
+            left.append(item)
+        else:
+            right.append(item)
+
+    return QuickSort(left) + [pivot] + QuickSort(right)

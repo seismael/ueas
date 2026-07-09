@@ -1,22 +1,18 @@
-import GraphUtils
+@Complexity("O(V + E)", V = g.nodes.length, E = g.edges.length)
+algorithm DepthFirstSearch(g: Graph, start: Integer) -> Set:
+    
+    visited = {}
+    stack = [start]
 
-algorithm DepthFirstSearch(g: Graph<Integer, Void>, start: Integer) -> Set<Integer>
-    @Complexity("O(V + E)", V = cardinality(nodes(g)), E = cardinality(edges(g)))
-{
-    let visited: Set<Integer> := emptySet()
-    let stack: List<Integer> := [start]
-    while length(stack) > 0 {
-        invariant(length(stack) <= V): "Stack cannot exceed total vertices"
-        let current: Integer := pop(stack)
-        if not contains(visited, current) {
-            add(visited, current)
-            let neighbors: Set<Integer> := adjacent(g, current)
-            for neighbor in neighbors {
-                if not contains(visited, neighbor) {
-                    append(stack, neighbor)
-                }
-            }
-        }
-    }
+    while stack.length > 0:
+        invariant stack.length <= V, "Stack bounds"
+        current = stack.pop()
+
+        if current not in visited:
+            visited.add(current)
+            
+            for neighbor in g.adjacent(current):
+                if neighbor not in visited:
+                    stack.push(neighbor)
+
     return visited
-}

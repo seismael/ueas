@@ -205,6 +205,11 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
         "+" => op2(&left, &right, |a, b| a + b, |a, b| a + b),
         "-" => op2(&left, &right, |a, b| a - b, |a, b| a - b),
         "*" => op2(&left, &right, |a, b| a * b, |a, b| a * b),
+        "in" => eval_in_operator(&left, &right),
+        "!in" | "notin" => {
+            let inner = eval_in_operator(&left, &right)?;
+            Ok(AstValue::Boolean(!matches!(inner, AstValue::Boolean(true))))
+        }
         "/" => match (&left, &right) {
             (AstValue::Integer(a), AstValue::Integer(b)) => {
                 if *b == 0 {
@@ -259,6 +264,10 @@ fn eval_binary(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCo
         ">>" => bitwise_op(&left, &right, |a, b| a >> b),
         _ => Err(ExitCode::InvalidOperation),
     }
+}
+
+fn eval_in_operator(left: &AstValue, right: &AstValue) -> Result<AstValue, ExitCode> {
+    Ok(AstValue::Boolean(left == right))
 }
 
 fn bitwise_op<F>(left: &AstValue, right: &AstValue, op: F) -> Result<AstValue, ExitCode>
