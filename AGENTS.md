@@ -604,6 +604,7 @@ The following decisions are intentional and non-negotiable.
 | **`const` expressions** | Variables declared with `const` are immutable. This allows the kernel to optimize heap allocation and guarantees side-effect-free evaluation. |
 | **Graph directedness (`Directed`/`Undirected`)** | Explicit direction annotation prevents ambiguity in graph traversal algorithms. Undirected graphs treat edges as unordered pairs; directed graphs use ordered pairs. |
 | **`@Memory` annotation** | Optional memory complexity bound complements `@Complexity`. The kernel tracks `heap.bytes_allocated()` and traps with `HEAP_EXHAUSTION` if the bound is exceeded. |
+| **V2.0 Iceberg Architecture** | Syntax is user-facing (Pythonic pseudocode without braces/semicolons). Semantic engine (`kernel/src/infer/`) performs type inference and operator desugaring transparently. Users write pseudocode; the kernel handles the rigor. |
 
 ---
 

@@ -1,9 +1,33 @@
 # Changelog
 
 All notable changes to UEAS follow [Keep a Changelog](https://keepachangelog.com/) format.
-This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — Unreleased (Epoch 1)
+## [0.2.0] — July 2026 (V2.0 Iceberg Architecture)
+
+### Added
+- V2.0 grammar: INDENT/DEDENT blocks (Pythonic pseudocode syntax)
+- `in`/`not in` operators with desugaring to contains()
+- `pass` statement, NEWS statement terminator (no semicolons)
+- Method chaining: target.method(args) → method(target, args)
+- Simplified composite literals: [] for List, {} for Set/Map
+- `@Complexity` + `@Memory` decorators above algorithm declaration
+- Semantic engine: kernel/src/infer/mod.rs (type inference + desugaring)
+- Implicit variable declaration (first assignment = VariableDeclaration)
+- V2.0 examples: dfs.ueas, bfs.ueas, quicksort.ueas, binary_search.ueas
+- `const` keyword for immutable variables
+- `Directed`/`Undirected` graph type markers
+- `randInt`/`randReal` randomization builtins
+- `@Memory` annotation for memory complexity enforcement
+- Infinity/NaN IEEE 754 literal tokens
+- Bitwise operators (& | ^ << >>)
+- String manipulation: substring(), concat(), strlen()
+
+### Changed
+- Control flow: `if expr :`, `while expr :`, `for x in expr :` (no parentheses)
+- Statements: NEWS-terminated (no semicolons)
+- Blocks: INDENT/DEDENT (no curly braces)
+
+## [0.1.0] — July 2026
 
 ### Added
 - Formal specification (SPEC.md v1.0.0-draft, 980 lines)
