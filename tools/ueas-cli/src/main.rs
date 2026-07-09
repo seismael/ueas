@@ -357,7 +357,7 @@ fn collect_until_depth<'a>(
             anyhow::bail!("line {}: expected matching 'end' closure not found", start);
         }
         let l = lines[i].trim().to_lowercase();
-        if l.starts_with("if ") || l == "else" || l.starts_with("for ") || l.starts_with("while ") {
+        if l.starts_with("if ") || l.starts_with("for ") || l.starts_with("while ") {
             depth += 1;
         }
         if l == "end if" || l == "end for" || l == "end while" || l == "end algorithm" {
