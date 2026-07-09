@@ -7,9 +7,7 @@
 
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind, AstValue};
 use ueas_kernel::heap::{HeapConfig, TypeTag, VirtualHeap};
-use ueas_kernel::interp::{
-    evaluate, execute_assert, execute_invariant, execute_program, ExecContext,
-};
+use ueas_kernel::interp::{evaluate, execute_program, ExecContext};
 use ueas_kernel::profiling::{ComplexityContract, Profiler, ProfilingConfig};
 use ueas_kernel::traps::ExitCode;
 
@@ -89,7 +87,7 @@ fn conformance_complexity_violation() {
     };
     let mut ctx = ExecContext::new(config);
     // O(1) allows 1*c_max=1 step. Running >1 step should violate.
-    for i in 0..8000u64 {
+    for _ in 0..8000u64 {
         ctx.profiler.step().ok();
     }
     let contract = ComplexityContract::Constant;

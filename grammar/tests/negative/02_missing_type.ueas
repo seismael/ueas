@@ -1,5 +1,6 @@
-algorithm BadAlgo(x) -> Real
-    @Complexity("O(1)")
-{
+Algorithm BadAlgo(x)
+    Ensure: Real
+    Complexity: "O(1)"
+
     return 0.0
-}
+end Algorithm

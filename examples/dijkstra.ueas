@@ -1,25 +1,32 @@
-@Complexity("O((V+E) log V)", V = g.nodes.length, E = g.edges.length)
-algorithm DijkstraShortestPath(g: Graph, source: Integer) -> Map:
+Algorithm DijkstraShortestPath(g, source)
+    Require: g: Graph, source: Integer
+    Ensure: Map
+    Complexity: "O((V+E) log V)", V = g.nodes.length, E = g.edges.length
 
-    distances = {}
-    unvisited = g.nodes
+    distances <- {}
+    unvisited <- g.nodes
 
-    for node in unvisited:
-        if node == source:
-            distances[node] = 0.0
-        else:
-            distances[node] = 999999.0
+    for each node in unvisited do
+        if node == source then
+            distances[node] <- 0.0
+        else
+            distances[node] <- 999999.0
+        end if
+    end for
 
-    while unvisited.length > 0:
+    while unvisited.length > 0 do
         invariant(unvisited.length <= V, "Unvisited cannot exceed total nodes")
-        current = extractMin(unvisited, distances)
-        neighbors = g.adjacent(current)
+        current <- extractMin(unvisited, distances)
+        neighbors <- g.adjacent(current)
 
-        for neighbor in neighbors:
-            edgeWeight = g.weight(current, neighbor)
-            newDist = distances[current] + edgeWeight
+        for each neighbor in neighbors do
+            edgeWeight <- g.weight(current, neighbor)
+            newDist <- distances[current] + edgeWeight
 
-            if newDist < distances[neighbor]:
-                distances[neighbor] = newDist
+            if newDist < distances[neighbor] then
+                distances[neighbor] <- newDist
+            end if
+        end for
+    end while
 
     return distances

@@ -570,13 +570,13 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
     Ok(last)
 }
 
-/// Enforce @Memory annotation by checking heap bytes allocated.
+/// Enforce Memory: annotation by checking heap bytes allocated.
 fn enforce_memory(ctx: &ExecContext, node: &AstNode) -> Result<(), ExitCode> {
-    // Memory annotation, if present, follows complexity string in algorithm children
-    // Format: @Memory("O(N)") or @Memory("256B") etc.
+    // Memory annotation, if present, follows complexity string in algorithm children.
+    // v3.0 format: "Memory" annotation string (without @ prefix).
     for child in node.children.iter().skip(1) {
         match &child.value {
-            Some(AstValue::String(s)) if s.contains("@Memory") => {
+            Some(AstValue::String(s)) if s.starts_with("Memory") || s.contains("@Memory") => {
                 let bytes = ctx.heap.bytes_allocated() as u64;
                 let max_bytes = 256 * 1024 * 1024; // default 256MB
                 if bytes > max_bytes {
@@ -704,7 +704,14 @@ fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
         _ => return Err(ExitCode::InvalidOperation),
     };
     let value = evaluate(ctx, &node.children[1])?;
-    ctx.symbols.assign(&name, &value, &mut ctx.heap)
+    match ctx.symbols.assign(&name, &value, &mut ctx.heap) {
+        Ok(()) => Ok(()),
+        Err(ExitCode::NullDereference) => {
+            ctx.symbols.declare(&name, &value, &mut ctx.heap)?;
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
 }
 
 fn execute_if(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
@@ -1356,32 +1363,31 @@ mod tests {
             AstNodeFactory::integer_literal("3"),
         );
         assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Integer(6));
-
-        #[test]
-        fn while_false_never_executes() {
-            let mut c = ctx();
-            declare_int(&mut c, "x", 0);
-            let w = AstNode::internal(
-                AstNodeKind::WhileLoop,
-                vec![
-                    AstNodeFactory::boolean_literal(false),
-                    AstNode::internal(
-                        AstNodeKind::WhileLoop,
-                        vec![AstNodeFactory::assignment(
-                            AstNodeFactory::identifier("x"),
-                            AstNodeFactory::integer_literal("99"),
-                        )],
-                        None,
-                    ),
-                ],
-                None,
-            );
-            execute_while(&mut c, &w).ok();
-            assert_eq!(
-                c.symbols.lookup("x", &c.heap).unwrap(),
-                AstValue::Integer(0)
-            );
-        }
+    }
+    #[test]
+    fn while_false_never_executes() {
+        let mut c = ctx();
+        declare_int(&mut c, "x", 0);
+        let w = AstNode::internal(
+            AstNodeKind::WhileLoop,
+            vec![
+                AstNodeFactory::boolean_literal(false),
+                AstNode::internal(
+                    AstNodeKind::WhileLoop,
+                    vec![AstNodeFactory::assignment(
+                        AstNodeFactory::identifier("x"),
+                        AstNodeFactory::integer_literal("99"),
+                    )],
+                    None,
+                ),
+            ],
+            None,
+        );
+        execute_while(&mut c, &w).ok();
+        assert_eq!(
+            c.symbols.lookup("x", &c.heap).unwrap(),
+            AstValue::Integer(0)
+        );
     }
     #[test]
     fn eval_shift_left() {
@@ -1472,17 +1478,19 @@ mod tests {
         );
     }
     #[test]
-    fn exec_var_undeclared_assignment_traps() {
+    fn exec_var_undeclared_assignment_auto_declares() {
+        let mut c = ctx();
+        execute_assignment(
+            &mut c,
+            &AstNodeFactory::assignment(
+                AstNodeFactory::identifier("novar"),
+                AstNodeFactory::integer_literal("1"),
+            ),
+        )
+        .unwrap();
         assert_eq!(
-            execute_assignment(
-                &mut ctx(),
-                &AstNodeFactory::assignment(
-                    AstNodeFactory::identifier("novar"),
-                    AstNodeFactory::integer_literal("1"),
-                )
-            )
-            .unwrap_err(),
-            ExitCode::NullDereference
+            c.symbols.lookup("novar", &c.heap).unwrap(),
+            AstValue::Integer(1)
         );
     }
     #[test]

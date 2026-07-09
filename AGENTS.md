@@ -603,8 +603,8 @@ The following decisions are intentional and non-negotiable.
 | **Design pattern enforcement** | Consistent patterns (Visitor, Strategy, Observer, Factory, Command) make the codebase navigable and predictable. |
 | **`const` expressions** | Variables declared with `const` are immutable. This allows the kernel to optimize heap allocation and guarantees side-effect-free evaluation. |
 | **Graph directedness (`Directed`/`Undirected`)** | Explicit direction annotation prevents ambiguity in graph traversal algorithms. Undirected graphs treat edges as unordered pairs; directed graphs use ordered pairs. |
-| **`@Memory` annotation** | Optional memory complexity bound complements `@Complexity`. The kernel tracks `heap.bytes_allocated()` and traps with `HEAP_EXHAUSTION` if the bound is exceeded. |
-| **V2.0 Iceberg Architecture** | Syntax is user-facing (Pythonic pseudocode without braces/semicolons). Semantic engine (`kernel/src/infer/`) performs type inference and operator desugaring transparently. Users write pseudocode; the kernel handles the rigor. |
+| **`Memory:` annotation** | Optional memory complexity bound complements `Complexity:`. The kernel tracks `heap.bytes_allocated()` and traps with `HEAP_EXHAUSTION` if the bound is exceeded. |
+| **V3.0 Iceberg Architecture** | Syntax is user-facing (academic pseudocode with `Require:`/`Ensure:` preamble, `<-` assignment, `then`/`do`/`end` closures). Semantic engine (`kernel/src/infer/`) performs type inference and operator desugaring transparently. Users write textbook-style pseudocode; the kernel handles the rigor. |
 
 ---
 
@@ -648,7 +648,7 @@ Key terms (abbreviated reference):
 - **Step Count** — Monotonic counter of primitive operations
 - **Trap Code** — Controlled error code (0 = success, 1-11 = trap conditions)
 - **Invariant** — Boolean predicate enforced by the kernel at runtime
-- **Complexity Contract** — `@Complexity` annotation with Big-O bound
+- **Complexity Contract** — `Complexity:` annotation with Big-O bound
 - **TargetGenerator** — Interface for transpilation backends
 - **UCTS** — UEAS Conformance Test Suite
 

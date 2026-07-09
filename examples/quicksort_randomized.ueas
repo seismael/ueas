@@ -1,16 +1,20 @@
-@Complexity("O(N log N)")
-@Memory("O(N)")
-algorithm QuickSortRandomized(data: List) -> List:
+Algorithm QuickSortRandomized(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N log N)"
+    Memory: "O(N)"
 
-    pivotIndex = randInt(0, data.length - 1)
-    pivot = data[pivotIndex]
-    left = []
-    right = []
+    pivotIndex <- randInt(0, data.length - 1)
+    pivot <- data[pivotIndex]
+    left <- []
+    right <- []
 
-    for item in data:
-        if item < pivot:
+    for each item in data do
+        if item < pivot then
             left.append(item)
-        elif item > pivot:
+        else if item > pivot then
             right.append(item)
+        end if
+    end for
 
     return QuickSortRandomized(left) + [pivot] + QuickSortRandomized(right)

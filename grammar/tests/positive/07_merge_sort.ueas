@@ -1,15 +1,16 @@
 import ListUtils
 
-algorithm MergeSort(data: List<Integer>) -> List<Integer>
-    @Complexity("O(N log N)")
-{
-    if length(data) <= 1 {
-        return data
-    }
+Algorithm MergeSort(data)
+    Require: data: List<Integer>
+    Ensure: List<Integer>
+    Complexity: "O(N log N)"
 
-    let mid: Integer := length(data) / 2
-    let left: List<Integer> := slice(data, 0, mid)
-    let right: List<Integer> := slice(data, mid, length(data))
+    if length(data) <= 1 then
+        return data
+    end if
+
+    mid <- length(data) / 2
+    left <- slice(data, 0, mid)
+    right <- slice(data, mid, length(data))
 
     return Merge(MergeSort(left), MergeSort(right))
-}

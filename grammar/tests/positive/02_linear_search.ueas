@@ -1,16 +1,17 @@
 import ListUtils
 
-algorithm LinearSearch(data: List<Integer>, target: Integer) -> Integer
-    @Complexity("O(N)")
-{
-    let index: Integer := 0
-    
-    for item in data {
-        if item == target {
+Algorithm LinearSearch(data, target)
+    Require: data: List<Integer>, target: Integer
+    Ensure: Integer
+    Complexity: "O(N)"
+
+    index <- 0
+
+    for each item in data do
+        if item == target then
             return index
-        }
-        index := index + 1
-    }
-    
+        end if
+        index <- index + 1
+    end for
+
     return -1
-}

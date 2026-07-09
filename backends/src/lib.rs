@@ -13,6 +13,7 @@
 pub mod mcp;
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 /// Error returned when transpilation fails.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -519,16 +520,18 @@ impl TargetGenerator for RustTarget {
         match kind {
             "Program" => {
                 let mut output = String::new();
+                let mut declared = HashSet::new();
                 if let Some(algorithms) = root["children"].as_array() {
                     for algo in algorithms {
-                        self.generate_algo(algo, &mut output)?;
+                        self.generate_algo(algo, &mut output, &mut declared)?;
                     }
                 }
                 Ok(output)
             }
             "Algorithm" => {
                 let mut output = String::new();
-                self.generate_algo(&root, &mut output)?;
+                let mut declared = HashSet::new();
+                self.generate_algo(&root, &mut output, &mut declared)?;
                 Ok(output)
             }
             _ => {
@@ -580,6 +583,7 @@ impl RustTarget {
         &self,
         node: &serde_json::Value,
         output: &mut String,
+        declared: &mut HashSet<String>,
     ) -> Result<(), TranspilationError> {
         let children = node["children"]
             .as_array()
@@ -594,7 +598,9 @@ impl RustTarget {
             if child["kind"] == "Parameter" {
                 if let Some(pc) = child["children"].as_array() {
                     if !pc.is_empty() {
-                        params.push(pc[0]["value"].as_str().unwrap_or("_").to_string());
+                        let pname = pc[0]["value"].as_str().unwrap_or("_").to_string();
+                        declared.insert(pname.clone());
+                        params.push(pname);
                     }
                 }
                 body_start += 1;
@@ -612,7 +618,7 @@ impl RustTarget {
         );
         output.push_str(") -> i64 {\n");
         for child in children.iter().skip(body_start + 1) {
-            self.generate_statement(child, output, 1)?;
+            self.generate_statement(child, output, 1, declared)?;
         }
         output.push_str("}\n\n");
         Ok(())
@@ -623,6 +629,7 @@ impl RustTarget {
         node: &serde_json::Value,
         output: &mut String,
         indent: usize,
+        declared: &mut HashSet<String>,
     ) -> Result<(), TranspilationError> {
         let kind = node["kind"].as_str().unwrap_or("");
         let prefix = "    ".repeat(indent);
@@ -630,7 +637,8 @@ impl RustTarget {
         match kind {
             "VariableDeclaration" => {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
-                let name = c[0]["value"].as_str().unwrap_or("_");
+                let name = c[0]["value"].as_str().unwrap_or("_").to_string();
+                declared.insert(name.clone());
                 output.push_str(&format!("{}let {}: i64 = ", prefix, name));
                 if c.len() > 2 {
                     self.generate_node(&c[2], output)?;
@@ -642,8 +650,13 @@ impl RustTarget {
             "Assignment" => {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
 
-                let target = c[0]["value"].as_str().unwrap_or("_");
-                output.push_str(&format!("{}{} = ", prefix, target));
+                let target = c[0]["value"].as_str().unwrap_or("_").to_string();
+                if declared.contains(&target) {
+                    output.push_str(&format!("{}{} = ", prefix, target));
+                } else {
+                    declared.insert(target.clone());
+                    output.push_str(&format!("{}let mut {} = ", prefix, target));
+                }
                 self.generate_node(&c[1], output)?;
                 output.push_str(";\n");
             }
@@ -665,7 +678,7 @@ impl RustTarget {
                 if c.len() > 1 {
                     if let Some(body) = c[1]["children"].as_array() {
                         for stmt in body {
-                            self.generate_statement(stmt, output, indent + 1)?;
+                            self.generate_statement(stmt, output, indent + 1, declared)?;
                         }
                     }
                 }
@@ -673,7 +686,7 @@ impl RustTarget {
                     output.push_str(&format!("{}}} else {{\n", prefix));
                     if let Some(body) = c[2]["children"].as_array() {
                         for stmt in body {
-                            self.generate_statement(stmt, output, indent + 1)?;
+                            self.generate_statement(stmt, output, indent + 1, declared)?;
                         }
                     }
                 }
@@ -688,7 +701,7 @@ impl RustTarget {
                 if c.len() > 1 {
                     if let Some(body) = c[1]["children"].as_array() {
                         for stmt in body {
-                            self.generate_statement(stmt, output, indent + 1)?;
+                            self.generate_statement(stmt, output, indent + 1, declared)?;
                         }
                     }
                 }
@@ -698,11 +711,12 @@ impl RustTarget {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
 
                 let iterator = c[0]["value"].as_str().unwrap_or("_");
+                declared.insert(iterator.to_string());
                 output.push_str(&format!("{}for {} in 0..", prefix, iterator));
                 self.generate_node(&c[1], output)?;
                 output.push_str(" {\n");
                 for child in &c[2..] {
-                    self.generate_statement(child, output, indent + 1)?;
+                    self.generate_statement(child, output, indent + 1, declared)?;
                 }
                 output.push_str(&format!("{}}}\n", prefix));
             }

@@ -1,4 +1,6 @@
-algorithm BadAlgo(x: Integer) -> Integer
-{
+Algorithm BadAlgo(x)
+    Require: x: Integer
+    Ensure: Integer
+
     return x
-}
+end Algorithm

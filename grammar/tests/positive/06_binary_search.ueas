@@ -1,21 +1,22 @@
-algorithm BinarySearch(data: List<Integer>, target: Integer) -> Integer
-    @Complexity("O(log N)")
-{
-    let low: Integer := 0
-    let high: Integer := length(data) - 1
+Algorithm BinarySearch(data, target)
+    Require: data: List<Integer>, target: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
 
-    while low <= high {
-        invariant(low >= 0 and high < length(data)): "Pointers must remain in bounds"
-        let mid: Integer := low + (high - low) / 2
-        
-        if data[mid] == target {
+    low <- 0
+    high <- length(data) - 1
+
+    while low <= high do
+        invariant(low >= 0 and high < length(data), "Pointers must remain in bounds")
+        mid <- low + (high - low) / 2
+
+        if data[mid] == target then
             return mid
-        } elif data[mid] < target {
-            low := mid + 1
-        } else {
-            high := mid - 1
-        }
-    }
-    
+        else if data[mid] < target then
+            low <- mid + 1
+        else
+            high <- mid - 1
+        end if
+    end while
+
     return -1
-}

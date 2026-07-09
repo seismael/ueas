@@ -147,29 +147,30 @@ of the standard's power.
 A traveling salesman algorithm in UEAS:
 
 ```
-algorithm MultilevelTSP(cities: List<City>, initialUpperBound: Real) -> Tour
-    @Complexity("O(N^2)", N = length(cities))
-{
-    let clusters: List<Set<City>> := partitionIntoClusters(cities, 10)
+Algorithm MultilevelTSP(cities, initialUpperBound)
+    Require: cities: List<City>, initialUpperBound: Real
+    Ensure: Tour
+    Complexity: "O(N^2)", N = length(cities)
 
-    invariant(length(cities) > 0): "Input must contain at least one city"
+    invariant(length(cities) > 0, "Input must contain at least one city")
 
-    for cluster in clusters {
-        let localTour: Tour := solveExactTSP(cluster)
-        clusterTourMap[cluster] := localTour
-    }
+    clusters <- partitionIntoClusters(cities, 10)
 
-    let macroNodes: List<Point> := centroidsOf(clusters)
-    let macroTour: Tour := solveApproximateTSP(macroNodes)
-    let globalTour: Tour := stitchClusters(clusterTourMap, macroTour)
+    for each cluster in clusters do
+        localTour <- solveExactTSP(cluster)
+        clusterTourMap[cluster] <- localTour
+    end for
 
-    globalTour := localSearch2Opt(globalTour)
+    macroNodes <- centroidsOf(clusters)
+    macroTour <- solveApproximateTSP(macroNodes)
+    globalTour <- stitchClusters(clusterTourMap, macroTour)
 
-    assert(tourLength(globalTour) <= initialUpperBound):
-        "Final tour must not exceed the initial upper bound"
+    globalTour <- localSearch2Opt(globalTour)
+
+    assert(tourLength(globalTour) <= initialUpperBound,
+        "Final tour must not exceed the initial upper bound")
 
     return globalTour
-}
 ```
 
 The AST produced by this algorithm can be:

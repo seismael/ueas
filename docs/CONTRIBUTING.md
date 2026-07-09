@@ -134,16 +134,21 @@ Kernel traps with COMPLEXITY_VIOLATION on an O(N) linear search
 over an empty list.
 
 ## Reproducer
-algorithm LinearSearchEmpty @Complexity("O(N)") {
-    let data: List<Integer> := [];
-    let target: Integer := 5;
-    let i: Integer := 0;
-    while (i < length(data)) {
-        if (data[i] == target) { return i; }
-        i := i + 1;
-    }
-    return -1;
-}
+Algorithm LinearSearchEmpty()
+    Ensure: Integer
+    Complexity: "O(N)"
+
+    data <- []
+    target <- 5
+    i <- 0
+    while i < length(data) do
+        if data[i] == target then
+            return i
+        end if
+        i <- i + 1
+    end while
+    return -1
+end Algorithm
 
 ## Expected
 Trap code 0 (NO_ERROR), returns -1.

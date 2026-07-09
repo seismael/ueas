@@ -1,5 +1,7 @@
-algorithm BadAlgo(x: Integer) -> Integer
-    @Complexity("invalid")
-{
+Algorithm BadAlgo(x)
+    Require: x: Integer
+    Ensure: Integer
+    Complexity: "invalid"
+
     return x
-}
+end Algorithm

@@ -1,15 +1,20 @@
-@Complexity("O(R * C * K)")
-algorithm MatrixMultiply(A: Matrix, B: Matrix) -> Matrix:
+Algorithm MatrixMultiply(A, B)
+    Require: A: Matrix, B: Matrix
+    Ensure: Matrix
+    Complexity: "O(R * C * K)"
 
-    result = zeroMatrix(R, K)
+    result <- zeroMatrix(R, K)
 
-    for i in range(0, R):
-        for j in range(0, K):
-            sum = 0.0
+    for each i in range(0, R) do
+        for each j in range(0, K) do
+            sum <- 0.0
 
-            for k in range(0, C):
-                sum = sum + A[i][k] * B[k][j]
+            for each k in range(0, C) do
+                sum <- sum + A[i][k] * B[k][j]
+            end for
 
-            result[i][j] = sum
+            result[i][j] <- sum
+        end for
+    end for
 
     return result

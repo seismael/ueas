@@ -1,49 +1,52 @@
-// UEAS Grammar v2.0: The "Iceberg" Architecture
+// UEAS Grammar v3.0: Academic Pseudocode (CLRS / LaTeX algorithmicx Style)
 // =====================================================================
-// Modern Mathematical Pseudocode Syntax:
-// - INDENT/DEDENT blocks (no curly braces)
-// - NEWLINE as statement terminator (no semicolons)
-// - Natural language operators (and, or, not, in)
-// - Method chaining with desugaring in semantic engine
-// - Implicit type inference for algorithm bodies
-// - @Complexity decorator above algorithm declaration
+// Iceberg Architecture — academic frontend, rigorous Rust backend.
+// NEWLINE-terminated statements, INDENT/DEDENT blocks.
+// Algorithm header uses Require: / Ensure: / Complexity: preamble.
+// Control flow uses then/do/end closures.
+// Assignment uses <- (academic arrow) or := (backward-compatible).
 
 grammar UEAS;
 
 // ===== Lexer Rules =====
 
-// Keywords
-ALGORITHM : 'algorithm';
-FUNCTION  : 'function';
-PROCEDURE : 'procedure';
-RETURN    : 'return';
-IF        : 'if';
-ELIF      : 'elif';
-ELSE      : 'else';
-FOR       : 'for';
-WHILE     : 'while';
-BREAK     : 'break';
-CONTINUE  : 'continue';
-IN        : 'in';
-LET       : 'let';
-CONST     : 'const';
-PASS      : 'pass';
-ASSERT    : 'assert';
-INVARIANT : 'invariant';
-COMPLEXITY: 'Complexity' | 'complexity';
-MEMORY    : 'Memory' | 'memory';
-IMPORT    : 'import';
-DIRECTED  : 'Directed';
-UNDIRECTED: 'Undirected';
-INFINITY  : 'Infinity';
-NAN       : 'NaN';
-TRUE      : 'true';
-FALSE     : 'false';
-AND       : 'and';
-OR        : 'or';
-NOT       : 'not';
-MOD       : 'mod';
-AS        : 'as';
+// Reserved keywords (case-insensitive for academic flexibility)
+ALGORITHM : 'algorithm' | 'Algorithm' | 'ALGORITHM';
+FUNCTION  : 'function'  | 'Function'  | 'FUNCTION';
+PROCEDURE : 'procedure' | 'Procedure' | 'PROCEDURE';
+RETURN    : 'return'    | 'Return'    | 'RETURN';
+IF        : 'if'        | 'If'        | 'IF';
+ELSE      : 'else'      | 'Else'      | 'ELSE';
+FOR       : 'for'       | 'For'       | 'FOR';
+WHILE     : 'while'     | 'While'     | 'WHILE';
+BREAK     : 'break'     | 'Break'     | 'BREAK';
+CONTINUE  : 'continue'  | 'Continue'  | 'CONTINUE';
+IN        : 'in'        | 'In'        | 'IN';
+EACH      : 'each'      | 'Each'      | 'EACH';
+LET       : 'let'       | 'Let'       | 'LET';
+CONST     : 'const'     | 'Const'     | 'CONST';
+PASS      : 'pass'      | 'Pass'      | 'PASS';
+ASSERT    : 'assert'    | 'Assert'    | 'ASSERT';
+INVARIANT : 'invariant' | 'Invariant' | 'INVARIANT';
+REQUIRE   : 'require'   | 'Require'   | 'REQUIRE';
+ENSURE    : 'ensure'    | 'Ensure'    | 'ENSURE';
+COMPLEXITY: 'complexity' | 'Complexity' | 'COMPLEXITY';
+THEN      : 'then'      | 'Then'      | 'THEN';
+DO        : 'do'        | 'Do'        | 'DO';
+END       : 'end'       | 'End'       | 'END';
+MEMORY    : 'memory'    | 'Memory'    | 'MEMORY';
+IMPORT    : 'import'    | 'Import'    | 'IMPORT';
+DIRECTED  : 'directed'  | 'Directed'  | 'DIRECTED';
+UNDIRECTED: 'undirected'| 'Undirected'| 'UNDIRECTED';
+INFINITY  : 'infinity'  | 'Infinity'  | 'INFINITY';
+NAN       : 'nan'       | 'NaN'       | 'NAN';
+TRUE      : 'true'      | 'True'      | 'TRUE';
+FALSE     : 'false'     | 'False'     | 'FALSE';
+AND       : 'and'       | 'And'       | 'AND';
+OR        : 'or'        | 'Or'        | 'OR';
+NOT       : 'not'       | 'Not'       | 'NOT';
+MOD       : 'mod'       | 'Mod'       | 'MOD';
+AS        : 'as'        | 'As'        | 'AS';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -56,7 +59,7 @@ PLUS      : '+';
 MINUS     : '-';
 STAR      : '*';
 SLASH     : '/';
-ASSIGN    : ':=';
+ASSIGN    : '<-' | ':=';
 BIND      : '=';
 EQ        : '==';
 NEQ       : '!=';
@@ -72,22 +75,21 @@ LPAREN    : '(';
 RPAREN    : ')';
 LBRACKET  : '[';
 RBRACKET  : ']';
+LBRACE    : '{';
+RBRACE    : '}';
 AMP       : '&';
 CARET     : '^';
 LSHIFT    : '<<';
 RSHIFT    : '>>';
-LBRACE    : '{';
-RBRACE    : '}';
-AT        : '@';
+PIPE      : '|';
 
 // Indentation-aware tokens
 NEWLINE : '\r'? '\n' SPACES? -> channel(HIDDEN);
 SPACES  : [ \t]+ -> skip;
 
-// Comments
-LINE_COMMENT  : '//' ~[\r\n]* -> skip;
+// Comments (# style for academic pseudocode)
+LINE_COMMENT  : '#' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
-WS            : [ \t]+ -> skip;
 
 // ===== Parser Rules =====
 
@@ -98,24 +100,33 @@ importDecl : IMPORT IDENTIFIER NEWLINE?;
 
 algorithmDecl : complexityDecorator?
                 ALGORITHM IDENTIFIER
-                LPAREN (parameter (COMMA parameter)*)? RPAREN
-                (ARROW typeAnnotation)? COLON? NEWLINE?
-                block;
+                LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN NEWLINE
+                requireBlock?
+                ensureBlock?
+                memoryDecorator?
+                block
+                (END ALGORITHM? NEWLINE?)? ;
 
-complexityDecorator : AT COMPLEXITY LPAREN STRING_LIT
-                      (COMMA variableBinding)* RPAREN NEWLINE?;
+requireBlock : REQUIRE COLON? paramTypeDecl (COMMA paramTypeDecl)* NEWLINE;
 
-memoryDecorator : AT MEMORY LPAREN STRING_LIT RPAREN NEWLINE?;
+paramTypeDecl : IDENTIFIER COLON typeAnnotation;
+
+ensureBlock : ENSURE COLON? typeAnnotation NEWLINE;
+
+complexityDecorator : COMPLEXITY COLON? STRING_LIT
+                      (COMMA variableBinding)* NEWLINE?;
+
+memoryDecorator : MEMORY COLON? STRING_LIT NEWLINE?;
 
 variableBinding : IDENTIFIER BIND expression;
-
-parameter : IDENTIFIER COLON typeAnnotation;
 
 // Block & Statements (INDENT/DEDENT style)
 block : INDENT statement+ DEDENT;
 
 statement : assignmentOrCall NEWLINE
           | returnStmt NEWLINE
+          | letDecl NEWLINE
+          | constDecl NEWLINE
           | ifStmt
           | forLoop
           | whileLoop
@@ -125,7 +136,10 @@ statement : assignmentOrCall NEWLINE
           | BREAK NEWLINE
           | CONTINUE NEWLINE ;
 
-// Implicit declaration: Semantic analyzer infers this is declaration or assignment
+letDecl : LET IDENTIFIER (COLON typeAnnotation)? ASSIGN expression;
+
+constDecl : CONST IDENTIFIER (COLON typeAnnotation)? ASSIGN expression;
+
 assignmentOrCall : target ASSIGN expression
                  | expression ;
 
@@ -139,14 +153,15 @@ assertStmt : ASSERT LPAREN expression RPAREN (COMMA STRING_LIT)? ;
 
 invariantStmt : INVARIANT LPAREN expression RPAREN (COMMA STRING_LIT)? ;
 
-// Control Flow
-ifStmt : IF expression COLON NEWLINE block
-         (ELIF expression COLON NEWLINE block)*
-         (ELSE COLON NEWLINE block)? ;
+// Control Flow (academic textbook style: then/do/end closures)
+ifStmt : IF expression THEN NEWLINE block
+         (ELSE IF expression THEN NEWLINE block)*
+         (ELSE NEWLINE block)?
+         END IF NEWLINE ;
 
-forLoop : FOR IDENTIFIER IN expression COLON NEWLINE block ;
+forLoop : FOR EACH? IDENTIFIER IN expression DO NEWLINE block END FOR NEWLINE ;
 
-whileLoop : WHILE expression COLON NEWLINE block ;
+whileLoop : WHILE expression DO NEWLINE block END WHILE NEWLINE ;
 
 // Expressions (ordered by precedence)
 expression : logicalOr (AS typeAnnotation)? ;
@@ -157,7 +172,7 @@ equality   : comparison ((EQ | NEQ) comparison)* ;
 comparison : additive ((LT | LE | GT | GE | IN) additive)* (NOT IN)? ;
 additive   : multiplicative ((PLUS | MINUS) multiplicative)* ;
 multiplicative : unary ((STAR | SLASH | MOD) unary)* ;
-bitwise : multiplicative ((AMP | CARET | LSHIFT | RSHIFT) multiplicative)* ;
+bitwise : multiplicative ((AMP | CARET | PIPE | LSHIFT | RSHIFT) multiplicative)* ;
 unary      : (NOT | MINUS)? primary ;
 
 primary : INTEGER_LIT
@@ -171,18 +186,16 @@ primary : INTEGER_LIT
         | dataStructure
         | methodCallOrId ;
 
-// Intuitive data structures
-dataStructure : LBRACKET (expression (COMMA expression)*)? RBRACKET    // Auto-infers List
-              | LBRACE (expression (COMMA expression)*)? RBRACE       // Auto-infers Set
-              | LBRACE (expression COLON expression (COMMA expression COLON expression)*)? RBRACE ; // Auto-infers Map
+dataStructure : LBRACKET (expression (COMMA expression)*)? RBRACKET
+              | LBRACE (expression (COMMA expression)*)? RBRACE
+              | LBRACE (expression COLON expression (COMMA expression COLON expression)*)? RBRACE ;
 
-// Method chaining: visited.add(node) instead of add(visited, node)
 methodCallOrId : IDENTIFIER
                | methodCallOrId DOT IDENTIFIER LPAREN (expression (COMMA expression)*)? RPAREN
                | methodCallOrId LBRACKET expression RBRACKET
                | IDENTIFIER LPAREN (expression (COMMA expression)*)? RPAREN ;
 
-// Types (only used at algorithm boundaries)
+// Types (used at algorithm boundaries and Require/Ensure blocks)
 typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void'
                | 'List' | 'Set' | 'Map' | 'Graph' | 'Matrix'
                | 'List' LT typeAnnotation GT
@@ -194,9 +207,8 @@ typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void'
 
 matrixDim : INTEGER_LIT | IDENTIFIER ;
 
-// Identifier — accepts keywords usable as variable names
-identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none'
-           | 'true' | 'false' | 'const' | 'Directed' | 'Undirected' | 'pass' ;
+// Identifier — accepts select non-reserved words usable as variable names
+identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' ;
 
 INDENT : 'INDENT_TOKEN_PLACEHOLDER' ;
 DEDENT : 'DEDENT_TOKEN_PLACEHOLDER' ;

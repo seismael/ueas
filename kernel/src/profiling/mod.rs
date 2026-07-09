@@ -2,7 +2,7 @@
 //!
 //! The step counter is the basis for invariant enforcement and complexity
 //! validation. Each primitive operation increments a monotonic u64 counter.
-//! The kernel enforces `@Complexity` contracts by comparing step counts
+//! The kernel enforces `Complexity:` contracts by comparing step counts
 //! against declared asymptotic bounds.
 //!
 //! # Rationale

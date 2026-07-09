@@ -1,4 +1,4 @@
-//! Multi-pass semantic engine for the UEAS V2.0 "Iceberg" Architecture.
+//! Multi-pass semantic engine for the UEAS V3.0 "Iceberg" Architecture.
 //!
 //! The engine performs three passes over the Draft AST:
 //! 1. Type Inference — deduce types from literal values
@@ -8,7 +8,7 @@
 //! Pass 2 handles:
 //! - Method chaining: `a.push(b)` → `FunctionCall("push", [a, b])`
 //! - `in` operator: `x in s` → `FunctionCall("contains", [s, x])`
-//! - Implicit declaration: first assignment without `let` → `VariableDeclaration`
+//! - Implicit declaration: first assignment (`x <- v`) → `VariableDeclaration`
 
 use crate::ast::{AstNode, AstNodeKind, AstValue, Type};
 

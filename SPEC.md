@@ -77,7 +77,7 @@ mathematical verification of algorithmic correctness.
 
 2. **Abstract Step-Counting.** Wall-clock time profiling is forbidden. Every
    primitive operation carries a fixed, spec-defined step cost (Section 6.2).
-   Complexity contracts (`@Complexity`) are enforced by counting abstract
+   Complexity contracts (`Complexity:`) are enforced by counting abstract
    logical mutations, producing identical complexity curves on any hardware.
 
 3. **Specification Before Implementation.** The canonical JSON AST (Section 5)
@@ -162,46 +162,59 @@ Randomization is provided for algorithmic completeness (e.g., Randomized QuickSo
 
 ---
 
-## 4. Grammar Specification (Epoch 1)
+## 4. Grammar Specification (Epoch 3)
 
 The UEAS grammar is specified in Extended Backus-Naur Form (EBNF). The
 reference implementation uses ANTLR4 (`UEAS.g4`) as the parser generator. The
 grammar is the normative definition of valid UEAS syntax.
 
+UEAS v3.0 adopts academic pseudocode conventions inspired by CLRS textbooks
+and the LaTeX `algorithmicx` package. The syntax uses `Require:`/`Ensure:` preambles,
+`<-` assignment, and `then`/`do`/`end` block closures to produce human-readable
+algorithms that are both executable and recognizable to any computer scientist.
+
 ### 4.1. Lexical Tokens
 
+All structural keywords accept lowercase, TitleCase, and UPPERCASE variants for
+academic flexibility (e.g., `if`, `If`, `IF` all produce the `IF` token).
+
 ```ebnf
-(* Keywords *)
-ALGORITHM   ::= 'algorithm'
-FUNCTION    ::= 'function'
-PROCEDURE   ::= 'procedure'
-RETURN      ::= 'return'
-IF          ::= 'if'
-ELIF        ::= 'elif'
-ELSE        ::= 'else'
-FOR         ::= 'for'
-WHILE       ::= 'while'
-IN          ::= 'in'
-LET         ::= 'let'
-ASSERT      ::= 'assert'
-INVARIANT   ::= 'invariant'
-COMPLEXITY  ::= 'Complexity' | 'complexity'
-IMPORT      ::= 'import'
-TRUE        ::= 'true'
-FALSE       ::= 'false'
-AND         ::= 'and'
-OR          ::= 'or'
-NOT         ::= 'not'
-MOD         ::= 'mod'
-AS          ::= 'as'
-BREAK       ::= 'break'
-CONTINUE    ::= 'continue'
-CONST       ::= 'const'
-DIRECTED    ::= 'Directed'
-UNDIRECTED  ::= 'Undirected'
-MEMORY      ::= 'Memory' | 'memory'
-INFINITY    ::= 'Infinity'
-NAN         ::= 'NaN'
+(* Keywords — case-insensitive)
+ALGORITHM   ::= 'algorithm' | 'Algorithm' | 'ALGORITHM'
+FUNCTION    ::= 'function'  | 'Function'  | 'FUNCTION'
+PROCEDURE   ::= 'procedure' | 'Procedure' | 'PROCEDURE'
+RETURN      ::= 'return'    | 'Return'    | 'RETURN'
+IF          ::= 'if'        | 'If'        | 'IF'
+ELSE        ::= 'else'      | 'Else'      | 'ELSE'
+FOR         ::= 'for'       | 'For'       | 'FOR'
+WHILE       ::= 'while'     | 'While'     | 'WHILE'
+BREAK       ::= 'break'     | 'Break'     | 'BREAK'
+CONTINUE    ::= 'continue'  | 'Continue'  | 'CONTINUE'
+IN          ::= 'in'        | 'In'        | 'IN'
+EACH        ::= 'each'      | 'Each'      | 'EACH'
+LET         ::= 'let'       | 'Let'       | 'LET'
+CONST       ::= 'const'     | 'Const'     | 'CONST'
+ASSERT      ::= 'assert'    | 'Assert'    | 'ASSERT'
+INVARIANT   ::= 'invariant' | 'Invariant' | 'INVARIANT'
+REQUIRE     ::= 'require'   | 'Require'   | 'REQUIRE'
+ENSURE      ::= 'ensure'    | 'Ensure'    | 'ENSURE'
+COMPLEXITY  ::= 'complexity'| 'Complexity'| 'COMPLEXITY'
+THEN        ::= 'then'      | 'Then'      | 'THEN'
+DO          ::= 'do'        | 'Do'        | 'DO'
+END         ::= 'end'       | 'End'       | 'END'
+MEMORY      ::= 'memory'    | 'Memory'    | 'MEMORY'
+IMPORT      ::= 'import'    | 'Import'    | 'IMPORT'
+TRUE        ::= 'true'      | 'True'      | 'TRUE'
+FALSE       ::= 'false'     | 'False'     | 'FALSE'
+AND         ::= 'and'       | 'And'       | 'AND'
+OR          ::= 'or'        | 'Or'        | 'OR'
+NOT         ::= 'not'       | 'Not'       | 'NOT'
+MOD         ::= 'mod'       | 'Mod'       | 'MOD'
+AS          ::= 'as'        | 'As'        | 'AS'
+DIRECTED    ::= 'directed'  | 'Directed'  | 'DIRECTED'
+UNDIRECTED  ::= 'undirected'| 'Undirected'| 'UNDIRECTED'
+INFINITY    ::= 'infinity'  | 'Infinity'  | 'INFINITY'
+NAN         ::= 'nan'       | 'NaN'       | 'NAN'
 
 (* Literals *)
 IDENTIFIER  ::= [a-zA-Z_][a-zA-Z0-9_]*
@@ -214,7 +227,7 @@ PLUS        ::= '+'
 MINUS       ::= '-'
 STAR        ::= '*'
 SLASH       ::= '/'
-ASSIGN      ::= ':='
+ASSIGN      ::= '<-' | ':='
 BIND        ::= '='
 EQ          ::= '=='
 NEQ         ::= '!='
@@ -224,27 +237,22 @@ GT          ::= '>'
 GE          ::= '>='
 ARROW       ::= '->'
 COLON       ::= ':'
-SEMICOLON   ::= ';'
 COMMA       ::= ','
 DOT         ::= '.'
-LBRACE      ::= '{'
-RBRACE      ::= '}'
 LPAREN      ::= '('
 RPAREN      ::= ')'
 LBRACKET    ::= '['
 RBRACKET    ::= ']'
-AT          ::= '@'
 AMP         ::= '&'
 CARET       ::= '^'
 LSHIFT      ::= '<<'
 RSHIFT      ::= '>>'
-PIPE        ::= '|'
 
 (* Comments and Whitespace *)
-LINE_COMMENT ::= '//' [^\n]*
+LINE_COMMENT  ::= '#' [^\n]*
 BLOCK_COMMENT ::= '/*' .* '*/'
-NEWLINE     ::= '\r'? '\n' -> skip
-WS          ::= [ \t]+ -> skip
+NEWLINE      ::= '\r'? '\n' -> skip
+WS           ::= [ \t]+ -> skip
 ```
 
 ### 4.2. Production Rules
@@ -256,24 +264,32 @@ program          ::= importDecl* algorithmDecl+
 importDecl       ::= 'import' IDENTIFIER
 
 algorithmDecl    ::= complexityDecorator?
-                     memoryDecorator?
                      'algorithm' IDENTIFIER
-                     LPAREN (parameter (COMMA parameter)*)? RPAREN
-                     (ARROW typeAnnotation)? COLON? NEWLINE?
+                     LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN NEWLINE
+                     requireBlock?
+                     ensureBlock?
+                     memoryDecorator?
                      block
+                     (END ALGORITHM? NEWLINE?)?
 
-parameter        ::= IDENTIFIER ':' typeAnnotation
+requireBlock     ::= 'Require' COLON? paramTypeDecl (COMMA paramTypeDecl)* NEWLINE
 
-complexityDecorator ::= '@Complexity' LPAREN STRING_LIT
-                         (COMMA variableBinding)* RPAREN
+paramTypeDecl    ::= IDENTIFIER ':' typeAnnotation
 
-memoryDecorator  ::= '@Memory' LPAREN STRING_LIT RPAREN
+ensureBlock      ::= 'Ensure' COLON? typeAnnotation NEWLINE
+
+complexityDecorator ::= 'Complexity' COLON? STRING_LIT
+                         (COMMA variableBinding)* NEWLINE?
+
+memoryDecorator  ::= 'Memory' COLON? STRING_LIT NEWLINE?
 
 variableBinding  ::= IDENTIFIER '=' expression
 
 (* Statements *)
 statement        ::= assignmentOrCall NEWLINE
                    | returnStmt NEWLINE
+                   | letDecl NEWLINE
+                   | constDecl NEWLINE
                    | ifStmt
                    | forLoop
                    | whileLoop
@@ -283,7 +299,9 @@ statement        ::= assignmentOrCall NEWLINE
                    | CONTINUE NEWLINE
                    | PASS NEWLINE
 
-constDecl        ::= 'const' IDENTIFIER ':' typeAnnotation ASSIGN expression
+letDecl          ::= 'let' IDENTIFIER (':' typeAnnotation)? ASSIGN expression
+
+constDecl        ::= 'const' IDENTIFIER (':' typeAnnotation)? ASSIGN expression
 
 block            ::= INDENT statement+ DEDENT
 
@@ -302,14 +320,17 @@ assertStmt       ::= 'assert' LPAREN expression RPAREN
 invariantStmt    ::= 'invariant' LPAREN expression RPAREN
                      (COMMA STRING_LIT)?
 
-(* Control Flow — Pythonic: condition ':' NEWLINE block *)
-ifStmt           ::= 'if' expression ':' NEWLINE block
-                     ('elif' expression ':' NEWLINE block)*
-                     ('else' ':' NEWLINE block)?
+(* Control Flow — academic textbook style: then/do/end closures *)
+ifStmt           ::= 'if' expression 'then' NEWLINE block
+                     ('else' 'if' expression 'then' NEWLINE block)*
+                     ('else' NEWLINE block)?
+                     'end' 'if' NEWLINE
 
-forLoop          ::= 'for' IDENTIFIER 'in' expression ':' NEWLINE block
+forLoop          ::= 'for' 'each'? IDENTIFIER 'in' expression 'do'
+                     NEWLINE block 'end' 'for' NEWLINE
 
-whileLoop        ::= 'while' expression ':' NEWLINE block
+whileLoop        ::= 'while' expression 'do' NEWLINE block
+                     'end' 'while' NEWLINE
 
 (* Expressions *)
 expression       ::= logicalOr
@@ -382,15 +403,17 @@ compositeType    ::= 'Set'    LANGLE typeAnnotation RANGLE
 
 The parser MUST reject programs for the following reasons:
 
-1. **Undeclared variable** — an `IDENTIFIER` used before a corresponding `let` declaration in scope.
-2. **Type mismatch in assignment** — the right-hand side expression type does not match the declared variable type.
-3. **Type mismatch in binary operation** — operands to `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, `>=` are not both `Integer` or both `Real`.
-4. **Type mismatch in unary operation** — operand to `-` is not `Integer` or `Real`; operand to `not` is not `Boolean`.
-5. **Invalid cast** — the cast target type is incompatible with the source type per the type compatibility matrix (Appendix A).
-6. **Missing complexity annotation** — an `algorithmDecl` lacks a `complexityAnnotation`.
-7. **Invalid complexity string** — the complexity annotation string does not match any supported form defined in Appendix C.
-8. **Complexity binding mismatch** — a variable in the complexity string appears in a form that requires a binding (e.g., `V` in `O((V+E) log V)`) but no corresponding `variableBinding` is provided; or a binding references an undeclared variable name.
-9. **Undefined complexity variable** — a `variableBinding` references an identifier that is not a declared parameter of the algorithm.
+1. **Variable used before first assignment** — the kernel auto-declares variables
+   on first `<-` assignment; however, a variable read before any assignment in
+   scope remains a runtime error (`NullDereference` trap code 4).
+2. **Type mismatch in binary operation** — operands to `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, `>=` are not both `Integer` or both `Real`.
+3. **Type mismatch in unary operation** — operand to `-` is not `Integer` or `Real`; operand to `not` is not `Boolean`.
+4. **Invalid cast** — the cast target type is incompatible with the source type per the type compatibility matrix (Appendix A).
+5. **Missing complexity annotation** — an `algorithmDecl` lacks a `Complexity:` preamble.
+6. **Invalid complexity string** — the complexity annotation string does not match any supported form defined in Appendix C.
+7. **Complexity binding mismatch** — a variable in the complexity string appears in a form that requires a binding (e.g., `V` in `O((V+E) log V)`) but no corresponding `variableBinding` is provided.
+8. **Missing Require block** — an `algorithmDecl` with typed parameters lacks a `Require:` preamble.
+9. **Missing parameter type** — a `paramTypeDecl` in `Require:` must include a type annotation for each parameter.
 
 ---
 
@@ -406,7 +429,7 @@ The AST is serialized to JSON with a strict schema. Every node has a `"kind"` fi
 | `"Algorithm"` | Top-level algorithm. Fields: `name: string`, `parameters: Parameter[]`, `returnType?: Type`, `complexity: string`, `bindings: VariableBinding[]`, `body: Statement[]`. |
 | `"Parameter"` | Algorithm parameter. Fields: `name: string`, `type: Type`. |
 | `"VariableBinding"` | Complexity variable binding. Fields: `variable: string`, `expression: Expression`. |
-| `"VariableDeclaration"` | A `let` binding. Fields: `name: string`, `type: Type`, `initializer?: Expression`. |
+| `"VariableDeclaration"` | An explicit `let` binding (optional in v3.0; the kernel auto-declares variables on first `Assignment`). Fields: `name: string`, `type: Type`, `initializer?: Expression`. |
 | `"ConstDeclaration"` | A `const` binding. Fields: `name: string`, `type: Type`, `initializer: Expression`. |
 | `"Assignment"` | Mutation of an existing binding. Fields: `target: LValue`, `value: Expression`. |
 | `"Return"` | Return statement. Fields: `value?: Expression`. |
@@ -454,13 +477,14 @@ Every `Type` node has `"kind": "Type"` and a `"name"` field:
 For the algorithm:
 
 ```
-algorithm EuclideanDistance(x1: Real, y1: Real, x2: Real, y2: Real) -> Real
-    @Complexity("O(1)")
-{
-    let dx: Real := x2 - x1;
-    let dy: Real := y2 - y1;
-    return sqrt(dx * dx + dy * dy);
-}
+Algorithm EuclideanDistance(x1, y1, x2, y2)
+    Require: x1: Real, y1: Real, x2: Real, y2: Real
+    Ensure: Real
+    Complexity: "O(1)"
+
+    dx <- x2 - x1
+    dy <- y2 - y1
+    return sqrt(dx * dx + dy * dy)
 ```
 
 The canonical JSON AST MUST output:
@@ -483,10 +507,9 @@ The canonical JSON AST MUST output:
       "bindings": [],
       "body": [
         {
-          "kind": "VariableDeclaration",
-          "name": "dx",
-          "type": { "kind": "Type", "name": "Real", "typeArguments": [] },
-          "initializer": {
+          "kind": "Assignment",
+          "target": { "kind": "Identifier", "name": "dx" },
+          "value": {
             "kind": "BinaryExpression",
             "operator": "-",
             "left": { "kind": "Identifier", "name": "x2" },
@@ -494,10 +517,9 @@ The canonical JSON AST MUST output:
           }
         },
         {
-          "kind": "VariableDeclaration",
-          "name": "dy",
-          "type": { "kind": "Type", "name": "Real", "typeArguments": [] },
-          "initializer": {
+          "kind": "Assignment",
+          "target": { "kind": "Identifier", "name": "dy" },
+          "value": {
             "kind": "BinaryExpression",
             "operator": "-",
             "left": { "kind": "Identifier", "name": "y2" },
@@ -547,7 +569,9 @@ canonical AST. It maintains:
 - a **Virtual Heap** — an isolated memory arena with no access to system I/O,
   network, filesystem, or hardware;
 - a **Symbol Table** — a stack of lexical scopes mapping identifiers to heap
-  addresses;
+  addresses. Variables are declared implicitly on first assignment — the
+  kernel allocates a heap slot and inserts the identifier into the current
+  scope automatically when `execute_assignment` encounters an unbound name;
 - a **Step Counter** — a monotonic 64-bit unsigned integer incremented on every
   primitive operation;
 - a **Trap Register** — set non-zero when execution is halted abnormally.
@@ -558,8 +582,7 @@ memory architecture. This makes complexity validation environment-dependent
 and non-reproducible. The UEAS kernel instead counts abstract operational steps
 — each primitive operation has a fixed, spec-defined cost (see Section 6.2).
 This produces an absolute, deterministic complexity curve independent of
-hardware, operating system, or concurrent workload. An algorithm declared at
-`@Complexity("O(N log N)")` can be objectively verified against its contract
+hardware, operating system, or concurrent workload. An algorithm declared with `Complexity: "O(N log N)"` can be objectively verified against its contract
 regardless of where the kernel runs.
 
 ### 6.2. Primitive Operations and Step Cost
@@ -573,7 +596,7 @@ by a defined weight:
 | Integer multiplication, division, modulo | 1 |
 | Real (float) arithmetic or comparison | 1 |
 | Boolean logic (`and`, `or`, `not`) | 1 |
-| Variable declaration (allocation) | 1 |
+| Variable declaration (allocation, implicit on first assignment) | 1 |
 | Variable assignment | 1 |
 | Array/list element access (`get`, `set`) | 1 |
 | Set `contains` | 1 |
@@ -600,7 +623,7 @@ An `invariant` statement declares a boolean expression that MUST evaluate to
 
 ### 6.4. Complexity Contract Enforcement
 
-The `@Complexity` annotation declares an asymptotic bound. The complexity
+The `Complexity:` annotation declares an asymptotic bound. The complexity
 string `S` describes the Big-O form (e.g., `"O(N^2)"`, `"O((V+E) log V)"`).
 Optional `variableBinding` entries (`V = expression`) map each abstract variable
 in `S` to a concrete expression evaluated at algorithm entry.
@@ -639,7 +662,7 @@ before execution begins.
 
 ### 6.5. Memory Complexity Enforcement
 
-The optional `@Memory` annotation declares an asymptotic memory bound. The
+The optional `Memory:` annotation declares an asymptotic memory bound. The
 kernel tracks the total bytes allocated on the Virtual Heap (`heap.bytes_allocated()`)
 and verifies the allocation does not exceed the configured maximum (default 256 MiB).
 If the maximum is exceeded, the kernel traps with `HEAP_EXHAUSTION` (code 7).
@@ -655,7 +678,7 @@ Code `0` indicates successful completion. Non-zero codes are termed
 | `0` | `NO_ERROR` | Exit | Normal termination. |
 | `1` | `DIVISION_BY_ZERO` | Trap | Division or modulo by zero. |
 | `2` | `INDEX_OUT_OF_BOUNDS` | Trap | List, Tuple, or Matrix access beyond declared bounds. |
-| `3` | `NULL_DEREFERENCE` | Trap | Access on an `Option` of `None`. |
+| `3` | `NULL_DEREFERENCE` | Trap | Read access on an undeclared variable or an `Option` of `None`. Note: Assignment to an undeclared variable triggers implicit declaration (see Section 6.1). |
 | `4` | `INVARIANT_VIOLATION` | Trap | An `invariant` expression evaluated to `false`. |
 | `5` | `COMPLEXITY_VIOLATION` | Trap | Step count breached the declared complexity contract. |
 | `6` | `STACK_OVERFLOW` | Trap | Recursion depth exceeded configurable limit (default 10^4). |
@@ -901,9 +924,11 @@ The following identifiers are reserved and MUST NOT be used as variable or
 algorithm names:
 
 ```
-algorithm, function, procedure, return, if, elif, else, for, while,
-in, let, assert, invariant, complexity, import, and, or, not, mod,
-as, Integer, Real, Boolean, String, Void, Set, List, Map, Graph,
+algorithm, function, procedure, return, if, else, for, while,
+break, continue, in, each, let, const, pass, assert, invariant,
+require, ensure, complexity, then, do, end, memory, import,
+and, or, not, mod, as,
+Integer, Real, Boolean, String, Void, Set, List, Map, Graph,
 Matrix, Option, Result, Tuple
 ```
 
@@ -911,14 +936,14 @@ The following words may be used as identifiers despite appearing in
 syntactic contexts (they are handled by the `identifier` parser rule):
 
 ```
-graph, matrix, some, none, true, false, const, Directed, Undirected
+graph, matrix, some, none, true, false, Directed, Undirected
 ```
 
 ---
 
 ## Appendix C: Complexity Annotation Pattern
 
-The complexity string in `@Complexity` MUST match one of the supported forms.
+The complexity string in `Complexity:` MUST match one of the supported forms.
 The grammar of complexity strings is:
 
 ```

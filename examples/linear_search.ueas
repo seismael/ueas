@@ -1,8 +1,12 @@
-@Complexity("O(N)")
-algorithm LinearSearch(data: List, target: Integer) -> Integer:
+Algorithm LinearSearch(data, target)
+    Require: data: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(N)"
 
-    for item in data:
-        if item == target:
+    for each item in data do
+        if item == target then
             return item
+        end if
+    end for
 
     return -1
