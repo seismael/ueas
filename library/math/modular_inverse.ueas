@@ -1,0 +1,33 @@
+Algorithm ModularInverse(a, m)
+    Require: a: Integer, m: Integer
+    Ensure: Integer
+    Complexity: "O(log M)"
+
+    egcd <- extendedGCD(a, m)
+    assert(egcd.d == 1, "Modular inverse does not exist")
+
+    result <- egcd.x % m
+
+    if result < 0 then
+        result <- result + m
+    end if
+
+    return result
+end Algorithm
+
+
+Algorithm extendedGCD(a, b)
+    Require: a: Integer, b: Integer
+    Ensure: Tuple
+    Complexity: "O(log N)"
+
+    if b == 0 then
+        return Tuple(a, 1, 0)
+    end if
+
+    g <- extendedGCD(b, a % b)
+    x <- g.y
+    y <- g.x - (a / b) * g.y
+
+    return Tuple(g.d, x, y)
+end Algorithm

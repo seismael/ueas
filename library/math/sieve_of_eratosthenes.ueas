@@ -1,0 +1,31 @@
+Algorithm SieveOfEratosthenes(limit)
+    Require: limit: Integer
+    Ensure: List
+    Complexity: "O(N log log N)"
+
+    isPrime <- []
+    primes <- []
+
+    for each i in range(2, limit + 1) do
+        isPrime[i] <- true
+    end for
+
+    for each p in range(2, sqrtInt(limit) + 1) do
+        if isPrime[p] then
+            multiple <- p * p
+
+            while multiple <= limit do
+                isPrime[multiple] <- false
+                multiple <- multiple + p
+            end while
+        end if
+    end for
+
+    for each i in range(2, limit + 1) do
+        if isPrime[i] then
+            primes.append(i)
+        end if
+    end for
+
+    return primes
+end Algorithm

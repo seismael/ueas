@@ -1,0 +1,92 @@
+Algorithm SegmentTree(arr)
+    Require: arr: List
+    Ensure: Map
+    Complexity: "O(N)"
+
+    n <- arr.length
+    tree <- zeroList(4 * n)
+
+    buildTree(arr, tree, 0, 0, n - 1)
+
+    return {"tree": tree, "size": n}
+end Algorithm
+
+
+Algorithm buildTree(arr, tree, node, start, end)
+    Require: arr: List, tree: List, node: Integer, start: Integer, end: Integer
+    Ensure: Integer
+    Complexity: "O(N)"
+
+    if start == end then
+        tree[node] <- arr[start]
+        return tree[node]
+    end if
+
+    mid <- (start + end) / 2
+    leftSum <- buildTree(arr, tree, 2 * node + 1, start, mid)
+    rightSum <- buildTree(arr, tree, 2 * node + 2, mid + 1, end)
+
+    tree[node] <- leftSum + rightSum
+    return tree[node]
+end Algorithm
+
+
+Algorithm STRQuery(st, l, r)
+    Require: st: Map, l: Integer, r: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    return queryTree(st["tree"], 0, 0, st["size"] - 1, l, r)
+end Algorithm
+
+
+Algorithm queryTree(tree, node, start, end, l, r)
+    Require: tree: List, node: Integer, start: Integer, end: Integer, l: Integer, r: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    if r < start or end < l then
+        return 0
+    end if
+
+    if l <= start and end <= r then
+        return tree[node]
+    end if
+
+    mid <- (start + end) / 2
+    leftSum <- queryTree(tree, 2 * node + 1, start, mid, l, r)
+    rightSum <- queryTree(tree, 2 * node + 2, mid + 1, end, l, r)
+
+    return leftSum + rightSum
+end Algorithm
+
+
+Algorithm STUpdate(st, idx, value)
+    Require: st: Map, idx: Integer, value: Integer
+    Ensure: None
+    Complexity: "O(log N)"
+
+    updateTree(st["tree"], 0, 0, st["size"] - 1, idx, value)
+end Algorithm
+
+
+Algorithm updateTree(tree, node, start, end, idx, value)
+    Require: tree: List, node: Integer, start: Integer, end: Integer, idx: Integer, value: Integer
+    Ensure: None
+    Complexity: "O(log N)"
+
+    if start == end then
+        tree[node] <- value
+        return
+    end if
+
+    mid <- (start + end) / 2
+
+    if idx <= mid then
+        updateTree(tree, 2 * node + 1, start, mid, idx, value)
+    else
+        updateTree(tree, 2 * node + 2, mid + 1, end, idx, value)
+    end if
+
+    tree[node] <- tree[2 * node + 1] + tree[2 * node + 2]
+end Algorithm

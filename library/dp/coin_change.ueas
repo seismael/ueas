@@ -1,0 +1,26 @@
+Algorithm CoinChange(coins, amount)
+    Require: coins: List, amount: Integer
+    Ensure: Integer
+    Complexity: "O(N * A)", N = coins.length, A = amount
+
+    dp <- []
+    dp[0] <- 0
+
+    for each a in range(1, amount + 1) do
+        dp[a] <- 999999
+
+        for each coin in coins do
+            if coin <= a then
+                if dp[a - coin] + 1 < dp[a] then
+                    dp[a] <- dp[a - coin] + 1
+                end if
+            end if
+        end for
+    end for
+
+    if dp[amount] == 999999 then
+        return -1
+    end if
+
+    return dp[amount]
+end Algorithm

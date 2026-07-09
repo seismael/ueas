@@ -1,0 +1,119 @@
+Algorithm TrieNode()
+    Ensure: Map
+    Complexity: "O(1)"
+
+    return {"children": {}, "isEnd": false}
+end Algorithm
+
+
+Algorithm TrieInsert(root, word)
+    Require: root: Map, word: String
+    Ensure: None
+    Complexity: "O(L)", L = word.length
+
+    node <- root
+
+    i <- 0
+    while i < word.length do
+        ch <- word[i]
+
+        if ch not in node["children"] then
+            node["children"][ch] <- TrieNode()
+        end if
+
+        node <- node["children"][ch]
+        i <- i + 1
+    end while
+
+    node["isEnd"] <- true
+end Algorithm
+
+
+Algorithm TrieSearch(root, word)
+    Require: root: Map, word: String
+    Ensure: Boolean
+    Complexity: "O(L)", L = word.length
+
+    node <- root
+
+    i <- 0
+    while i < word.length do
+        ch <- word[i]
+
+        if ch not in node["children"] then
+            return false
+        end if
+
+        node <- node["children"][ch]
+        i <- i + 1
+    end while
+
+    return node["isEnd"]
+end Algorithm
+
+
+Algorithm TrieStartsWith(root, prefix)
+    Require: root: Map, prefix: String
+    Ensure: Boolean
+    Complexity: "O(L)", L = prefix.length
+
+    node <- root
+
+    i <- 0
+    while i < prefix.length do
+        ch <- prefix[i]
+
+        if ch not in node["children"] then
+            return false
+        end if
+
+        node <- node["children"][ch]
+        i <- i + 1
+    end while
+
+    return true
+end Algorithm
+
+
+Algorithm TrieDelete(root, word)
+    Require: root: Map, word: String
+    Ensure: Boolean
+    Complexity: "O(L)", L = word.length
+
+    return trieDeleteHelper(root, word, 0)
+end Algorithm
+
+
+Algorithm trieDeleteHelper(node, word, depth)
+    Require: node: Map, word: String, depth: Integer
+    Ensure: Boolean
+    Complexity: "O(L)", L = word.length
+
+    if node == null then
+        return false
+    end if
+
+    if depth == word.length then
+        if node["isEnd"] == false then
+            return false
+        end if
+
+        node["isEnd"] <- false
+        return node["children"].length == 0
+    end if
+
+    ch <- word[depth]
+
+    if ch not in node["children"] then
+        return false
+    end if
+
+    shouldDelete <- trieDeleteHelper(node["children"][ch], word, depth + 1)
+
+    if shouldDelete then
+        node["children"].remove(ch)
+        return node["children"].length == 0 and node["isEnd"] == false
+    end if
+
+    return false
+end Algorithm

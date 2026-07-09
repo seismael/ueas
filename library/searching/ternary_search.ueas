@@ -1,0 +1,43 @@
+Algorithm TernarySearch(data, target)
+    Require: data: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    return TernarySearchHelper(data, target, 0, data.length - 1)
+
+Algorithm TernarySearchHelper(data, target, low, high)
+    Require: data: List, target: Integer, low: Integer, high: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    if low > high then
+        return -1
+    end if
+
+    if low == high then
+        if data[low] == target then
+            return low
+        else
+            return -1
+        end if
+    end if
+
+    third <- (high - low) / 3
+    mid1 <- low + third
+    mid2 <- high - third
+
+    if data[mid1] == target then
+        return mid1
+    end if
+
+    if data[mid2] == target then
+        return mid2
+    end if
+
+    if target < data[mid1] then
+        return TernarySearchHelper(data, target, low, mid1 - 1)
+    else if target < data[mid2] then
+        return TernarySearchHelper(data, target, mid1 + 1, mid2 - 1)
+    else
+        return TernarySearchHelper(data, target, mid2 + 1, high)
+    end if

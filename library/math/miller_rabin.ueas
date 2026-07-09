@@ -1,0 +1,82 @@
+Algorithm MillerRabin(n, k)
+    Require: n: Integer, k: Integer
+    Ensure: Boolean
+    Complexity: "O(k * log^3 N)"
+
+    if n < 2 then
+        return false
+    end if
+
+    if n == 2 or n == 3 then
+        return true
+    end if
+
+    if n % 2 == 0 then
+        return false
+    end if
+
+    d <- n - 1
+    s <- 0
+
+    while d % 2 == 0 do
+        d <- d / 2
+        s <- s + 1
+    end while
+
+    for each i in range(0, k) do
+        if millerRabinWitness(n, d, s) == false then
+            return false
+        end if
+    end for
+
+    return true
+end Algorithm
+
+
+Algorithm millerRabinWitness(n, d, s)
+    Require: n: Integer, d: Integer, s: Integer
+    Ensure: Boolean
+    Complexity: "O(log^3 N)"
+
+    a <- randInt(2, n - 2)
+    x <- modularPow(a, d, n)
+
+    if x == 1 or x == n - 1 then
+        return true
+    end if
+
+    for each r in range(1, s) do
+        x <- (x * x) % n
+
+        if x == n - 1 then
+            return true
+        end if
+
+        if x == 1 then
+            return false
+        end if
+    end for
+
+    return false
+end Algorithm
+
+
+Algorithm modularPow(base, exp, mod)
+    Require: base: Integer, exp: Integer, mod: Integer
+    Ensure: Integer
+    Complexity: "O(log exp)"
+
+    result <- 1
+    base <- base % mod
+
+    while exp > 0 do
+        if exp % 2 == 1 then
+            result <- (result * base) % mod
+        end if
+
+        base <- (base * base) % mod
+        exp <- exp / 2
+    end while
+
+    return result
+end Algorithm

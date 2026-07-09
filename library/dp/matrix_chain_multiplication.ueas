@@ -1,0 +1,24 @@
+Algorithm MatrixChainMultiplication(dimensions)
+    Require: dimensions: List
+    Ensure: Integer
+    Complexity: "O(N^3)", N = dimensions.length - 1
+
+    dp <- zeroMatrix(N, N)
+
+    for each len in range(2, N + 1) do
+        for each i in range(0, N - len + 1) do
+            j <- i + len - 1
+            dp[i][j] <- 999999
+
+            for each k in range(i, j) do
+                cost <- dp[i][k] + dp[k + 1][j] + dimensions[i] * dimensions[k + 1] * dimensions[j + 1]
+
+                if cost < dp[i][j] then
+                    dp[i][j] <- cost
+                end if
+            end for
+        end for
+    end for
+
+    return dp[0][N - 1]
+end Algorithm

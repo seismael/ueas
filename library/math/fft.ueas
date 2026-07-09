@@ -1,0 +1,41 @@
+Algorithm FFT(data, inverse)
+    Require: data: List, inverse: Boolean
+    Ensure: List
+    Complexity: "O(N log N)"
+
+    n <- data.length
+
+    if n <= 1 then
+        return data
+    end if
+
+    even <- []
+    odd <- []
+
+    for each i in range(0, n) do
+        if i % 2 == 0 then
+            even.append(data[i])
+        else
+            odd.append(data[i])
+        end if
+    end for
+
+    evenTransformed <- FFT(even, inverse)
+    oddTransformed <- FFT(odd, inverse)
+
+    result <- zeroArray(n)
+    angle <- pi2 / n
+
+    if inverse then
+        angle <- -angle
+    end if
+
+    for each k in range(0, n / 2) do
+        wk <- complexExp(angle * k)
+        t <- wk * oddTransformed[k]
+        result[k] <- evenTransformed[k] + t
+        result[k + n / 2] <- evenTransformed[k] - t
+    end for
+
+    return result
+end Algorithm

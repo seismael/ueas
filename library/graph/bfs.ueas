@@ -1,0 +1,20 @@
+Algorithm BreadthFirstSearch(g, start)
+    Require: g: Graph, start: Integer
+    Ensure: Set
+    Complexity: "O(V + E)", V = g.nodes.length, E = g.edges.length
+
+    visited <- {start}
+    queue <- [start]
+
+    while queue.length > 0 do
+        current <- queue.pop(0)
+
+        for each neighbor in g.adjacent(current) do
+            if neighbor not in visited then
+                visited.add(neighbor)
+                queue.append(neighbor)
+            end if
+        end for
+    end while
+
+    return visited

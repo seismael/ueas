@@ -1,0 +1,44 @@
+Algorithm ExponentialSearch(data, target)
+    Require: data: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    n <- data.length
+
+    if n == 0 then
+        return -1
+    end if
+
+    if data[0] == target then
+        return 0
+    end if
+
+    bound <- 1
+
+    while bound < n and data[bound] <= target do
+        bound <- bound * 2
+    end while
+
+    low <- bound / 2
+    high <- min(bound, n)
+
+    return BinarySearchRange(data, target, low, high)
+
+Algorithm BinarySearchRange(data, target, low, high)
+    Require: data: List, target: Integer, low: Integer, high: Integer
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    while low <= high do
+        mid <- low + (high - low) / 2
+
+        if data[mid] == target then
+            return mid
+        else if data[mid] < target then
+            low <- mid + 1
+        else
+            high <- mid - 1
+        end if
+    end while
+
+    return -1

@@ -1,0 +1,67 @@
+Algorithm BucketSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N^2)"
+
+    if data.length <= 1 then
+        return data
+    end if
+
+    n <- data.length
+
+    buckets <- []
+    i <- 0
+    while i < n do
+        buckets.append([])
+        i <- i + 1
+    end while
+
+    i <- 0
+    while i < n do
+        idx <- data[i] * n / (maxVal + 1)
+        buckets[idx].append(data[i])
+        i <- i + 1
+    end while
+
+    i <- 0
+    while i < n do
+        buckets[i] <- InsertionSort(buckets[i])
+        i <- i + 1
+    end while
+
+    result <- []
+    i <- 0
+    while i < n do
+        j <- 0
+        while j < buckets[i].length do
+            result.append(buckets[i][j])
+            j <- j + 1
+        end while
+        i <- i + 1
+    end while
+
+    return result
+end Algorithm
+
+
+Algorithm InsertionSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N^2)"
+
+    i <- 1
+    while i < data.length do
+        key <- data[i]
+        j <- i - 1
+
+        while j >= 0 and data[j] > key do
+            data[j + 1] <- data[j]
+            j <- j - 1
+        end while
+
+        data[j + 1] <- key
+        i <- i + 1
+    end while
+
+    return data
+end Algorithm

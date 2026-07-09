@@ -1,0 +1,42 @@
+Algorithm ChineseRemainderTheorem(remainders, moduli)
+    Require: remainders: List, moduli: List
+    Ensure: Integer
+    Complexity: "O(N * log M)"
+
+    M <- 1
+    result <- 0
+
+    for each m in moduli do
+        M <- M * m
+    end for
+
+    for each i in range(0, moduli.length) do
+        mi <- moduli[i]
+        Mi <- M / mi
+        invMi <- modularInverse(Mi, mi)
+        result <- result + remainders[i] * Mi * invMi
+    end for
+
+    result <- result % M
+
+    if result < 0 then
+        result <- result + M
+    end if
+
+    return result
+end Algorithm
+
+
+Algorithm modularInverse(a, m)
+    Require: a: Integer, m: Integer
+    Ensure: Integer
+    Complexity: "O(log M)"
+
+    g <- extendedGCD(a, m)
+
+    if g.x < 0 then
+        g.x <- g.x + m
+    end if
+
+    return g.x % m
+end Algorithm

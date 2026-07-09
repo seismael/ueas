@@ -1,0 +1,72 @@
+Algorithm RadixSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(d * (N + b))"
+
+    if data.length <= 1 then
+        return data
+    end if
+
+    maxVal <- data[0]
+    i <- 1
+    while i < data.length do
+        if data[i] > maxVal then
+            maxVal <- data[i]
+        end if
+        i <- i + 1
+    end while
+
+    exp <- 1
+    while maxVal / exp > 0 do
+        data <- CountingSortByDigit(data, exp)
+        exp <- exp * 10
+    end while
+
+    return data
+end Algorithm
+
+
+Algorithm CountingSortByDigit(data, exp)
+    Require: data: List, exp: Integer
+    Ensure: List
+    Complexity: "O(N + b)"
+
+    n <- data.length
+    output <- []
+    j <- 0
+    while j < n do
+        output.append(0)
+        j <- j + 1
+    end while
+
+    count <- []
+    j <- 0
+    while j < 10 do
+        count.append(0)
+        j <- j + 1
+    end while
+
+    i <- 0
+    while i < n do
+        digit <- (data[i] / exp) % 10
+        count[digit] <- count[digit] + 1
+        i <- i + 1
+    end while
+
+    i <- 1
+    while i < 10 do
+        count[i] <- count[i] + count[i - 1]
+        i <- i + 1
+    end while
+
+    i <- n - 1
+    while i >= 0 do
+        digit <- (data[i] / exp) % 10
+        pos <- count[digit] - 1
+        output[pos] <- data[i]
+        count[digit] <- count[digit] - 1
+        i <- i - 1
+    end while
+
+    return output
+end Algorithm

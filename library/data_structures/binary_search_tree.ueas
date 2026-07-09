@@ -1,0 +1,80 @@
+Algorithm BSTInsert(root, key)
+    Require: root: Map, key: Integer
+    Ensure: Map
+    Complexity: "O(H)", H = tree height
+
+    if root == null then
+        return {"key": key, "left": null, "right": null}
+    end if
+
+    if key < root["key"] then
+        root["left"] <- BSTInsert(root["left"], key)
+    else if key > root["key"] then
+        root["right"] <- BSTInsert(root["right"], key)
+    end if
+
+    return root
+end Algorithm
+
+
+Algorithm BSTSearch(root, key)
+    Require: root: Map, key: Integer
+    Ensure: Boolean
+    Complexity: "O(H)", H = tree height
+
+    if root == null then
+        return false
+    end if
+
+    if key == root["key"] then
+        return true
+    else if key < root["key"] then
+        return BSTSearch(root["left"], key)
+    else
+        return BSTSearch(root["right"], key)
+    end if
+end Algorithm
+
+
+Algorithm BSTDelete(root, key)
+    Require: root: Map, key: Integer
+    Ensure: Map
+    Complexity: "O(H)", H = tree height
+
+    if root == null then
+        return null
+    end if
+
+    if key < root["key"] then
+        root["left"] <- BSTDelete(root["left"], key)
+    else if key > root["key"] then
+        root["right"] <- BSTDelete(root["right"], key)
+    else
+        if root["left"] == null then
+            return root["right"]
+        else if root["right"] == null then
+            return root["left"]
+        end if
+
+        successor <- BSTMin(root["right"])
+        root["key"] <- successor
+        root["right"] <- BSTDelete(root["right"], successor)
+    end if
+
+    return root
+end Algorithm
+
+
+Algorithm BSTMin(root)
+    Require: root: Map
+    Ensure: Integer
+    Complexity: "O(H)", H = tree height
+
+    current <- root
+
+    while current["left"] != null do
+        current <- current["left"]
+    end while
+
+    return current["key"]
+end Algorithm

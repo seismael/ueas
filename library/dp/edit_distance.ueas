@@ -1,0 +1,30 @@
+Algorithm EditDistance(s1, s2)
+    Require: s1: String, s2: String
+    Ensure: Integer
+    Complexity: "O(M * N)", M = s1.length, N = s2.length
+
+    dp <- zeroMatrix(M + 1, N + 1)
+
+    for each i in range(0, M + 1) do
+        dp[i][0] <- i
+    end for
+
+    for each j in range(0, N + 1) do
+        dp[0][j] <- j
+    end for
+
+    for each i in range(1, M + 1) do
+        for each j in range(1, N + 1) do
+            if s1[i - 1] == s2[j - 1] then
+                dp[i][j] <- dp[i - 1][j - 1]
+            else
+                substitution <- dp[i - 1][j - 1] + 1
+                deletion <- dp[i - 1][j] + 1
+                insertion <- dp[i][j - 1] + 1
+                dp[i][j] <- min(substitution, deletion, insertion)
+            end if
+        end for
+    end for
+
+    return dp[M][N]
+end Algorithm

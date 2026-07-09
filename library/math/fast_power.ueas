@@ -1,0 +1,23 @@
+Algorithm FastPower(base, exponent)
+    Require: base: Real, exponent: Integer
+    Ensure: Real
+    Complexity: "O(log N)"
+
+    if exponent < 0 then
+        base <- 1.0 / base
+        exponent <- -exponent
+    end if
+
+    result <- 1.0
+
+    while exponent > 0 do
+        if exponent % 2 == 1 then
+            result <- result * base
+        end if
+
+        base <- base * base
+        exponent <- exponent / 2
+    end while
+
+    return result
+end Algorithm

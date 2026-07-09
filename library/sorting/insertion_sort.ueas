@@ -1,0 +1,21 @@
+Algorithm InsertionSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N^2)"
+
+    i <- 1
+    while i < data.length do
+        key <- data[i]
+        j <- i - 1
+
+        while j >= 0 and data[j] > key do
+            data[j + 1] <- data[j]
+            j <- j - 1
+        end while
+
+        data[j + 1] <- key
+        i <- i + 1
+    end while
+
+    return data
+end Algorithm

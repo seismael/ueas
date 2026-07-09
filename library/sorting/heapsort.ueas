@@ -1,0 +1,54 @@
+Algorithm HeapSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N log N)"
+
+    n <- data.length
+
+    i <- n / 2 - 1
+    while i >= 0 do
+        Heapify(data, n, i)
+        i <- i - 1
+    end while
+
+    i <- n - 1
+    while i > 0 do
+        temp <- data[0]
+        data[0] <- data[i]
+        data[i] <- temp
+
+        Heapify(data, i, 0)
+        i <- i - 1
+    end while
+
+    return data
+end Algorithm
+
+
+Algorithm Heapify(data, n, i)
+    Require: data: List, n: Integer, i: Integer
+    Ensure: List
+    Complexity: "O(log N)"
+
+    largest <- i
+    left <- 2 * i + 1
+    right <- 2 * i + 2
+
+    if left < n and data[left] > data[largest] then
+        largest <- left
+    end if
+
+    if right < n and data[right] > data[largest] then
+        largest <- right
+    end if
+
+    if largest != i then
+        temp <- data[i]
+        data[i] <- data[largest]
+        data[largest] <- temp
+
+        Heapify(data, n, largest)
+    end if
+
+    return data
+end Algorithm

@@ -1,0 +1,42 @@
+Algorithm TopologicalSort(g)
+    Require: g: Graph
+    Ensure: List
+    Complexity: "O(V + E)", V = g.nodes.length, E = g.edges.length
+
+    inDegree <- {}
+    queue <- []
+    result <- []
+
+    for each node in g.nodes do
+        inDegree[node] <- 0
+    end for
+
+    for each edge in g.edges do
+        inDegree[edge.v] <- inDegree[edge.v] + 1
+    end for
+
+    for each node in g.nodes do
+        if inDegree[node] == 0 then
+            queue.append(node)
+        end if
+    end for
+
+    while queue.length > 0 do
+        current <- queue.pop(0)
+        result.append(current)
+
+        for each neighbor in g.adjacent(current) do
+            inDegree[neighbor] <- inDegree[neighbor] - 1
+
+            if inDegree[neighbor] == 0 then
+                queue.append(neighbor)
+            end if
+        end for
+    end while
+
+    if result.length != g.nodes.length then
+        assert(false, "Graph contains a cycle")
+    end if
+
+    return result
+end Algorithm

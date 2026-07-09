@@ -1,0 +1,52 @@
+Algorithm BoyerMoore(text, pattern)
+    Require: text: String, pattern: String
+    Ensure: List
+    Complexity: "O(N + M)", N = text.length, M = pattern.length
+
+    badChar <- buildBadCharTable(pattern)
+    matches <- []
+    n <- text.length
+    m <- pattern.length
+    shift <- 0
+
+    while shift <= n - m do
+        j <- m - 1
+
+        while j >= 0 and pattern[j] == text[shift + j] do
+            j <- j - 1
+        end while
+
+        if j < 0 then
+            matches.append(shift)
+
+            if shift + m < n then
+                shift <- shift + m - getOrDefault(badChar, text[shift + m], m)
+            else
+                shift <- shift + 1
+            end if
+        else
+            badShift <- getOrDefault(badChar, text[shift + j], -1)
+            shift <- shift + max(1, j - badShift)
+        end if
+    end while
+
+    return matches
+end Algorithm
+
+
+Algorithm buildBadCharTable(pattern)
+    Require: pattern: String
+    Ensure: Map
+    Complexity: "O(M)", M = pattern.length
+
+    table <- {}
+    m <- pattern.length
+
+    i <- 0
+    while i < m do
+        table[pattern[i]] <- i
+        i <- i + 1
+    end while
+
+    return table
+end Algorithm

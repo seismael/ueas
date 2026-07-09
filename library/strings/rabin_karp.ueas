@@ -1,0 +1,58 @@
+Algorithm RabinKarp(text, pattern)
+    Require: text: String, pattern: String
+    Ensure: List
+    Complexity: "O(N + M)", N = text.length, M = pattern.length
+
+    matches <- []
+    base <- 256
+    prime <- 101
+
+    patHash <- 0
+    txtHash <- 0
+    h <- 1
+
+    i <- 0
+    while i < M - 1 do
+        h <- (h * base) mod prime
+        i <- i + 1
+    end while
+
+    i <- 0
+    while i < M do
+        patHash <- (base * patHash + ordAt(pattern, i)) mod prime
+        txtHash <- (base * txtHash + ordAt(text, i)) mod prime
+        i <- i + 1
+    end while
+
+    i <- 0
+    while i <= N - M do
+        if patHash == txtHash then
+            match <- true
+            j <- 0
+
+            while j < M do
+                if text[i + j] != pattern[j] then
+                    match <- false
+                    break
+                end if
+                j <- j + 1
+            end while
+
+            if match then
+                matches.append(i)
+            end if
+        end if
+
+        if i < N - M then
+            txtHash <- (base * (txtHash - ordAt(text, i) * h) + ordAt(text, i + M)) mod prime
+
+            if txtHash < 0 then
+                txtHash <- txtHash + prime
+            end if
+        end if
+
+        i <- i + 1
+    end while
+
+    return matches
+end Algorithm

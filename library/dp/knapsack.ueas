@@ -1,0 +1,23 @@
+Algorithm Knapsack01(weights, values, capacity)
+    Require: weights: List, values: List, capacity: Integer
+    Ensure: Integer
+    Complexity: "O(N * W)", N = weights.length, W = capacity
+
+    dp <- zeroRow(capacity + 1)
+
+    i <- 0
+    for each item in weights do
+        w <- weights[i]
+        v <- values[i]
+
+        cap <- capacity
+        while cap >= w do
+            if dp[cap - w] + v > dp[cap] then
+                dp[cap] <- dp[cap - w] + v
+            end if
+            cap <- cap - 1
+        end while
+        i <- i + 1
+    end for
+
+    return dp[capacity]

@@ -1,0 +1,58 @@
+Algorithm KMP(text, pattern)
+    Require: text: String, pattern: String
+    Ensure: List
+    Complexity: "O(N + M)", N = text.length, M = pattern.length
+
+    lps <- computeLPS(pattern)
+    matches <- []
+    i <- 0
+    j <- 0
+
+    while i < N do
+        if text[i] == pattern[j] then
+            i <- i + 1
+            j <- j + 1
+        end if
+
+        if j == M then
+            matches.append(i - j)
+            j <- lps[j - 1]
+        else if i < N and text[i] != pattern[j] then
+            if j != 0 then
+                j <- lps[j - 1]
+            else
+                i <- i + 1
+            end if
+        end if
+    end while
+
+    return matches
+end Algorithm
+
+
+Algorithm computeLPS(pattern)
+    Require: pattern: String
+    Ensure: List
+    Complexity: "O(M)", M = pattern.length
+
+    lps <- zeroList(M)
+    length <- 0
+    i <- 1
+
+    while i < M do
+        if pattern[i] == pattern[length] then
+            length <- length + 1
+            lps[i] <- length
+            i <- i + 1
+        else
+            if length != 0 then
+                length <- lps[length - 1]
+            else
+                lps[i] <- 0
+                i <- i + 1
+            end if
+        end if
+    end while
+
+    return lps
+end Algorithm

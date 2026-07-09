@@ -1,0 +1,80 @@
+Algorithm DisjointSet(n)
+    Require: n: Integer
+    Ensure: Map
+    Complexity: "O(N)"
+
+    parent <- {}
+    rank <- {}
+    sets <- n
+
+    i <- 0
+    while i < n do
+        parent[i] <- i
+        rank[i] <- 0
+        i <- i + 1
+    end while
+
+    return {"parent": parent, "rank": rank, "sets": sets}
+end Algorithm
+
+
+Algorithm DSUFind(ds, x)
+    Require: ds: Map, x: Integer
+    Ensure: Integer
+    Complexity: "O(alpha(N))"
+
+    parent <- ds["parent"]
+
+    if parent[x] != x then
+        parent[x] <- DSUFind(ds, parent[x])
+    end if
+
+    return parent[x]
+end Algorithm
+
+
+Algorithm DSUUnion(ds, a, b)
+    Require: ds: Map, a: Integer, b: Integer
+    Ensure: Boolean
+    Complexity: "O(alpha(N))"
+
+    parent <- ds["parent"]
+    rank <- ds["rank"]
+
+    rootA <- DSUFind(ds, a)
+    rootB <- DSUFind(ds, b)
+
+    if rootA == rootB then
+        return false
+    end if
+
+    if rank[rootA] < rank[rootB] then
+        parent[rootA] <- rootB
+    else if rank[rootA] > rank[rootB] then
+        parent[rootB] <- rootA
+    else
+        parent[rootB] <- rootA
+        rank[rootA] <- rank[rootA] + 1
+    end if
+
+    ds["sets"] <- ds["sets"] - 1
+    return true
+end Algorithm
+
+
+Algorithm DSUConnected(ds, a, b)
+    Require: ds: Map, a: Integer, b: Integer
+    Ensure: Boolean
+    Complexity: "O(alpha(N))"
+
+    return DSUFind(ds, a) == DSUFind(ds, b)
+end Algorithm
+
+
+Algorithm DSUCountSets(ds)
+    Require: ds: Map
+    Ensure: Integer
+    Complexity: "O(1)"
+
+    return ds["sets"]
+end Algorithm

@@ -1,0 +1,25 @@
+Algorithm QuickSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N log N)"
+
+    if data.length <= 1 then
+        return data
+    end if
+
+    pivot <- data[data.length - 1]
+    left <- []
+    right <- []
+
+    i <- 0
+    while i < data.length - 1 do
+        if data[i] <= pivot then
+            left.append(data[i])
+        else
+            right.append(data[i])
+        end if
+        i <- i + 1
+    end while
+
+    return QuickSort(left) + [pivot] + QuickSort(right)
+end Algorithm

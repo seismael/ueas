@@ -1,0 +1,108 @@
+Algorithm SuffixArray(s)
+    Require: s: String
+    Ensure: List
+    Complexity: "O(N log^2 N)", N = s.length
+
+    n <- s.length
+    sa <- range(0, n)
+    rank <- zeroList(n)
+
+    i <- 0
+    while i < n do
+        rank[i] <- ordAt(s, i)
+        i <- i + 1
+    end while
+
+    k <- 1
+    while k < n do
+        sa <- sortByDoubleKey(sa, rank, k, n)
+        tempRank <- zeroList(n)
+        tempRank[sa[0]] <- 0
+
+        i <- 1
+        while i < n do
+            prev <- sa[i - 1]
+            curr <- sa[i]
+
+            if rank[prev] == rank[curr] and getRank(rank, prev + k, n) == getRank(rank, curr + k, n) then
+                tempRank[curr] <- tempRank[prev]
+            else
+                tempRank[curr] <- tempRank[prev] + 1
+            end if
+
+            i <- i + 1
+        end while
+
+        rank <- tempRank
+        k <- k * 2
+    end while
+
+    return sa
+end Algorithm
+
+
+Algorithm sortByDoubleKey(sa, rank, k, n)
+    Require: sa: List, rank: List, k: Integer, n: Integer
+    Ensure: List
+    Complexity: "O(N log N)"
+
+    keys <- zeroList(n)
+
+    i <- 0
+    while i < n do
+        keys[sa[i]] <- getRank(rank, sa[i] + k, n)
+        i <- i + 1
+    end while
+
+    sa <- countingSortByKey(sa, rank, n)
+    sa <- countingSortByKey(sa, keys, n)
+
+    return sa
+end Algorithm
+
+
+Algorithm getRank(rank, idx, n)
+    Require: rank: List, idx: Integer, n: Integer
+    Ensure: Integer
+    Complexity: "O(1)"
+
+    if idx < n then
+        return rank[idx]
+    end if
+
+    return -1
+end Algorithm
+
+
+Algorithm countingSortByKey(arr, keys, maxVal)
+    Require: arr: List, keys: List, maxVal: Integer
+    Ensure: List
+    Complexity: "O(N + K)", N = arr.length, K = maxVal
+
+    n <- arr.length
+    count <- zeroList(maxVal + 1)
+    output <- zeroList(n)
+
+    i <- 0
+    while i < n do
+        key <- keys[arr[i]] + 1
+        count[key] <- count[key] + 1
+        i <- i + 1
+    end while
+
+    i <- 1
+    while i <= maxVal do
+        count[i] <- count[i] + count[i - 1]
+        i <- i + 1
+    end while
+
+    i <- n - 1
+    while i >= 0 do
+        key <- keys[arr[i]] + 1
+        count[key] <- count[key] - 1
+        output[count[key]] <- arr[i]
+        i <- i - 1
+    end while
+
+    return output
+end Algorithm

@@ -1,0 +1,51 @@
+Algorithm MergeSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N log N)"
+
+    if data.length <= 1 then
+        return data
+    end if
+
+    mid <- data.length / 2
+    left <- data[0:mid]
+    right <- data[mid:data.length]
+
+    sortedLeft <- MergeSort(left)
+    sortedRight <- MergeSort(right)
+
+    return Merge(sortedLeft, sortedRight)
+end Algorithm
+
+
+Algorithm Merge(left, right)
+    Require: left: List, right: List
+    Ensure: List
+    Complexity: "O(N)"
+
+    result <- []
+    i <- 0
+    j <- 0
+
+    while i < left.length and j < right.length do
+        if left[i] <= right[j] then
+            result.append(left[i])
+            i <- i + 1
+        else
+            result.append(right[j])
+            j <- j + 1
+        end if
+    end while
+
+    while i < left.length do
+        result.append(left[i])
+        i <- i + 1
+    end while
+
+    while j < right.length do
+        result.append(right[j])
+        j <- j + 1
+    end while
+
+    return result
+end Algorithm

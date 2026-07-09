@@ -1,0 +1,15 @@
+Algorithm ExtendedEuclidean(a, b)
+    Require: a: Integer, b: Integer
+    Ensure: Tuple
+    Complexity: "O(log N)"
+
+    if b == 0 then
+        return Tuple(a, 1, 0)
+    end if
+
+    gcd <- ExtendedEuclidean(b, a % b)
+    x <- gcd.y
+    y <- gcd.x - (a / b) * gcd.y
+
+    return Tuple(gcd.d, x, y)
+end Algorithm

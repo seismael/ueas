@@ -1,0 +1,124 @@
+Algorithm MinHeap()
+    Ensure: Map
+    Complexity: "O(1)"
+
+    return {"heap": [], "size": 0}
+end Algorithm
+
+
+Algorithm HeapInsert(h, value)
+    Require: h: Map, value: Integer
+    Ensure: None
+    Complexity: "O(log N)"
+
+    heap <- h["heap"]
+    heap.append(value)
+    h["size"] <- h["size"] + 1
+    siftUp(heap, h["size"] - 1)
+end Algorithm
+
+
+Algorithm HeapExtractMin(h)
+    Require: h: Map
+    Ensure: Integer
+    Complexity: "O(log N)"
+
+    heap <- h["heap"]
+
+    if h["size"] == 0 then
+        return null
+    end if
+
+    minVal <- heap[0]
+    heap[0] <- heap[h["size"] - 1]
+    heap.pop()
+    h["size"] <- h["size"] - 1
+
+    if h["size"] > 0 then
+        siftDown(heap, 0, h["size"])
+    end if
+
+    return minVal
+end Algorithm
+
+
+Algorithm HeapPeek(h)
+    Require: h: Map
+    Ensure: Integer
+    Complexity: "O(1)"
+
+    if h["size"] == 0 then
+        return null
+    end if
+
+    return h["heap"][0]
+end Algorithm
+
+
+Algorithm siftUp(heap, idx)
+    Require: heap: List, idx: Integer
+    Ensure: None
+    Complexity: "O(log N)"
+
+    while idx > 0 do
+        parent <- (idx - 1) / 2
+
+        if heap[idx] >= heap[parent] then
+            break
+        end if
+
+        temp <- heap[idx]
+        heap[idx] <- heap[parent]
+        heap[parent] <- temp
+
+        idx <- parent
+    end while
+end Algorithm
+
+
+Algorithm siftDown(heap, idx, size)
+    Require: heap: List, idx: Integer, size: Integer
+    Ensure: None
+    Complexity: "O(log N)"
+
+    while true do
+        smallest <- idx
+        left <- 2 * idx + 1
+        right <- 2 * idx + 2
+
+        if left < size and heap[left] < heap[smallest] then
+            smallest <- left
+        end if
+
+        if right < size and heap[right] < heap[smallest] then
+            smallest <- right
+        end if
+
+        if smallest == idx then
+            break
+        end if
+
+        temp <- heap[idx]
+        heap[idx] <- heap[smallest]
+        heap[smallest] <- temp
+
+        idx <- smallest
+    end while
+end Algorithm
+
+
+Algorithm Heapify(arr)
+    Require: arr: List
+    Ensure: List
+    Complexity: "O(N)"
+
+    n <- arr.length
+
+    i <- n / 2
+    while i >= 0 do
+        siftDown(arr, i, n)
+        i <- i - 1
+    end while
+
+    return arr
+end Algorithm

@@ -1,0 +1,41 @@
+Algorithm BellmanFord(g, source)
+    Require: g: Graph, source: Integer
+    Ensure: Map
+    Complexity: "O(V * E)", V = g.nodes.length, E = g.edges.length
+
+    distances <- {}
+    predecessor <- {}
+
+    for each node in g.nodes do
+        if node == source then
+            distances[node] <- 0.0
+        else
+            distances[node] <- 999999.0
+        end if
+        predecessor[node] <- -1
+    end for
+
+    for each i in range(1, V) do
+        updated <- false
+
+        for each edge in g.edges do
+            if distances[edge.u] + edge.weight < distances[edge.v] then
+                distances[edge.v] <- distances[edge.u] + edge.weight
+                predecessor[edge.v] <- edge.u
+                updated <- true
+            end if
+        end for
+
+        if updated == false then
+            break
+        end if
+    end for
+
+    for each edge in g.edges do
+        if distances[edge.u] + edge.weight < distances[edge.v] then
+            assert(false, "Negative cycle detected")
+        end if
+    end for
+
+    return distances
+end Algorithm

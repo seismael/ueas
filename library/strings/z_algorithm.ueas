@@ -1,0 +1,67 @@
+Algorithm ZSearch(text, pattern)
+    Require: text: String, pattern: String
+    Ensure: List
+    Complexity: "O(N + M)", N = text.length, M = pattern.length
+
+    concat <- pattern + "$" + text
+    z <- computeZ(concat)
+    matches <- []
+    m <- pattern.length
+
+    i <- 0
+    while i < text.length do
+        if z[m + 1 + i] == m then
+            matches.append(i)
+        end if
+        i <- i + 1
+    end while
+
+    return matches
+end Algorithm
+
+
+Algorithm computeZ(s)
+    Require: s: String
+    Ensure: List
+    Complexity: "O(N)", N = s.length
+
+    n <- s.length
+    z <- zeroList(n)
+    z[0] <- 0
+    left <- 0
+    right <- 0
+
+    i <- 1
+    while i < n do
+        if i > right then
+            left <- i
+            right <- i
+
+            while right < n and s[right] == s[right - left] do
+                right <- right + 1
+            end while
+
+            z[i] <- right - left
+            right <- right - 1
+        else
+            k <- i - left
+
+            if z[k] < right - i + 1 then
+                z[i] <- z[k]
+            else
+                left <- i
+
+                while right < n and s[right] == s[right - left] do
+                    right <- right + 1
+                end while
+
+                z[i] <- right - left
+                right <- right - 1
+            end if
+        end if
+
+        i <- i + 1
+    end while
+
+    return z
+end Algorithm

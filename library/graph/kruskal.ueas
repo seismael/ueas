@@ -1,0 +1,57 @@
+Algorithm KruskalMST(g)
+    Require: g: Graph
+    Ensure: List
+    Complexity: "O(E log V)", V = g.nodes.length, E = g.edges.length
+
+    parent <- {}
+    rank <- {}
+    mst <- []
+
+    for each node in g.nodes do
+        parent[node] <- node
+        rank[node] <- 0
+    end for
+
+    edges <- sortEdgesByWeight(g.edges)
+
+    for each edge in edges do
+        rootU <- findWithPathCompression(parent, edge.u)
+        rootV <- findWithPathCompression(parent, edge.v)
+
+        if rootU != rootV then
+            unionByRank(parent, rank, rootU, rootV)
+            mst.append(edge)
+        end if
+    end for
+
+    return mst
+end Algorithm
+
+
+Algorithm findWithPathCompression(parent, x)
+    Require: parent: Map, x: Integer
+    Ensure: Integer
+    Complexity: "O(alpha(V))"
+
+    if parent[x] != x then
+        parent[x] <- findWithPathCompression(parent, parent[x])
+    end if
+
+    return parent[x]
+end Algorithm
+
+
+Algorithm unionByRank(parent, rank, a, b)
+    Require: parent: Map, rank: Map, a: Integer, b: Integer
+    Ensure: None
+    Complexity: "O(1)"
+
+    if rank[a] < rank[b] then
+        parent[a] <- b
+    else if rank[a] > rank[b] then
+        parent[b] <- a
+    else
+        parent[b] <- a
+        rank[a] <- rank[a] + 1
+    end if
+end Algorithm

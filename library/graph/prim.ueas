@@ -1,0 +1,54 @@
+Algorithm PrimMST(g, start)
+    Require: g: Graph, start: Integer
+    Ensure: List
+    Complexity: "O(V^2)", V = g.nodes.length
+
+    included <- {}
+    mst <- []
+    cheapest <- {}
+    parent <- {}
+
+    for each node in g.nodes do
+        cheapest[node] <- 999999.0
+        parent[node] <- -1
+    end for
+
+    cheapest[start] <- 0.0
+
+    for each i in range(0, g.nodes.length) do
+        current <- -1
+        minCost <- 999999.0
+
+        for each node in g.nodes do
+            if node not in included then
+                if cheapest[node] < minCost then
+                    minCost <- cheapest[node]
+                    current <- node
+                end if
+            end if
+        end for
+
+        if current == -1 then
+            break
+        end if
+
+        included.add(current)
+
+        if parent[current] != -1 then
+            mst.append(Edge(parent[current], current, cheapest[current]))
+        end if
+
+        for each neighbor in g.adjacent(current) do
+            if neighbor not in included then
+                weight <- g.weight(current, neighbor)
+
+                if weight < cheapest[neighbor] then
+                    cheapest[neighbor] <- weight
+                    parent[neighbor] <- current
+                end if
+            end if
+        end for
+    end for
+
+    return mst
+end Algorithm

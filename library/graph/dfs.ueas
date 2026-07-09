@@ -1,0 +1,24 @@
+Algorithm DepthFirstSearch(g, start)
+    Require: g: Graph, start: Integer
+    Ensure: Set
+    Complexity: "O(V + E)", V = g.nodes.length, E = g.edges.length
+
+    visited <- {}
+    stack <- [start]
+
+    while stack.length > 0 do
+        invariant stack.length <= V, "Stack bounds"
+        current <- stack.pop()
+
+        if current not in visited then
+            visited.add(current)
+
+            for each neighbor in g.adjacent(current) do
+                if neighbor not in visited then
+                    stack.push(neighbor)
+                end if
+            end for
+        end if
+    end while
+
+    return visited

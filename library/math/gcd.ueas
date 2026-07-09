@@ -1,0 +1,13 @@
+Algorithm GCD(a, b)
+    Require: a: Integer, b: Integer
+    Ensure: Integer
+    Complexity: "O(log min(a, b))"
+
+    while b != 0 do
+        temp <- b
+        b <- a % b
+        a <- temp
+    end while
+
+    return abs(a)
+end Algorithm

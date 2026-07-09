@@ -1,0 +1,83 @@
+Algorithm KosarajuSCC(g)
+    Require: g: Graph
+    Ensure: List
+    Complexity: "O(V + E)", V = g.nodes.length, E = g.edges.length
+
+    visited <- {}
+    stack <- []
+
+    for each node in g.nodes do
+        if node not in visited then
+            kosarajuDFS1(g, node, visited, stack)
+        end if
+    end for
+
+    reversed <- reverseGraph(g)
+
+    visited <- {}
+    components <- []
+
+    while stack.length > 0 do
+        node <- stack.pop()
+
+        if node not in visited then
+            component <- []
+            kosarajuDFS2(reversed, node, visited, component)
+            components.append(component)
+        end if
+    end while
+
+    return components
+end Algorithm
+
+
+Algorithm kosarajuDFS1(g, node, visited, stack)
+    Require: g: Graph, node: Integer, visited: Set, stack: List
+    Ensure: None
+    Complexity: "O(V + E)"
+
+    visited.add(node)
+
+    for each neighbor in g.adjacent(node) do
+        if neighbor not in visited then
+            kosarajuDFS1(g, neighbor, visited, stack)
+        end if
+    end for
+
+    stack.append(node)
+end Algorithm
+
+
+Algorithm kosarajuDFS2(g, node, visited, component)
+    Require: g: Graph, node: Integer, visited: Set, component: List
+    Ensure: None
+    Complexity: "O(V + E)"
+
+    visited.add(node)
+    component.append(node)
+
+    for each neighbor in g.adjacent(node) do
+        if neighbor not in visited then
+            kosarajuDFS2(g, neighbor, visited, component)
+        end if
+    end for
+end Algorithm
+
+
+Algorithm reverseGraph(g)
+    Require: g: Graph
+    Ensure: Graph
+    Complexity: "O(V + E)"
+
+    reversed <- createGraph()
+
+    for each node in g.nodes do
+        reversed.addNode(node)
+    end for
+
+    for each edge in g.edges do
+        reversed.addEdge(edge.v, edge.u, edge.weight)
+    end for
+
+    return reversed
+end Algorithm

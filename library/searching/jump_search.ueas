@@ -1,0 +1,25 @@
+Algorithm JumpSearch(data, target)
+    Require: data: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(sqrt N)"
+
+    n <- data.length
+    step <- floor(sqrt(n))
+    prev <- 0
+    current <- step
+
+    while current < n and data[current] <= target do
+        prev <- current
+        current <- current + step
+    end while
+
+    current <- min(current, n)
+
+    while prev < current do
+        if data[prev] == target then
+            return prev
+        end if
+        prev <- prev + 1
+    end while
+
+    return -1

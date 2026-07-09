@@ -1,0 +1,121 @@
+Algorithm AVLInsert(root, key)
+    Require: root: Map, key: Integer
+    Ensure: Map
+    Complexity: "O(log N)"
+
+    if root == null then
+        return {"key": key, "left": null, "right": null, "height": 1}
+    end if
+
+    if key < root["key"] then
+        root["left"] <- AVLInsert(root["left"], key)
+    else if key > root["key"] then
+        root["right"] <- AVLInsert(root["right"], key)
+    else
+        return root
+    end if
+
+    root["height"] <- 1 + max(avlHeight(root["left"]), avlHeight(root["right"]))
+    balance <- avlBalance(root)
+
+    if balance > 1 and key < root["left"]["key"] then
+        return avlRotateRight(root)
+    end if
+
+    if balance < -1 and key > root["right"]["key"] then
+        return avlRotateLeft(root)
+    end if
+
+    if balance > 1 and key > root["left"]["key"] then
+        root["left"] <- avlRotateLeft(root["left"])
+        return avlRotateRight(root)
+    end if
+
+    if balance < -1 and key < root["right"]["key"] then
+        root["right"] <- avlRotateRight(root["right"])
+        return avlRotateLeft(root)
+    end if
+
+    return root
+end Algorithm
+
+
+Algorithm AVLSearch(root, key)
+    Require: root: Map, key: Integer
+    Ensure: Boolean
+    Complexity: "O(log N)"
+
+    if root == null then
+        return false
+    end if
+
+    if key == root["key"] then
+        return true
+    else if key < root["key"] then
+        return AVLSearch(root["left"], key)
+    else
+        return AVLSearch(root["right"], key)
+    end if
+end Algorithm
+
+
+Algorithm avlHeight(node)
+    Require: node: Map
+    Ensure: Integer
+    Complexity: "O(1)"
+
+    if node == null then
+        return 0
+    end if
+
+    return node["height"]
+end Algorithm
+
+
+Algorithm avlBalance(node)
+    Require: node: Map
+    Ensure: Integer
+    Complexity: "O(1)"
+
+    if node == null then
+        return 0
+    end if
+
+    return avlHeight(node["left"]) - avlHeight(node["right"])
+end Algorithm
+
+
+Algorithm avlRotateRight(y)
+    Require: y: Map
+    Ensure: Map
+    Complexity: "O(1)"
+
+    x <- y["left"]
+    T2 <- x["right"]
+
+    x["right"] <- y
+    y["left"] <- T2
+
+    y["height"] <- 1 + max(avlHeight(y["left"]), avlHeight(y["right"]))
+    x["height"] <- 1 + max(avlHeight(x["left"]), avlHeight(x["right"]))
+
+    return x
+end Algorithm
+
+
+Algorithm avlRotateLeft(x)
+    Require: x: Map
+    Ensure: Map
+    Complexity: "O(1)"
+
+    y <- x["right"]
+    T2 <- y["left"]
+
+    y["left"] <- x
+    x["right"] <- T2
+
+    x["height"] <- 1 + max(avlHeight(x["left"]), avlHeight(x["right"]))
+    y["height"] <- 1 + max(avlHeight(y["left"]), avlHeight(y["right"]))
+
+    return y
+end Algorithm

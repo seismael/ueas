@@ -1,0 +1,63 @@
+Algorithm CountingSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N + k)"
+
+    if data.length <= 1 then
+        return data
+    end if
+
+    maxVal <- data[0]
+    minVal <- data[0]
+
+    i <- 1
+    while i < data.length do
+        if data[i] > maxVal then
+            maxVal <- data[i]
+        end if
+        if data[i] < minVal then
+            minVal <- data[i]
+        end if
+        i <- i + 1
+    end while
+
+    range <- maxVal - minVal + 1
+    count <- []
+    j <- 0
+    while j < range do
+        count.append(0)
+        j <- j + 1
+    end while
+
+    i <- 0
+    while i < data.length do
+        idx <- data[i] - minVal
+        count[idx] <- count[idx] + 1
+        i <- i + 1
+    end while
+
+    i <- 1
+    while i < range do
+        count[i] <- count[i] + count[i - 1]
+        i <- i + 1
+    end while
+
+    output <- []
+    j <- 0
+    while j < data.length do
+        output.append(0)
+        j <- j + 1
+    end while
+
+    i <- data.length - 1
+    while i >= 0 do
+        val <- data[i]
+        idx <- val - minVal
+        pos <- count[idx] - 1
+        output[pos] <- val
+        count[idx] <- count[idx] - 1
+        i <- i - 1
+    end while
+
+    return output
+end Algorithm
