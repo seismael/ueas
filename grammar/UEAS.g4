@@ -1,13 +1,12 @@
-// UEAS Grammar — Universal Executable Algorithm Standard
-// Version 1.0.0-draft
-// License: Apache 2.0
-//
-// Modern Mathematical Syntax:
-// - { } braces for explicit scope (immune to whitespace corruption)
-// - Newlines as statement terminators (semicolons removed)
-// - No parentheses around if/while/for conditions
-// - and/or/not operators (not &&/||/!)
-// - := for assignment, = for binding, == for equality
+// UEAS Grammar v2.0: The "Iceberg" Architecture
+// =====================================================================
+// Modern Mathematical Pseudocode Syntax:
+// - INDENT/DEDENT blocks (no curly braces)
+// - NEWLINE as statement terminator (no semicolons)
+// - Natural language operators (and, or, not, in)
+// - Method chaining with desugaring in semantic engine
+// - Implicit type inference for algorithm bodies
+// - @Complexity decorator above algorithm declaration
 
 grammar UEAS;
 
@@ -25,24 +24,26 @@ FOR       : 'for';
 WHILE     : 'while';
 BREAK     : 'break';
 CONTINUE  : 'continue';
-DIRECTED  : 'Directed';
-UNDIRECTED: 'Undirected';
-CONST     : 'const';
-MEMORY    : 'Memory' | 'memory';
 IN        : 'in';
 LET       : 'let';
+CONST     : 'const';
+PASS      : 'pass';
 ASSERT    : 'assert';
 INVARIANT : 'invariant';
 COMPLEXITY: 'Complexity' | 'complexity';
+MEMORY    : 'Memory' | 'memory';
 IMPORT    : 'import';
+DIRECTED  : 'Directed';
+UNDIRECTED: 'Undirected';
+INFINITY  : 'Infinity';
+NAN       : 'NaN';
 TRUE      : 'true';
 FALSE     : 'false';
 AND       : 'and';
 OR        : 'or';
 NOT       : 'not';
 MOD       : 'mod';
-INFINITY  : 'Infinity';
-NAN       : 'NaN';
+AS        : 'as';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -67,24 +68,25 @@ ARROW     : '->';
 COLON     : ':';
 COMMA     : ',';
 DOT       : '.';
-LBRACE    : '{';
-RBRACE    : '}';
 LPAREN    : '(';
 RPAREN    : ')';
 LBRACKET  : '[';
 RBRACKET  : ']';
-PIPE      : '|';
-AT        : '@';
-AS        : 'as';
 AMP       : '&';
 CARET     : '^';
 LSHIFT    : '<<';
 RSHIFT    : '>>';
+LBRACE    : '{';
+RBRACE    : '}';
+AT        : '@';
 
-// Comments and Whitespace
+// Indentation-aware tokens
+NEWLINE : '\r'? '\n' SPACES? -> channel(HIDDEN);
+SPACES  : [ \t]+ -> skip;
+
+// Comments
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
-NEWLINE       : '\r'? '\n' -> skip;
 WS            : [ \t]+ -> skip;
 
 // ===== Parser Rules =====
@@ -92,141 +94,109 @@ WS            : [ \t]+ -> skip;
 // Top-Level
 program : importDecl* algorithmDecl+ EOF;
 
-importDecl : IMPORT identifier NEWLINE?;
+importDecl : IMPORT IDENTIFIER NEWLINE?;
 
-algorithmDecl : ALGORITHM identifier
+algorithmDecl : complexityDecorator?
+                ALGORITHM IDENTIFIER
                 LPAREN (parameter (COMMA parameter)*)? RPAREN
-                (ARROW typeAnnotation)?
-                complexityAnnotation NEWLINE?
-                memoryAnnotation? NEWLINE?
+                (ARROW typeAnnotation)? COLON? NEWLINE?
                 block;
 
-parameter : identifier COLON typeAnnotation;
+complexityDecorator : AT COMPLEXITY LPAREN STRING_LIT
+                      (COMMA variableBinding)* RPAREN NEWLINE?;
 
-complexityAnnotation : AT COMPLEXITY LPAREN STRING_LIT
-                       (COMMA variableBinding)* RPAREN;
+memoryDecorator : AT MEMORY LPAREN STRING_LIT RPAREN NEWLINE?;
 
-memoryAnnotation : AT MEMORY LPAREN STRING_LIT RPAREN;
+variableBinding : IDENTIFIER BIND expression;
 
-variableBinding : identifier BIND expression;
+parameter : IDENTIFIER COLON typeAnnotation;
 
-// Statements
-statement : variableDecl
-          | constDecl
-          | assignment
-          | returnStmt
+// Block & Statements (INDENT/DEDENT style)
+block : INDENT statement+ DEDENT;
+
+statement : assignmentOrCall NEWLINE
+          | returnStmt NEWLINE
           | ifStmt
           | forLoop
           | whileLoop
-          | assertStmt
-          | invariantStmt
-          | BREAK
-          | CONTINUE
-          | expression;
+          | assertStmt NEWLINE
+          | invariantStmt NEWLINE
+          | PASS NEWLINE
+          | BREAK NEWLINE
+          | CONTINUE NEWLINE ;
 
-block : LBRACE statement* RBRACE;
+// Implicit declaration: Semantic analyzer infers this is declaration or assignment
+assignmentOrCall : target ASSIGN expression
+                 | expression ;
 
-variableDecl : LET identifier COLON typeAnnotation
-               (ASSIGN expression)?;
+target : IDENTIFIER
+       | target LBRACKET expression RBRACKET
+       | target DOT IDENTIFIER ;
 
-constDecl : CONST identifier COLON typeAnnotation ASSIGN expression;
+returnStmt : RETURN expression? ;
 
-assignment : identifier
-             (DOT identifier | LBRACKET expression RBRACKET)*
-             ASSIGN expression;
+assertStmt : ASSERT LPAREN expression RPAREN (COMMA STRING_LIT)? ;
 
-returnStmt : RETURN expression?;
+invariantStmt : INVARIANT LPAREN expression RPAREN (COMMA STRING_LIT)? ;
 
-ifStmt : IF expression block
-         (ELIF expression block)*
-         (ELSE block)?;
+// Control Flow
+ifStmt : IF expression COLON NEWLINE block
+         (ELIF expression COLON NEWLINE block)*
+         (ELSE COLON NEWLINE block)? ;
 
-forLoop : FOR identifier IN expression block;
+forLoop : FOR IDENTIFIER IN expression COLON NEWLINE block ;
 
-whileLoop : WHILE expression block;
+whileLoop : WHILE expression COLON NEWLINE block ;
 
-assertStmt : ASSERT LPAREN expression RPAREN
-             (COLON STRING_LIT)?;
+// Expressions (ordered by precedence)
+expression : logicalOr (AS typeAnnotation)? ;
 
-invariantStmt : INVARIANT LPAREN expression RPAREN
-                (COLON STRING_LIT)?;
-
-// Expressions (ordered by precedence — lowest to highest)
-expression : logicalOr (AS typeAnnotation)?;
-
-logicalOr : logicalAnd (OR logicalAnd)*;
-
-logicalAnd : equality (AND equality)*;
-
-equality : comparison ((EQ | NEQ) comparison)*;
-
-comparison : additive ((LT | LE | GT | GE) additive)*;
-
-additive : bitwise ((PLUS | MINUS) bitwise)*;
-
-multiplicative : unary ((STAR | SLASH | MOD) unary)*;
-
-bitwise : multiplicative ((AMP | PIPE | CARET | LSHIFT | RSHIFT) multiplicative)*;
-
-unary : (NOT | MINUS)? primary;
+logicalOr  : logicalAnd (OR logicalAnd)* ;
+logicalAnd : equality (AND equality)* ;
+equality   : comparison ((EQ | NEQ) comparison)* ;
+comparison : additive ((LT | LE | GT | GE | IN) additive)* (NOT IN)? ;
+additive   : multiplicative ((PLUS | MINUS) multiplicative)* ;
+multiplicative : unary ((STAR | SLASH | MOD) unary)* ;
+bitwise : multiplicative ((AMP | CARET | LSHIFT | RSHIFT) multiplicative)* ;
+unary      : (NOT | MINUS)? primary ;
 
 primary : INTEGER_LIT
         | REAL_LIT
         | STRING_LIT
         | TRUE
         | FALSE
-        | 'none'
-        | 'some'
         | INFINITY
         | NAN
-        | compositeCall
         | LPAREN expression RPAREN
-        | compositeLiteral;
+        | dataStructure
+        | methodCallOrId ;
 
-compositeCall : identifier ( DOT identifier | LBRACKET expression RBRACKET )*
-               ( LPAREN (expression (COMMA expression)*)? RPAREN )?;
+// Intuitive data structures
+dataStructure : LBRACKET (expression (COMMA expression)*)? RBRACKET    // Auto-infers List
+              | LBRACE (expression (COMMA expression)*)? RBRACE       // Auto-infers Set
+              | LBRACE (expression COLON expression (COMMA expression COLON expression)*)? RBRACE ; // Auto-infers Map
 
-compositeLiteral : setLiteral
-                 | listLiteral
-                 | mapLiteral
-                 | graphLiteral
-                 | matrixLiteral;
+// Method chaining: visited.add(node) instead of add(visited, node)
+methodCallOrId : IDENTIFIER
+               | methodCallOrId DOT IDENTIFIER LPAREN (expression (COMMA expression)*)? RPAREN
+               | methodCallOrId LBRACKET expression RBRACKET
+               | IDENTIFIER LPAREN (expression (COMMA expression)*)? RPAREN ;
 
-setLiteral : LBRACE (expression (COMMA expression)*)? RBRACE;
+// Types (only used at algorithm boundaries)
+typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void'
+               | 'List' | 'Set' | 'Map' | 'Graph' | 'Matrix'
+               | 'List' LT typeAnnotation GT
+               | 'Set' LT typeAnnotation GT
+               | 'Map' LT typeAnnotation COMMA typeAnnotation GT
+               | 'Graph' LT typeAnnotation COMMA typeAnnotation GT
+               | 'Matrix' LT matrixDim COMMA matrixDim COMMA typeAnnotation GT
+               | IDENTIFIER ;
 
-listLiteral : LBRACKET expression (COMMA expression)* RBRACKET;
-
-mapLiteral : LBRACE (expression COLON expression
-                     (COMMA expression COLON expression)*)? RBRACE;
-
-graphLiteral : 'graph' LT typeAnnotation COMMA typeAnnotation GT
-               LPAREN LPAREN expression (COMMA expression)* RPAREN COMMA
-               LPAREN edgeLiteral (COMMA edgeLiteral)* RPAREN RPAREN;
-
-edgeLiteral : LPAREN expression COMMA expression
-              (COMMA expression)? RPAREN;
-
-matrixLiteral : 'matrix' LT matrixDim COMMA matrixDim
-                COMMA typeAnnotation GT
-                LPAREN expression (COMMA expression)* RPAREN;
-
-matrixDim : INTEGER_LIT | identifier;
-
-// Types
-typeAnnotation : primitiveType
-               | compositeType
-               | IDENTIFIER;
-
-primitiveType : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void';
-
-compositeType : 'Set'    LT typeAnnotation GT
-              | 'List'   LT typeAnnotation GT
-              | 'Map'    LT typeAnnotation COMMA typeAnnotation GT
-              | 'Graph'  LT typeAnnotation COMMA typeAnnotation GT
-              | 'Matrix' LT matrixDim COMMA matrixDim COMMA typeAnnotation GT
-              | 'Option' LT typeAnnotation GT
-              | 'Result' LT typeAnnotation COMMA typeAnnotation GT
-              | 'Tuple'  LT typeAnnotation (COMMA typeAnnotation)* GT;
+matrixDim : INTEGER_LIT | IDENTIFIER ;
 
 // Identifier — accepts keywords usable as variable names
-identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none' | 'true' | 'false' | 'const' | 'Directed' | 'Undirected';
+identifier : IDENTIFIER | 'graph' | 'matrix' | 'some' | 'none'
+           | 'true' | 'false' | 'const' | 'Directed' | 'Undirected' | 'pass' ;
+
+INDENT : 'INDENT_TOKEN_PLACEHOLDER' ;
+DEDENT : 'DEDENT_TOKEN_PLACEHOLDER' ;
