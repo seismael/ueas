@@ -51,6 +51,7 @@ pub enum AstNodeKind {
     InfinityLiteral,
     NanLiteral,
     Type,
+    Import,
 }
 
 /// Source location in the UEAS source file.
@@ -513,6 +514,8 @@ pub trait AstVisitor {
     fn visit_nan_literal(&mut self, _node: &AstNode) {}
     fn visit_type(&mut self, _node: &AstNode) {}
 
+    fn visit_import(&mut self, _node: &AstNode) {}
+
     /// Traverse an AST node by dispatching to the appropriate visit method,
     /// then recursively visiting all children.
     fn traverse(&mut self, node: &AstNode) {
@@ -549,6 +552,7 @@ pub trait AstVisitor {
             AstNodeKind::InfinityLiteral => self.visit_infinity_literal(node),
             AstNodeKind::NanLiteral => self.visit_nan_literal(node),
             AstNodeKind::Type => self.visit_type(node),
+            AstNodeKind::Import => self.visit_import(node),
         }
         for child in &node.children {
             self.traverse(child);
@@ -613,6 +617,7 @@ mod tests {
             AstNodeKind::InfinityLiteral,
             AstNodeKind::NanLiteral,
             AstNodeKind::Type,
+            AstNodeKind::Import,
         ];
         for kind in kinds {
             let json = serde_json::to_string(&kind).unwrap();

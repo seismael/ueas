@@ -96,7 +96,7 @@ BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 // Top-Level
 program : importDecl* algorithmDecl+ EOF;
 
-importDecl : IMPORT IDENTIFIER NEWLINE?;
+importDecl : 'Import:' IDENTIFIER ('.' IDENTIFIER)* NEWLINE?;
 
 algorithmDecl : complexityDecorator?
                 ALGORITHM IDENTIFIER

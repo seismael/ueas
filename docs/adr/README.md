@@ -61,6 +61,8 @@ What other options were evaluated? Why were they not chosen?
 | 0011 | Tensor Architecture for Machine Learning Workloads | Accepted | 2026-07-10 |
 | 0012 | Academic Bridge (LaTeX Target) | Accepted | 2026-07-10 |
 | 0013 | AI Agent Integration (MCP Server) | Accepted | 2026-07-10 |
+| 0014 | Interactive Debugger (DAP Protocol) | Accepted | 2026-07-10 |
+| 0015 | Jupyter Kernel Integration | Accepted | 2026-07-10 |
 
 ---
 

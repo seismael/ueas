@@ -10,5 +10,6 @@ pub mod heap;
 pub mod infer;
 pub mod interp;
 pub mod invariants;
+pub mod linker;
 pub mod profiling;
 pub mod traps;
