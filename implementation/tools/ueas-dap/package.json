@@ -1,0 +1,60 @@
+{
+  "name": "ueas-debug",
+  "displayName": "UEAS Debug Adapter",
+  "version": "0.1.0",
+  "description": "Step-through debugger for UEAS algorithms",
+  "publisher": "ueas",
+  "categories": ["Debuggers"],
+  "engines": { "vscode": "^1.80.0" },
+  "activationEvents": ["onDebug"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "ueas",
+        "label": "UEAS Algorithm Debugger",
+        "program": "./dist/debugAdapter.js",
+        "languages": ["ueas"],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the .ueas algorithm file to debug",
+                "default": "${workspaceFolder}/examples/core/euclidean.ueas"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "ueas",
+            "request": "launch",
+            "name": "Debug UEAS Algorithm",
+            "program": "${workspaceFolder}/examples/core/euclidean.ueas"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "UEAS: Launch",
+            "description": "Launch and debug a UEAS algorithm",
+            "body": {
+              "type": "ueas",
+              "request": "launch",
+              "name": "Debug UEAS Algorithm",
+              "program": "^\"${1:examples/core/euclidean.ueas}\""
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}
