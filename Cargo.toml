@@ -4,5 +4,6 @@ members = [
     "backends",
     "tools/ueas-cli",
     "tools/ueas-mcp",
+    "frontends",
 ]
 resolver = "2"

@@ -590,6 +590,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ueas-frontends"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "ueas-kernel",
+]
+
+[[package]]
 name = "ueas-kernel"
 version = "0.1.0"
 dependencies = [
