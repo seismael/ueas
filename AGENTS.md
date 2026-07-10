@@ -644,7 +644,7 @@ Key terms (abbreviated reference):
 - **AST** — Abstract Syntax Tree
 - **Virtual Heap** — Isolated memory arena with zero external access
 - **Step Count** — Monotonic counter of primitive operations
-- **Trap Code** — Controlled error code (0 = success, 1-11 = trap conditions)
+- **Trap Code** — Controlled error code (0 = success, 1-12 = trap conditions)
 - **Invariant** — Boolean predicate enforced by the kernel at runtime
 - **Complexity Contract** — `Complexity:` annotation with Big-O bound
 - **TargetGenerator** — Interface for transpilation backends
@@ -677,15 +677,33 @@ ueas/
 │       └── adr/           Architecture Decision Records
 │
 └── implementation/        The Reference Engine (Linux Foundation Domain)
-    ├── Cargo.toml         Workspace root (kernel + backends)
+    ├── Cargo.toml         Workspace root (kernel + backends + frontends + tools)
     ├── kernel/            Rust abstract interpreter
-    │   └── src/           AST, heap, traps, invariants, profiling
-    ├── backends/          Transpiler plugins
-    │   └── src/           PythonTarget, RustTarget, MCP
-    ├── tools/             CI, CLI, DAP, Jupyter
-    │   ├── ueas-cli/      `ueas` CLI (run, check, transpile)
-    │   ├── ueas-dap/      VS Code Debug Adapter
-    │   └── ueas-jupyter/  Jupyter Notebook Kernel
-    ├── library/           Standard algorithm library (45 algorithms)
-    └── examples/          Benchmark algorithm .ueas files
+    │   ├── src/           AST, heap, traps, invariants, profiling, linker, infer
+    │   └── tests/         Conformance, fuzz, integration
+    ├── backends/          Transpiler plugins (8 targets)
+    │   ├── src/           PythonTarget, RustTarget, CppTarget, JavaTarget,
+    │   │                  JavaScriptTarget, LeanTarget, TlaTarget, LatexTarget
+    │   └── tests/         Cross-target equivalence test suite
+    ├── frontends/         Reverse transpilation (target language → UEAS AST)
+    │   └── src/           Python extractor with axiom enforcement
+    ├── tools/             CLI, DAP Debugger, Jupyter Kernel, MCP Server, Playground
+    │   ├── ueas-cli/      `ueas` CLI (run, check, transpile, fmt)
+    │   ├── ueas-dap/      VS Code Debug Adapter Protocol server
+    │   ├── ueas-jupyter/  Jupyter Notebook Kernel wrapper
+    │   ├── ueas-mcp/      MCP server for AI agent integration
+    │   └── ueas-playground/  Browser-based UEAS editor
+    ├── library/           Standard algorithm library (45 algorithms, 7 categories)
+    │   └── INDEX.md       Catalog with name, category, complexity
+    └── examples/          30 reference implementations in 10 categories
+        ├── core/          4  (euclidean, linear/binary search, matrix multiply)
+        ├── sorting/       3
+        ├── graph/         3
+        ├── dynamic_programming/ 4
+        ├── backtracking/  4
+        ├── arrays/        7
+        ├── stack/         2
+        ├── heap/          1
+        ├── design/        1
+        └── intervals/     1
 ```

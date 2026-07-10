@@ -1,11 +1,11 @@
 # Universal Executable Algorithm Standard (UEAS)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-277-brightgreen)](kernel/)
-[![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](kernel/)  
-[![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](grammar/)
-[![Library](https://img.shields.io/badge/Algorithms-45-blue)](library/)
-[![Examples](https://img.shields.io/badge/Examples-30-orange)](examples/)
+[![Tests](https://img.shields.io/badge/Tests-326-brightgreen)](implementation/kernel/)
+[![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](implementation/kernel/)  
+[![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
+[![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
+[![Examples](https://img.shields.io/badge/Examples-30-orange)](implementation/examples/)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
 
@@ -24,6 +24,11 @@ Algorithms form the intellectual foundation of modern software systems, yet ther
 Existing formal verification tools (TLA+, Coq) demand PhD-level expertise and cannot execute code. General-purpose transpilers (Haxe, Nim) carry hardware baggage — memory management, network I/O, system calls — that have no place in a pure algorithm definition.
 
 **UEAS solves this.** UEAS treats algorithmic logic as a first-class, deployable asset decoupled entirely from programming language syntax, hardware constraints, and execution environments. 
+
+### Why UEAS? (Strategic Focus)
+UEAS is currently being optimized for two high-leverage domains critical for enterprise adoption:
+1. **AI Interoperability:** LLMs and autonomous coding agents struggle with language quirks. UEAS serves as the mathematically rigorous intermediary—an agent generates a UEAS algorithm, the MCP Server formally verifies its Big-O complexity, and then transpiles it into production-ready Python or Rust.
+2. **Cryptographic Rigor:** Cryptographic implementations require strict mathematical bounds. UEAS introduces `@ConstantTime` execution and `Secret` variables, using symbolic execution to catch timing leaks and prove hardware-level security guarantees before deployment.
 
 ### What UEAS Is NOT
 UEAS is **not a new programming language.** It does not build web servers, manage databases, or render UIs. It has zero network sockets and zero filesystem access. It is a **mathematical blueprint** — a pure, verified logic specification that complies *into* your existing programming languages. If you need a general-purpose language, use Rust or Python. If you need to mathematically prove that your algorithm is correct, use UEAS.
@@ -48,9 +53,9 @@ UEAS is **not a new programming language.** It does not build web servers, manag
 
 The UEAS ecosystem is divided into three decoupled domains, connected by the canonical JSON AST:
 
-1. **Front-End (Grammar & Parsing):** The ANTLR4 grammar (`UEAS.g4`) ingests human-readable pseudocode and produces a typed, validated AST. The grammar supports advanced algorithmic primitives including Module Linking (`Import`), Stochastic Primitives (`random`), and Infinite Streams.
-2. **Core Kernel (Abstract Interpreter):** A Rust-based virtual machine executes the AST in an isolated Virtual Heap with zero system I/O. It counts abstract logical steps rather than wall-clock time, enabling deterministic complexity profiling regardless of your CPU speed. 
-3. **Ecosystem Tooling:** The verified AST feeds into Transpiler plugins (generating idiomatic Python, Rust, C++, Java), a Debug Adapter Protocol (DAP) server for step-through debugging, and a ZeroMQ Jupyter Kernel for academic data science workflows.
+1. **Front-End (Grammar & Parsing):** The ANTLR4 grammar (`UEAS.g4`) ingests human-readable pseudocode and produces a typed, validated AST. The grammar supports advanced algorithmic primitives including Module Linking (`Import:`), Stochastic Primitives (`random`), Infinite Streams (`Stream<T>`), and Cryptographic guarantees (`Secret<T>`, `@ConstantTime`).
+2. **Core Kernel (Abstract Interpreter):** A Rust-based virtual machine executes the AST in an isolated Virtual Heap with zero system I/O. It counts abstract logical steps rather than wall-clock time, enabling deterministic complexity profiling regardless of your CPU speed. The kernel now includes cache simulation (`@HardwareProfile`), symbolic execution for timing leak detection, and a pseudo-random number generator for stochastic algorithms.
+3. **Ecosystem Tooling:** The verified AST feeds into 8 Transpiler plugins (idiomatic Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, LaTeX algorithm2e), a Debug Adapter Protocol (DAP) server for step-through debugging, a ZeroMQ Jupyter Kernel for academic workflows, and an MCP server for AI agent integration.
 
 ---
 
@@ -109,24 +114,25 @@ The AST produced by this algorithm can be:
 
 ### Installation
 ```bash
-cargo install ueas
+cd implementation
+cargo install --path tools/ueas-cli
 ```
 
 ### CLI Usage
 ```bash
 # Parse and execute an algorithm
-ueas run examples/euclidean.ueas
+ueas run examples/core/euclidean.ueas
 
 # Validate syntax
 ueas check library/sorting/quicksort.ueas
 
 # Transpile to a target language
-ueas transpile examples/linear_search.ueas --target python
-ueas transpile examples/linear_search.ueas --target rust
+ueas transpile examples/core/linear_search.ueas --target python
+ueas transpile examples/core/linear_search.ueas --target rust
 ```
 
 ### Standard Library
-UEAS ships with a comprehensive [standard algorithm library](library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
+UEAS ships with a comprehensive [standard algorithm library](implementation/library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
 
 ### Examples
 **30 reference implementations** organized by algorithmic technique:
@@ -155,9 +161,9 @@ All examples validated with `ueas check examples/<category>/<name>.ueas`.
 | **Phase 1: Combinatorial Core** | ANTLR4 grammar, type system, AST JSON schema | ✅ Complete |
 | **Phase 2: Profiling Kernel** | Abstract interpreter, complexity engine, virtual heap | ✅ Complete |
 | **Phase 3: Universal Bridge** | Transpilers (Python, Rust, C++, Java), CLI, Standard Library | ✅ Complete |
-| **Phase 4: Real-World Ecosystem** | DAP Debugger, Jupyter Kernel, `@HardwareProfile`, Modules | 🔨 Planned |
-| **Phase 5: Core Math Frontiers** | Stochastic `random`, Infinite `Stream<T>`, `@ConstantTime` Cryptography | 🔨 Planned |
-| **Phase 6: Formal Verification** | Lean 4 + TLA+ backend transpilers | 🔨 Planned |
+| **Phase 4: Real-World Ecosystem** | DAP Debugger, Jupyter Kernel, `@HardwareProfile`, Modules | ✅ Complete |
+| **Phase 5: Core Math Frontiers** | Stochastic `random`, Infinite `Stream<T>`, `@ConstantTime` Cryptography | ✅ Complete |
+| **Phase 6: Formal Verification** | Lean 4 + TLA+ backend transpilers | ✅ Complete |
 
 ---
 
@@ -165,13 +171,15 @@ All examples validated with `ueas check examples/<category>/<name>.ueas`.
 
 | Document | Purpose |
 |----------|---------|
-| [SPEC.md](SPEC.md) | Formal specification — the mathematical source of truth |
+| [SPEC.md](specification/SPEC.md) | Formal specification — the mathematical source of truth |
 | [AGENTS.md](AGENTS.md) | Conventions for AI agents working on UEAS |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, setup, quality gates |
 | [CONTRIBUTORS.md](CONTRIBUTORS.md) | List of contributors to the project |
 | [CLA.md](CLA.md) | Contributor License Agreement |
-| [RFC Process](docs/rfcs/README.md) | How to propose changes to the standard |
-| [ADR Log](docs/adr/README.md) | Architecture Decision Records |
+| [RFC Process](specification/docs/rfcs/README.md) | How to propose changes to the standard |
+| [ADR Log](specification/docs/adr/README.md) | Architecture Decision Records |
+| [Library](implementation/library/INDEX.md) | 45 standard algorithms across 7 categories |
+| [Examples](implementation/examples/) | 30 reference implementations in 10 categories |
 
 ---
 

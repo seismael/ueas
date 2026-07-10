@@ -6,7 +6,7 @@ First off, thank you for considering contributing to the Universal Executable Al
 The architectural governance of this project is extremely strict to maintain formal mathematical verification guarantees. Before you open a Pull Request, you **MUST** read the [AGENTS.md](AGENTS.md) manifesto.
 
 This document outlines:
-- The strict separation between `grammar/` (Specification) and `kernel/` (Execution).
+- The strict separation between `specification/grammar/` (Specification) and `implementation/kernel/` (Execution).
 - The non-negotiable Domain-Driven Design (DDD) and SOLID principles we enforce.
 - The testing pyramid (100% test coverage and zero fuzzing panics required).
 
@@ -21,7 +21,7 @@ You do not need to print or email anything. Simply add the following text to the
 
 ### A. Core Specification Changes (Grammar)
 If you want to add a new algorithm primitive or alter the `UEAS.g4` grammar:
-1. **Do not write code.** Open an Issue or Draft PR with an **RFC (Request for Comments)**. See `docs/rfcs/README.md`.
+1. **Do not write code.** Open an Issue or Draft PR with an **RFC (Request for Comments)**. See `specification/docs/rfcs/README.md`.
 2. Wait for the RFC to be ratified by the architectural maintainers.
 3. Once ratified, update `SPEC.md` first, then write the tests, then write the code.
 
@@ -42,7 +42,7 @@ If you are fixing a bug in the Rust interpreter or writing a new transpiler targ
 
 ### C. Developer Ecosystem (Tooling)
 If you are contributing to Phase 4 (DAP Debugger, Jupyter Kernel) or Phase 5:
-- Ensure your architecture is documented in an **ADR (Architecture Decision Record)** under `docs/adr/`.
+- Ensure your architecture is documented in an **ADR (Architecture Decision Record)** under `specification/docs/adr/`.
 
 ## 4. Submitting a Pull Request
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat: added monte carlo support`, `fix: heap allocation overflow`).
