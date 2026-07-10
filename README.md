@@ -6,7 +6,7 @@
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
 [![Examples](https://img.shields.io/badge/Examples-45-orange)](implementation/examples/)
-[![Version](https://img.shields.io/badge/Version-4.0.1-blue)](VERSION)
+[![Version](https://img.shields.io/badge/Version-4.1.0-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
 
@@ -136,7 +136,7 @@ ueas transpile examples/core/linear_search.ueas --target rust
 UEAS ships with a comprehensive [standard algorithm library](implementation/library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
 
 ### Examples
-**30 reference implementations** organized by algorithmic technique:
+**45 reference implementations** (30 algorithmic + 15 feature demos) organized across 20 categories:
 
 | Category | Count | Highlights |
 |----------|-------|------------|
@@ -193,7 +193,7 @@ All examples validated with `ueas check examples/<category>/<name>.ueas`.
 | [RFC Process](specification/docs/rfcs/README.md) | How to propose changes to the standard |
 | [ADR Log](specification/docs/adr/README.md) | Architecture Decision Records |
 | [Library](implementation/library/INDEX.md) | 45 standard algorithms across 7 categories |
-| [Examples](implementation/examples/) | 30 reference implementations in 10 categories |
+| [Examples](implementation/examples/) | 45 reference implementations in 20 categories |
 
 ---
 

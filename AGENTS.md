@@ -31,7 +31,7 @@ The architecture, specification, and core documentation of UEAS are
   documentation (e.g., new `docs/specs/` files, tutorial content, meeting
   notes, new ADRs documenting decisions consistent with the current
   architecture, new RFC drafts).
-- Adding new code in `grammar/`, `kernel/`, `backends/`, or `tools/` that
+- Adding new code in `specification/grammar/`, `implementation/kernel/`, `implementation/backends/`, or `implementation/tools/` that
   conforms to the existing specification and architecture.
 - Adding new tests, benchmarks, fuzzing strategies, CI configurations.
 - Fixing typos, broken links, or formatting issues in documentation.
@@ -121,7 +121,7 @@ The repository is physically split into two root directories:
 - **`implementation/backends/`** — Transpiler plugins implementing `TargetGenerator`. Each target is an isolated crate/module. Owns target-specific code generation.
 - **`implementation/tools/`** — CI scripts, fuzzing harnesses, benchmark runners, container definitions.
 
-**No cross-domain imports.** `grammar/` does not depend on `kernel/`. `kernel/` does not depend on `backends/`. Communication is via the canonical JSON AST.
+**No cross-domain imports.** `specification/grammar/` does not depend on `implementation/kernel/`. `implementation/kernel/` does not depend on `implementation/backends/`. Communication is via the canonical JSON AST.
 
 ---
 
@@ -198,7 +198,7 @@ checklist, see `.loop/LOOP_AGENTS.md`.
 - **Domain Events:** Cross-domain communication is through events, not
   direct function calls. Grammar produces `ParsedAST` event. Kernel consumes
   it. Kernel produces `ExecutedAST` event. Backend consumes it.
-- **Bounded Contexts:** `grammar/`, `kernel/`, and `backends/` are separate
+- **Bounded Contexts:** `specification/grammar/`, `implementation/kernel/`, and `implementation/backends/` are separate
   bounded contexts. Each has its own internal model. Translation between
   contexts happens at the boundary via the canonical JSON AST.
 
@@ -256,7 +256,7 @@ in Phase 2. This is non-negotiable.
 | New invariant type | SPEC.md Section 6.3 updated |
 | New error condition | SPEC.md Section 6.5 updated (new trap code, description, cause) |
 | Public API change | Module doc comments updated, README.md updated if user-facing |
-| Architectural decision | ADR written in `docs/adr/NNNN-title.md` |
+| Architectural decision | ADR written in `specification/docs/adr/NNNN-title.md` |
 | RFC implementation | RFC status updated, SPEC.md updated |
 
 ### Doc Comment Standard (Rust)
@@ -335,11 +335,11 @@ Every kernel function that accepts input MUST be tested with:
 
 | Domain | Minimum Line Coverage | Enforced By |
 |--------|----------------------|-------------|
-| `kernel/src/interp/` | 95% | CI gate |
-| `kernel/src/ast/` | 90% | CI gate |
-| `kernel/src/*.rs` (utilities) | 85% | CI gate |
-| `backends/<target>/` | 80% | CI gate |
-| `grammar/` | 100% benchmark parse accuracy | CI gate |
+| `implementation/kernel/src/interp/` | 95% | CI gate |
+| `implementation/kernel/src/ast/` | 90% | CI gate |
+| `implementation/kernel/src/*.rs` (utilities) | 85% | CI gate |
+| `implementation/backends/<target>/` | 80% | CI gate |
+| `specification/grammar/` | 100% benchmark parse accuracy | CI gate |
 
 Coverage regressions block merge. No exceptions.
 
@@ -361,7 +361,7 @@ Fuzzing strategies MUST generate:
 
 ## Code Quality Enforcement
 
-### Rust (`kernel/`)
+### Rust (`implementation/kernel/`)
 
 ```rust
 // REQUIRED: Module-level documentation
@@ -431,7 +431,7 @@ impl VirtualHeap {
   `// SAFETY:` comment. The issue must remain open as long as `unsafe`
   exists in the codebase.
 
-### ANTLR4 (`grammar/`)
+### ANTLR4 (`specification/grammar/`)
 
 - Version: 4.13.2+
 - Single `UEAS.g4` file with combined lexer and parser grammar.
@@ -445,7 +445,7 @@ impl VirtualHeap {
 - Every rule MUST have a comment explaining its purpose.
 - Generated parser/lexer files are NOT committed. They are build artifacts.
 
-### Python (`tools/`, `scripts/`)
+### Python (`implementation/tools/`, `scripts/`)
 
 - Version: 3.11+
 - Lint/Format: `ruff check --fix && ruff format`
@@ -456,7 +456,7 @@ impl VirtualHeap {
 - No `except:` without a specific exception type. No bare `except Exception`
   without logging or re-raise.
 
-### Documentation (`docs/`, `*.md`)
+### Documentation (`specification/docs/`, `*.md`)
 
 - Format: GitHub-Flavored Markdown.
 - Line length: 100 characters maximum.
@@ -471,9 +471,9 @@ impl VirtualHeap {
 
 When a task involves a specification change:
 
-1. **Check** if an RFC already exists in `docs/rfcs/` covering the change.
+1. **Check** if an RFC already exists in `specification/docs/rfcs/` covering the change.
 2. If no RFC exists, **draft one** using the template in
-   `docs/rfcs/README.md`. Name it `docs/rfcs/NNNN-title.md` (next number).
+   `specification/docs/rfcs/README.md`. Name it `specification/docs/rfcs/NNNN-title.md` (next number).
 3. Set status to `Draft` and submit for review.
 4. **Do not write ANY implementation code** until the RFC status is
    `Ratified`. This includes test code, prototype code, and proof-of-concept
@@ -511,13 +511,12 @@ All changes MUST pass these gates before merge. No gate may be skipped.
 Run before committing:
 
 ```bash
-# Rust (kernel/)
-cd kernel
-cargo test
-cargo clippy -- -D warnings
-cargo fmt --check
+# Rust (implementation/kernel/)
+cd implementation && cargo test --workspace
+cd implementation && cargo clippy --workspace -- -D warnings
+cd implementation && cargo fmt --all -- --check
 
-# Python (tools/, scripts/)
+# Python (implementation/tools/, scripts/)
 ruff check --fix
 ruff format --check
 mypy --strict tools/
