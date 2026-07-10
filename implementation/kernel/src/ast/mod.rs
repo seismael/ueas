@@ -60,6 +60,8 @@ pub enum AstNodeKind {
     Sync,
     ParallelFor,
     WorkSpan,
+    QubitType,
+    Measure,
 }
 
 /// Source location in the UEAS source file.
@@ -466,6 +468,21 @@ impl AstNodeFactory {
             None,
         )
     }
+
+    pub fn qubit_type() -> AstNode {
+        AstNode::leaf(AstNodeKind::QubitType, None)
+    }
+
+    pub fn measure_stmt(target: &str) -> AstNode {
+        AstNode::internal(
+            AstNodeKind::Measure,
+            vec![AstNode::leaf(
+                AstNodeKind::Identifier,
+                Some(AstValue::String(target.to_string())),
+            )],
+            None,
+        )
+    }
 }
 
 // ===== Type System =====
@@ -582,6 +599,10 @@ pub trait AstVisitor {
     fn visit_sync(&mut self, _node: &AstNode) {}
     fn visit_parallel_for(&mut self, _node: &AstNode) {}
     fn visit_work_span(&mut self, _node: &AstNode) {}
+    fn visit_qubit_type(&mut self, _node: &AstNode) {}
+    fn visit_measure(&mut self, _node: &AstNode) {}
+    fn visit_send(&mut self, _node: &AstNode) {}
+    fn visit_receive(&mut self, _node: &AstNode) {}
 
     /// Traverse an AST node by dispatching to the appropriate visit method,
     /// then recursively visiting all children.
@@ -628,6 +649,10 @@ pub trait AstVisitor {
             AstNodeKind::Sync => self.visit_sync(node),
             AstNodeKind::ParallelFor => self.visit_parallel_for(node),
             AstNodeKind::WorkSpan => self.visit_work_span(node),
+            AstNodeKind::QubitType => self.visit_qubit_type(node),
+            AstNodeKind::Measure => self.visit_measure(node),
+            AstNodeKind::Send => self.visit_send(node),
+            AstNodeKind::Receive => self.visit_receive(node),
         }
         for child in &node.children {
             self.traverse(child);

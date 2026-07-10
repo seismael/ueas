@@ -62,6 +62,14 @@ SECRET      : 'secret' | 'Secret' | 'SECRET';
 SPAWN       : 'spawn' | 'Spawn' | 'SPAWN';
 SYNC        : 'sync'  | 'Sync'  | 'SYNC';
 PARALLEL    : 'parallel' | 'Parallel' | 'PARALLEL';
+SEND        : 'send'    | 'Send'    | 'SEND';
+RECEIVE     : 'receive' | 'Receive' | 'RECEIVE';
+TO          : 'to'      | 'To'      | 'TO';
+FROM        : 'from'    | 'From'    | 'FROM';
+QUBIT      : 'qubit' | 'Qubit' | 'QUBIT';
+H_GATE     : 'H' | 'h';
+X_GATE     : 'X' | 'x';
+MEASURE    : 'measure' | 'Measure' | 'MEASURE';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -159,6 +167,9 @@ statement : assignmentOrCall NEWLINE
            | awaitStmt NEWLINE
            | spawnStmt NEWLINE
            | syncStmt NEWLINE
+           | sendStmt NEWLINE
+           | receiveStmt NEWLINE
+           | measureStmt NEWLINE
            | PASS NEWLINE
            | BREAK NEWLINE
            | CONTINUE NEWLINE ;
@@ -198,6 +209,12 @@ spawnStmt : SPAWN IDENTIFIER ASSIGN expression NEWLINE ;
 
 syncStmt  : SYNC NEWLINE ;
 
+sendStmt : SEND expression TO expression NEWLINE ;
+
+receiveStmt : RECEIVE IDENTIFIER FROM expression NEWLINE ;
+
+measureStmt : MEASURE IDENTIFIER NEWLINE ;
+
 // Expressions (ordered by precedence)
 expression : logicalOr (AS typeAnnotation)? ;
 
@@ -231,7 +248,7 @@ methodCallOrId : IDENTIFIER
                | IDENTIFIER LPAREN (expression (COMMA expression)*)? RPAREN ;
 
 // Types (used at algorithm boundaries and Require/Ensure blocks)
-typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void'
+typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void' | 'Qubit'
                | 'List' | 'Set' | 'Map' | 'Graph' | 'Matrix'
                | 'List' LT typeAnnotation GT
                | 'Set' LT typeAnnotation GT
