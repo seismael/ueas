@@ -63,6 +63,7 @@ What other options were evaluated? Why were they not chosen?
 | 0013 | AI Agent Integration (MCP Server) | Accepted | 2026-07-10 |
 | 0014 | Interactive Debugger (DAP Protocol) | Accepted | 2026-07-10 |
 | 0015 | Jupyter Kernel Integration | Accepted | 2026-07-10 |
+| 0016 | Timing Leak Validation | Accepted | 2026-07-10 |
 
 ---
 

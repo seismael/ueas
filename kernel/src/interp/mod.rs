@@ -34,6 +34,15 @@ impl SymbolTable {
             self.scopes.pop();
         }
     }
+    pub fn variable_names(&self) -> Vec<String> {
+        let mut names = Vec::new();
+        for scope in &self.scopes {
+            for name in scope.symbols.keys() {
+                names.push(name.clone());
+            }
+        }
+        names
+    }
     pub fn declare(
         &mut self,
         name: &str,
@@ -133,6 +142,7 @@ fn read_value_from_heap(heap: &VirtualHeap, handle: HeapHandle) -> Result<AstVal
     })
 }
 
+#[derive(Debug)]
 pub struct ExecContext {
     pub heap: VirtualHeap,
     pub symbols: SymbolTable,
@@ -493,7 +503,7 @@ fn dispatch_builtin(
     }
 }
 
-fn is_truthy(value: &AstValue) -> bool {
+pub fn is_truthy(value: &AstValue) -> bool {
     match value {
         AstValue::Boolean(b) => *b,
         AstValue::Integer(x) => *x != 0,
@@ -667,7 +677,7 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
     ctx.profiler.verify_complexity(&contract)
 }
 
-fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+pub fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     let name = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
         _ => return Err(ExitCode::InvalidOperation),
@@ -682,7 +692,7 @@ fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCod
     Ok(())
 }
 
-fn execute_const_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+pub fn execute_const_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     let name = match &node.children[0].value {
         Some(AstValue::String(s)) => s.clone(),
         _ => return Err(ExitCode::InvalidOperation),
@@ -695,7 +705,7 @@ fn execute_const_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
     Ok(())
 }
 
-fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
+pub fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitCode> {
     if node.children.len() < 2 {
         return Err(ExitCode::InvalidOperation);
     }
@@ -714,7 +724,7 @@ fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
     }
 }
 
-fn execute_if(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+pub fn execute_if(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     if node.children.is_empty() {
         return Ok(AstValue::None);
     }
@@ -727,7 +737,7 @@ fn execute_if(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCod
     }
 }
 
-fn execute_while(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+pub fn execute_while(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     if node.children.is_empty() {
         return Ok(AstValue::None);
     }
@@ -741,7 +751,7 @@ fn execute_while(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exit
     Ok(last)
 }
 
-fn execute_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+pub fn execute_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     if node.children.len() < 2 {
         return Ok(AstValue::None);
     }
@@ -791,7 +801,7 @@ pub fn execute_invariant(ctx: &mut ExecContext, node: &AstNode) -> Result<(), Ex
     Ok(())
 }
 
-fn exec_body(ctx: &mut ExecContext, body: &[AstNode]) -> Result<AstValue, ExitCode> {
+pub fn exec_body(ctx: &mut ExecContext, body: &[AstNode]) -> Result<AstValue, ExitCode> {
     let mut last = AstValue::None;
     for stmt in body {
         last = exec_stmt(ctx, stmt)?;
@@ -799,7 +809,7 @@ fn exec_body(ctx: &mut ExecContext, body: &[AstNode]) -> Result<AstValue, ExitCo
     Ok(last)
 }
 
-fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+pub fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     match node.kind {
         AstNodeKind::VariableDeclaration => {
             execute_var_decl(ctx, node)?;

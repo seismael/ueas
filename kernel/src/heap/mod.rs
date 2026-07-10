@@ -87,6 +87,7 @@ impl Default for HeapConfig {
 /// The virtual heap implements bump-pointer allocation with eager
 /// deallocation. All allocations are tracked with type metadata.
 /// The heap has zero access to system I/O, network, or hardware.
+#[derive(Debug)]
 pub struct VirtualHeap {
     memory: Vec<u8>,
     allocations: HashMap<HeapHandle, AllocationMetadata>,

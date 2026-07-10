@@ -1,0 +1,5 @@
+{
+  "argv": ["python", "-m", "tools.ueas_jupyter.kernel", "-f", "{connection_file}"],
+  "display_name": "UEAS (Algorithm Standard)",
+  "language": "python"
+}
