@@ -4,28 +4,28 @@
 //! Requires: cargo install wasm-pack
 
 use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
-use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind};
+use ueas_kernel::ast::AstNodeFactory;
 use ueas_kernel::interp::{execute_program, ExecContext};
 use wasm_bindgen::prelude::*;
 
+mod parser;
+
 #[wasm_bindgen]
 pub fn parse_ueas(source: &str) -> Result<String, JsValue> {
-    // Stub: full parser integration requires ANTLR4 bridge
-    Ok(format!("parsed {} bytes", source.len()))
+    match parser::parse_algorithm(source) {
+        Ok((_name, algo)) => {
+            let program = AstNodeFactory::program(vec![algo]);
+            serde_json::to_string_pretty(&program).map_err(|e| JsValue::from_str(&e.to_string()))
+        }
+        Err(e) => Err(JsValue::from_str(&e.to_string())),
+    }
 }
 
 #[wasm_bindgen]
-pub fn execute_ueas(_source: &str) -> Result<String, JsValue> {
+pub fn execute_ueas(source: &str) -> Result<String, JsValue> {
     let mut ctx = ExecContext::with_default_config();
-    let algo = AstNode::internal(
-        AstNodeKind::Algorithm,
-        vec![
-            AstNodeFactory::identifier("wasm"),
-            AstNodeFactory::string_literal("O(1)"),
-            AstNodeFactory::return_stmt(Some(AstNodeFactory::integer_literal("42"))),
-        ],
-        None,
-    );
+    let (_name, algo) = parser::parse_algorithm(source)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
     let program = AstNodeFactory::program(vec![algo]);
     match execute_program(&mut ctx, &program) {
         Ok(result) => Ok(format!("{:?}", result)),
@@ -34,16 +34,9 @@ pub fn execute_ueas(_source: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn transpile_ueas(_source: &str, target: &str) -> Result<String, JsValue> {
-    let algo = AstNode::internal(
-        AstNodeKind::Algorithm,
-        vec![
-            AstNodeFactory::identifier("wasm"),
-            AstNodeFactory::string_literal("O(1)"),
-            AstNodeFactory::return_stmt(Some(AstNodeFactory::integer_literal("42"))),
-        ],
-        None,
-    );
+pub fn transpile_ueas(source: &str, target: &str) -> Result<String, JsValue> {
+    let (_name, algo) = parser::parse_algorithm(source)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
     let program = AstNodeFactory::program(vec![algo]);
     let ast_json =
         serde_json::to_string(&program).map_err(|e| JsValue::from_str(&e.to_string()))?;

@@ -2,5 +2,8 @@
   "name": "ueas-playground",
   "version": "0.1.0",
   "private": true,
-  "description": "UEAS Playground — browser-based algorithm editor"
+  "description": "UEAS Playground — browser-based algorithm editor",
+  "scripts": {
+    "build": "rustup target add wasm32-unknown-unknown && cd wasm && wasm-pack build --target web"
+  }
 }

@@ -1,4 +1,6 @@
 // UEAS Playground — client-side interactive algorithm viewer
+import init, { parse_ueas, transpile_ueas } from './wasm/pkg/ueas_wasm.js';
+
 require.config({
   paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }
 });
@@ -166,132 +168,35 @@ const examples = [
   }
 ];
 
-// Transpile simulation (static demo — full WASM version runs kernel)
-const transpileSimulations = {
-  python: function(code) {
-    const lines = [];
-    const name = extractName(code);
-    const params = extractParams(code);
-    lines.push('import math');
-    lines.push('');
-    lines.push(`def ${name}(${params.join(', ')}):`);
-    lines.push('    # UEAS Algorithm — transpiled by ueas playground');
-    lines.push(`    # Complexity: ${extractComplexity(code)}`);
-    lines.push('    pass  # (kernel execution available via ueas CLI)');
-    return lines.join('\n');
-  },
-  rust: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    const lines = [];
-    lines.push(`fn ${name}(${params.map(p => p + ': i64').join(', ')}) -> i64 {`);
-    lines.push('    // UEAS Algorithm — transpiled by ueas playground');
-    lines.push(`    // Complexity: ${extractComplexity(code)}`);
-    lines.push('    unimplemented!()  // (kernel execution available via ueas CLI)');
-    lines.push('}');
-    return lines.join('\n');
-  },
-  cpp: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    const lines = [];
-    lines.push('#include <cstdint>');
-    lines.push('');
-    lines.push(`int64_t ${name}(${params.map(p => 'int64_t ' + p).join(', ')}) {`);
-    lines.push('    // UEAS Algorithm — transpiled by ueas playground');
-    lines.push(`    // Complexity: ${extractComplexity(code)}`);
-    lines.push('    return 0;  // (kernel execution available via ueas CLI)');
-    lines.push('}');
-    return lines.join('\n');
-  },
-  java: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    const lines = [];
-    lines.push('import java.util.*;');
-    lines.push('');
-    lines.push(`public static long ${name}(${params.map(p => 'long ' + p).join(', ')}) {`);
-    lines.push('    // UEAS Algorithm — transpiled by ueas playground');
-    lines.push(`    // Complexity: ${extractComplexity(code)}`);
-    lines.push('    return 0L;  // (kernel execution available via ueas CLI)');
-    lines.push('}');
-    return lines.join('\n');
-  },
-  javascript: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    const lines = [];
-    lines.push(`function ${name}(${params.join(', ')}) {`);
-    lines.push('    // UEAS Algorithm — transpiled by ueas playground');
-    lines.push(`    // Complexity: ${extractComplexity(code)}`);
-    lines.push('    return 0;  // (kernel execution available via ueas CLI)');
-    lines.push('}');
-    return lines.join('\n');
-  },
-  lean4: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    const lines = [];
-    lines.push('/- Algorithm: ' + name);
-    lines.push('   Complexity: ' + extractComplexity(code) + ' -/');
-    lines.push('');
-    lines.push(`def ${name} (${params.map(p => p + ' : ℕ').join(') (')}) : ℕ :=`);
-    lines.push('  -- (full Lean 4 theorem generation via ueas CLI --target lean4)');
-    if (params.length > 0) {
-      lines.push('  ' + params[0]);
-    } else {
-      lines.push('  0');
-    }
-    return lines.join('\n');
-  },
-  tlaplus: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    const lines = [];
-    lines.push('---- MODULE ' + name + ' ----');
-    lines.push('EXTENDS Naturals, Sequences');
-    lines.push('');
-    lines.push(`\\* Algorithm: ${name}`);
-    lines.push(`\\* Complexity: ${extractComplexity(code)}`);
-    lines.push('');
-    lines.push('VARIABLES ' + (params.length ? params.join(', ') + ', result' : 'result'));
-    lines.push('');
-    lines.push('Init ==');
-    lines.push('    /\\ result = 0');
-    params.forEach(p => lines.push('    /\\ ' + p + ' = 0'));
-    lines.push('');
-    lines.push('Next ==');
-    lines.push('    /\\ TRUE  -- (full TLA+ spec via ueas CLI --target tlaplus)');
-    lines.push('    /\\ UNCHANGED <<' + (params.length ? params.join(', ') + ', result' : 'result') + '>>');
-    lines.push('');
-    lines.push('====');
-    return lines.join('\n');
-  }
-};
-
-function extractName(code) {
-  const m = code.match(/Algorithm\s+(\w+)/);
-  return m ? m[1] : 'unnamed';
-}
-
-function extractParams(code) {
-  const m = code.match(/Algorithm\s+\w+\(([^)]*)\)/);
-  return m ? m[1].split(',').map(s => s.trim()).filter(s => s) : [];
-}
-
-function extractComplexity(code) {
-  const m = code.match(/Complexity:\s*"([^"]+)"/);
-  return m ? m[1] : 'O(?)';
-}
-
-function simulateTranspile() {
+// Helper to run WASM logic
+async function doTranspile() {
   const code = editor.getValue();
   const target = document.getElementById('target-select').value;
-  const fn = transpileSimulations[target];
-  const output = fn ? fn(code) : 'Target not supported in static playground.';
-  document.getElementById('output-transpiled').textContent = output;
+  
+  // Transpile
+  try {
+    const transpiled = transpile_ueas(code, target);
+    document.getElementById('output-transpiled').textContent = transpiled;
+  } catch (err) {
+    document.getElementById('output-transpiled').textContent = "Transpilation Error:\n" + err;
+  }
+
+  // Parse AST
+  try {
+    const ast = parse_ueas(code);
+    document.getElementById('output-ast').textContent = ast;
+  } catch (err) {
+    document.getElementById('output-ast').textContent = "Parse Error:\n" + err;
+  }
+  
   switchTab('transpiled');
 }
+window.doTranspile = doTranspile;
+
+function simulateTranspile() {
+  doTranspile();
+}
+window.simulateTranspile = simulateTranspile;
 
 function formatCode() {
   // Basic formatting: normalize whitespace
@@ -312,12 +217,14 @@ function formatCode() {
   }).join('\n');
   editor.setValue(formatted);
 }
+window.formatCode = formatCode;
 
 function copyToClipboard() {
   navigator.clipboard.writeText(editor.getValue()).then(function() {
     showToast('Copied to clipboard');
   });
 }
+window.copyToClipboard = copyToClipboard;
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -325,6 +232,7 @@ function switchTab(tab) {
   document.querySelector('[onclick="switchTab(\'' + tab + '\')"]').classList.add('active');
   document.getElementById('output-' + tab).classList.add('active');
 }
+window.switchTab = switchTab;
 
 function showToast(msg) {
   const el = document.createElement('div');
@@ -341,114 +249,126 @@ function loadExample(index) {
     el.classList.toggle('active', i === index);
   });
 }
+window.loadExample = loadExample;
 
 // Initialize
-require(['vs/editor/editor.main'], function() {
-  // Register UEAS language
-  monaco.languages.register({ id: 'ueas' });
+async function initializeApp() {
+  try {
+    await init(); // Initialize WASM
+    console.log("WASM Initialized successfully");
+  } catch (err) {
+    console.error("Failed to initialize WASM:", err);
+  }
 
-  monaco.languages.setMonarchTokensProvider('ueas', {
-    keywords: [
-      'Algorithm', 'algorithm', 'ALGORITHM',
-      'Require', 'require', 'REQUIRE',
-      'Ensure', 'ensure', 'ENSURE',
-      'Complexity', 'complexity', 'COMPLEXITY',
-      'Memory', 'memory', 'MEMORY',
-      'return', 'Return', 'RETURN',
-      'if', 'If', 'IF', 'then', 'Then', 'THEN',
-      'else', 'Else', 'ELSE',
-      'for', 'For', 'FOR', 'each', 'Each', 'EACH', 'in', 'In', 'IN', 'do', 'Do', 'DO',
-      'while', 'While', 'WHILE',
-      'end', 'End', 'END',
-      'assert', 'Assert', 'ASSERT',
-      'invariant', 'Invariant', 'INVARIANT',
-      'and', 'And', 'AND', 'or', 'Or', 'OR', 'not', 'Not', 'NOT',
-      'true', 'True', 'TRUE', 'false', 'False', 'FALSE',
-    ],
-    typeKeywords: [
-      'Integer', 'Real', 'Boolean', 'String', 'Void',
-      'List', 'Set', 'Map', 'Graph', 'Matrix',
-    ],
-    operators: ['<-', ':=', '=', '==', '!=', '<', '<=', '>', '>=', '+', '-', '*', '/', 'mod', '->'],
-    tokenizer: {
-      root: [
-        [/#.*$/, 'comment'],
-        [/"([^"\\]|\\.)*$/, 'string.invalid'],
-        [/'([^'\\]|\\.)*$/, 'string.invalid'],
-        [/"/, 'string', '@string_double'],
-        [/'/, 'string', '@string_single'],
-        [/[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/, 'number.float'],
-        [/[0-9]+/, 'number'],
-        [/[a-zA-Z_][a-zA-Z0-9_]*/, {
-          cases: {
-            '@typeKeywords': 'type',
-            '@keywords': 'keyword',
-            '@default': 'identifier'
-          }
-        }],
-        [/<-|:=/, 'keyword'],
-        [/[+\-*/=<>!]+/, 'operator'],
-        [/[{}()[\],.:]/, 'delimiter'],
+  require(['vs/editor/editor.main'], function() {
+    // Register UEAS language
+    monaco.languages.register({ id: 'ueas' });
+
+    monaco.languages.setMonarchTokensProvider('ueas', {
+      keywords: [
+        'Algorithm', 'algorithm', 'ALGORITHM',
+        'Require', 'require', 'REQUIRE',
+        'Ensure', 'ensure', 'ENSURE',
+        'Complexity', 'complexity', 'COMPLEXITY',
+        'Memory', 'memory', 'MEMORY',
+        'return', 'Return', 'RETURN',
+        'if', 'If', 'IF', 'then', 'Then', 'THEN',
+        'else', 'Else', 'ELSE',
+        'for', 'For', 'FOR', 'each', 'Each', 'EACH', 'in', 'In', 'IN', 'do', 'Do', 'DO',
+        'while', 'While', 'WHILE',
+        'end', 'End', 'END',
+        'assert', 'Assert', 'ASSERT',
+        'invariant', 'Invariant', 'INVARIANT',
+        'and', 'And', 'AND', 'or', 'Or', 'OR', 'not', 'Not', 'NOT',
+        'true', 'True', 'TRUE', 'false', 'False', 'FALSE',
       ],
-      string_double: [
-        [/[^\\"]+/, 'string'],
-        [/\\./, 'string.escape'],
-        [/"/, 'string', '@pop'],
+      typeKeywords: [
+        'Integer', 'Real', 'Boolean', 'String', 'Void',
+        'List', 'Set', 'Map', 'Graph', 'Matrix',
       ],
-      string_single: [
-        [/[^\\']+/, 'string'],
-        [/\\./, 'string.escape'],
-        [/'/, 'string', '@pop'],
+      operators: ['<-', ':=', '=', '==', '!=', '<', '<=', '>', '>=', '+', '-', '*', '/', 'mod', '->'],
+      tokenizer: {
+        root: [
+          [/#.*$/, 'comment'],
+          [/"([^"\\]|\\.)*$/, 'string.invalid'],
+          [/'([^'\\]|\\.)*$/, 'string.invalid'],
+          [/"/, 'string', '@string_double'],
+          [/'/, 'string', '@string_single'],
+          [/[0-9]+\.[0-9]+([eE][+-]?[0-9]+)?/, 'number.float'],
+          [/[0-9]+/, 'number'],
+          [/[a-zA-Z_][a-zA-Z0-9_]*/, {
+            cases: {
+              '@typeKeywords': 'type',
+              '@keywords': 'keyword',
+              '@default': 'identifier'
+            }
+          }],
+          [/<-|:=/, 'keyword'],
+          [/[+\-*/=<>!]+/, 'operator'],
+          [/[{}()[\],.:]/, 'delimiter'],
+        ],
+        string_double: [
+          [/[^\\"]+/, 'string'],
+          [/\\./, 'string.escape'],
+          [/"/, 'string', '@pop'],
+        ],
+        string_single: [
+          [/[^\\']+/, 'string'],
+          [/\\./, 'string.escape'],
+          [/'/, 'string', '@pop'],
+        ],
+      }
+    });
+
+    monaco.editor.defineTheme('ueas-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
+        { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
+        { token: 'type', foreground: '4EC9B0' },
+        { token: 'string', foreground: 'CE9178' },
+        { token: 'number', foreground: 'B5CEA8' },
+        { token: 'number.float', foreground: 'B5CEA8' },
+        { token: 'operator', foreground: 'D4D4D4' },
+        { token: 'identifier', foreground: 'DCDCAA' },
+        { token: 'delimiter', foreground: '808080' },
       ],
-    }
-  });
+      colors: {
+        'editor.background': '#0d1117',
+        'editor.foreground': '#c9d1d9',
+        'editor.lineHighlightBackground': '#161b22',
+        'editor.selectionBackground': '#264f78',
+        'editorCursor.foreground': '#58a6ff',
+        'editorLineNumber.foreground': '#484f58',
+      }
+    });
 
-  monaco.editor.defineTheme('ueas-dark', {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
-      { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
-      { token: 'type', foreground: '4EC9B0' },
-      { token: 'string', foreground: 'CE9178' },
-      { token: 'number', foreground: 'B5CEA8' },
-      { token: 'number.float', foreground: 'B5CEA8' },
-      { token: 'operator', foreground: 'D4D4D4' },
-      { token: 'identifier', foreground: 'DCDCAA' },
-      { token: 'delimiter', foreground: '808080' },
-    ],
-    colors: {
-      'editor.background': '#0d1117',
-      'editor.foreground': '#c9d1d9',
-      'editor.lineHighlightBackground': '#161b22',
-      'editor.selectionBackground': '#264f78',
-      'editorCursor.foreground': '#58a6ff',
-      'editorLineNumber.foreground': '#484f58',
-    }
-  });
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: examples[0].code,
+      language: 'ueas',
+      theme: 'ueas-dark',
+      fontSize: 14,
+      fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace",
+      lineNumbers: 'on',
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      tabSize: 4,
+      renderWhitespace: 'selection',
+      bracketPairColorization: { enabled: false },
+    });
 
-  editor = monaco.editor.create(document.getElementById('editor'), {
-    value: examples[0].code,
-    language: 'ueas',
-    theme: 'ueas-dark',
-    fontSize: 14,
-    fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace",
-    lineNumbers: 'on',
-    minimap: { enabled: false },
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    tabSize: 4,
-    renderWhitespace: 'selection',
-    bracketPairColorization: { enabled: false },
+    // Render examples sidebar
+    const list = document.getElementById('examples-list');
+    examples.forEach(function(ex, i) {
+      const div = document.createElement('div');
+      div.className = 'example-item' + (i === 0 ? ' active' : '');
+      div.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.complexity + '</div>';
+      div.onclick = function() { loadExample(i); };
+      list.appendChild(div);
+    });
   });
+}
 
-  // Render examples sidebar
-  const list = document.getElementById('examples-list');
-  examples.forEach(function(ex, i) {
-    const div = document.createElement('div');
-    div.className = 'example-item' + (i === 0 ? ' active' : '');
-    div.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.complexity + '</div>';
-    div.onclick = function() { loadExample(i); };
-    list.appendChild(div);
-  });
-});
+initializeApp();
