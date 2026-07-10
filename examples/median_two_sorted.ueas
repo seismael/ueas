@@ -1,0 +1,75 @@
+Algorithm MedianTwoSorted(nums1, nums2)
+    Require: nums1: List, nums2: List
+    Ensure: Float
+    Complexity: "O(log(min(N, M)))", N = nums1.length, M = nums2.length
+
+    # Binary search on the smaller array to find the partition point
+    # that splits both arrays into equal-sized left and right halves,
+    # where max(left) <= min(right).
+
+    if nums1.length > nums2.length then
+        # Ensure nums1 is the smaller array for efficient binary search.
+        return MedianTwoSorted(nums2, nums1)
+    end if
+
+    n <- nums1.length
+    m <- nums2.length
+    total <- n + m
+    half <- total / 2
+
+    left <- 0
+    right <- n
+
+    while left <= right do
+        invariant(left <= right and right <= n, "Search bounds valid")
+        invariant(half == (n + m + 1) / 2, "half is the size of the left partition")
+
+        # Partition nums1: elements at indices < partition1 go left.
+        partition1 <- left + (right - left) / 2
+        # Partition nums2: take enough elements to fill the left half.
+        partition2 <- half - partition1
+
+        # Boundary values: use -infinity if partition is at 0,
+        # +infinity if partition is at array end.
+        if partition1 == 0 then
+            maxLeft1 <- -999999999.0
+        else
+            maxLeft1 <- nums1[partition1 - 1]
+        end if
+
+        if partition1 == n then
+            minRight1 <- 999999999.0
+        else
+            minRight1 <- nums1[partition1]
+        end if
+
+        if partition2 == 0 then
+            maxLeft2 <- -999999999.0
+        else
+            maxLeft2 <- nums2[partition2 - 1]
+        end if
+
+        if partition2 == m then
+            minRight2 <- 999999999.0
+        else
+            minRight2 <- nums2[partition2]
+        end if
+
+        if maxLeft1 <= minRight2 and maxLeft2 <= minRight1 then
+            # Found the correct partition.
+            if total % 2 == 0 then
+                return (max(maxLeft1, maxLeft2) + min(minRight1, minRight2)) / 2.0
+            else
+                return max(maxLeft1, maxLeft2)
+            end if
+        else if maxLeft1 > minRight2 then
+            # Partition1 is too far right — move left.
+            right <- partition1 - 1
+        else
+            # Partition1 is too far left — move right.
+            left <- partition1 + 1
+        end if
+    end while
+
+    return -1.0
+end Algorithm

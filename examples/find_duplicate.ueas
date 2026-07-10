@@ -1,0 +1,23 @@
+Algorithm FindDuplicate(data)
+    Require: data: List
+    Ensure: Integer
+    Complexity: "O(N)", N = data.length
+
+    tortoise <- data[0]
+    hare <- data[0]
+
+    while true do
+        tortoise <- data[tortoise]
+        hare <- data[data[hare]]
+        if tortoise == hare then
+            break
+        end if
+    end while
+
+    tortoise <- data[0]
+    while tortoise != hare do
+        tortoise <- data[tortoise]
+        hare <- data[hare]
+    end while
+
+    return tortoise

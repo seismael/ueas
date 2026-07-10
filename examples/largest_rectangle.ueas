@@ -1,0 +1,52 @@
+Algorithm LargestRectangle(heights)
+    Require: heights: List
+    Ensure: Integer
+    Complexity: "O(N)"
+
+    # Monotonic stack approach: for each bar, compute the largest rectangle
+    # with that bar as the minimum height. The stack maintains increasing heights.
+    # When a shorter bar arrives, pop taller bars and compute their rectangle areas.
+
+    stack <- {}
+    maxArea <- 0
+    n <- heights.length
+
+    # Append a sentinel height of 0 to flush all remaining bars in the stack.
+    i <- 0
+    while i <= n do
+        invariant(i <= n, "Index within bounds including sentinel")
+        invariant(stack is non-decreasing in heights, "Stack is monotonic increasing by height")
+
+        if i == n then
+            currentHeight <- 0
+        else
+            currentHeight <- heights[i]
+        end if
+
+        # Maintain monotonic increasing stack: pop bars taller than current.
+        while stack.length > 0 and heights[stack.peek()] > currentHeight do
+            bar <- stack.pop()
+            height <- heights[bar]
+
+            # Width: if stack is empty after pop, the bar extended from index 0.
+            if stack.length == 0 then
+                width <- i
+            else
+                width <- i - stack.peek() - 1
+            end if
+
+            area <- height * width
+            if area > maxArea then
+                maxArea <- area
+            end if
+        end while
+
+        if i < n then
+            stack.push(i)
+        end if
+
+        i <- i + 1
+    end while
+
+    return maxArea
+end Algorithm

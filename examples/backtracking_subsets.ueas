@@ -1,0 +1,19 @@
+Algorithm Subsets(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N * 2^N)", N = data.length
+
+    result <- [[]]
+
+    for each num in data do
+        size <- result.length
+        i <- 0
+        while i < size do
+            subset <- Copy(result[i])
+            subset.append(num)
+            result.append(subset)
+            i <- i + 1
+        end while
+    end for
+
+    return result

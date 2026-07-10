@@ -1,0 +1,39 @@
+Algorithm TrapRainWater(heights)
+    Require: heights: List
+    Ensure: Integer
+    Complexity: "O(N)"
+
+    if heights.length == 0 then
+        return 0
+    end if
+
+    # Two-pointer approach: water trapped at position i is bounded by
+    # the minimum of the highest wall to the left and right, minus height[i].
+    # Maintain running max from both ends to avoid O(N) prefix scans.
+    left <- 0
+    right <- heights.length - 1
+    leftMax <- heights[left]
+    rightMax <- heights[right]
+    totalWater <- 0
+
+    while left < right do
+        invariant(left <= right, "Pointers must not cross")
+        invariant(leftMax == max(heights[0:left+1]), "leftMax tracks left maximum")
+        invariant(rightMax == max(heights[right:heights.length]), "rightMax tracks right maximum")
+
+        if leftMax < rightMax then
+            # The left wall is the limiting constraint for position left+1.
+            left <- left + 1
+            leftMax <- max(leftMax, heights[left])
+            # Water at position left = leftMax - heights[left] (non-negative by construction).
+            totalWater <- totalWater + (leftMax - heights[left])
+        else
+            # The right wall is the limiting constraint for position right-1.
+            right <- right - 1
+            rightMax <- max(rightMax, heights[right])
+            totalWater <- totalWater + (rightMax - heights[right])
+        end if
+    end while
+
+    return totalWater
+end Algorithm

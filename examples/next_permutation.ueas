@@ -1,0 +1,64 @@
+Algorithm NextPermutation(arr)
+    Require: arr: List
+    Ensure: List
+    Complexity: "O(N)"
+
+    if arr.length <= 1 then
+        return arr
+    end if
+
+    # Step 1: Find the first decreasing element from the right.
+    # This is the pivot — the rightmost element that can be increased.
+    pivot <- arr.length - 2
+    while pivot >= 0 and arr[pivot] >= arr[pivot + 1] do
+        pivot <- pivot - 1
+    end while
+
+    if pivot < 0 then
+        # Entire sequence is non-increasing — this is the last permutation.
+        # Return the first (sorted ascending).
+        ReverseRange(arr, 0, arr.length - 1)
+        return arr
+    end if
+
+    # Step 2: Find the smallest element in the suffix that exceeds the pivot.
+    # The suffix [pivot+1:] is in descending order, so scan from the right.
+    successor <- arr.length - 1
+    while arr[successor] <= arr[pivot] do
+        successor <- successor - 1
+    end while
+
+    swap(arr, pivot, successor)
+
+    # Step 3: Reverse the suffix to get the minimal next permutation.
+    ReverseRange(arr, pivot + 1, arr.length - 1)
+
+    return arr
+end Algorithm
+
+
+Algorithm ReverseRange(arr, left, right)
+    Require: arr: List, left: Integer, right: Integer
+    Ensure: List
+    Complexity: "O(N)"
+
+    while left < right do
+        swap(arr, left, right)
+        left <- left + 1
+        right <- right - 1
+    end while
+
+    return arr
+end Algorithm
+
+
+Algorithm Swap(arr, i, j)
+    Require: arr: List, i: Integer, j: Integer
+    Ensure: List
+    Complexity: "O(1)"
+
+    temp <- arr[i]
+    arr[i] <- arr[j]
+    arr[j] <- temp
+    return arr
+end Algorithm

@@ -1,0 +1,25 @@
+Algorithm IsValidParentheses(s)
+    Require: s: String
+    Ensure: Boolean
+    Complexity: "O(N)", N = s.length
+
+    stack <- []
+
+    for each ch in s do
+        if ch == '(' or ch == '{' or ch == '[' then
+            stack.append(ch)
+        else
+            if stack.length == 0 then
+                return false
+            end if
+
+            top <- stack[-1]
+            if (ch == ')' and top == '(') or (ch == '}' and top == '{') or (ch == ']' and top == '[') then
+                stack.pop()
+            else
+                return false
+            end if
+        end if
+    end for
+
+    return stack.length == 0

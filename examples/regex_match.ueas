@@ -1,0 +1,65 @@
+Algorithm RegexMatch(text, pattern)
+    Require: text: String, pattern: String
+    Ensure: Boolean
+    Complexity: "O(M * N)", M = text.length, N = pattern.length
+
+    # Dynamic programming: dp[i][j] = true if text[0:i] matches pattern[0:j].
+    # Pattern supports "." (any single char) and "*" (zero or more of preceding).
+    # Interpretation: "c*" matches zero or more occurrences of character c.
+
+    m <- text.length
+    n <- pattern.length
+
+    dp <- {}
+    for i <- 0 to m do
+        dp[i] <- {}
+        for j <- 0 to n do
+            dp[i][j] <- false
+        end for
+    end for
+
+    # Empty text matches empty pattern.
+    dp[0][0] <- true
+
+    # Empty text matches pattern if all pattern pairs are "x*" (zero-repetition).
+    # Iterate over pattern by pairs, checking if even-index chars have a following "*".
+    j <- 0
+    while j + 1 < n do
+        if pattern[j + 1] == "*" then
+            dp[0][j + 2] <- true
+            j <- j + 2
+        else
+            break
+        end if
+    end while
+
+    for i <- 1 to m do
+        for j <- 1 to n do
+            textChar <- text[i - 1]
+            patternChar <- pattern[j - 1]
+
+            if patternChar == "." or patternChar == textChar then
+                # Current characters match — carry forward previous match.
+                dp[i][j] <- dp[i - 1][j - 1]
+            else if patternChar == "*" then
+                # Two possibilities:
+                # 1. Skip "x*" entirely (zero repetitions).
+                dp[i][j] <- dp[i][j - 2]
+
+                # 2. Use one more repetition: preceding char matches current text char.
+                if j >= 2 then
+                    preceding <- pattern[j - 2]
+                    if preceding == "." or preceding == textChar then
+                        if dp[i - 1][j] then
+                            dp[i][j] <- true
+                        end if
+                    end if
+                end if
+            else
+                # Literal mismatch — leave dp[i][j] as false.
+            end if
+        end for
+    end for
+
+    return dp[m][n]
+end Algorithm

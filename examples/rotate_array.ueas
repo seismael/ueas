@@ -1,0 +1,37 @@
+Algorithm RotateArray(data, k)
+    Require: data: List, k: Integer
+    Ensure: List
+    Complexity: "O(N)", N = data.length
+
+    n <- data.length
+    if n <= 1 then
+        return data
+    end if
+
+    k <- k mod n
+    if k == 0 then
+        return data
+    end if
+
+    ReverseRange(data, 0, n - 1)
+    ReverseRange(data, 0, k - 1)
+    ReverseRange(data, k, n - 1)
+
+    return data
+end Algorithm
+
+
+Algorithm ReverseRange(data, left, right)
+    Require: data: List, left: Integer, right: Integer
+    Ensure: List
+    Complexity: "O(M)", M = right - left + 1
+
+    while left < right do
+        temp <- data[left]
+        data[left] <- data[right]
+        data[right] <- temp
+        left <- left + 1
+        right <- right - 1
+    end while
+
+    return data

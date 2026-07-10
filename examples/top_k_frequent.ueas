@@ -1,0 +1,29 @@
+Algorithm TopKFrequent(data, k)
+    Require: data: List, k: Integer
+    Ensure: List
+    Complexity: "O(N log K)", N = data.length
+
+    freqMap <- {}
+    for each num in data do
+        if num not in freqMap then
+            freqMap[num] <- 0
+        end if
+        freqMap[num] <- freqMap[num] + 1
+    end for
+
+    minHeap <- []
+    for each key in Keys(freqMap) do
+        MinHeapPush(minHeap, [freqMap[key], key])
+        if minHeap.length > k then
+            MinHeapPop(minHeap)
+        end if
+    end for
+
+    result <- []
+    while minHeap.length > 0 do
+        entry <- MinHeapPop(minHeap)
+        result.append(entry[1])
+    end while
+
+    Reverse(result)
+    return result

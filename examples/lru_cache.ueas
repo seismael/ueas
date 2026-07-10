@@ -1,0 +1,101 @@
+Algorithm LruCache(capacity)
+    Require: capacity: Integer
+    Ensure: Map
+    Complexity: "O(1) amortized per operation"
+
+    # LRU Cache backed by a doubly-linked list and a hash map.
+    # Head = most recently used, Tail = least recently used.
+    # All get/put operations are O(1).
+    state <- {}
+    state["capacity"] <- capacity
+    # Doubly-linked list sentinel nodes
+    state["head"] <- {"key": 0, "value": 0, "prev": nil, "next": nil}
+    state["tail"] <- {"key": 0, "value": 0, "prev": nil, "next": nil}
+    state["head"]["next"] <- state["tail"]
+    state["tail"]["prev"] <- state["head"]
+    # Hash map: key -> node reference
+    state["cache"] <- {}
+
+    return state
+end Algorithm
+
+
+# Access a key in the LRU cache. Returns the value or -1 if not present.
+# Moves the accessed node to the head (most-recently-used position).
+Algorithm LruGet(state, key)
+    Require: state: Map, key: Integer
+    Ensure: Integer
+    Complexity: "O(1)"
+
+    cache <- state["cache"]
+
+    if key not in cache then
+        return -1
+    end if
+
+    node <- cache[key]
+    RemoveNode(state, node)
+    AddNodeToHead(state, node)
+
+    return node["value"]
+end Algorithm
+
+
+# Insert or update a key-value pair. Evicts the LRU entry if at capacity.
+Algorithm LruPut(state, key, value)
+    Require: state: Map, key: Integer, value: Integer
+    Ensure: Map
+    Complexity: "O(1)"
+
+    cache <- state["cache"]
+
+    if key in cache then
+        node <- cache[key]
+        node["value"] <- value
+        RemoveNode(state, node)
+        AddNodeToHead(state, node)
+    else
+        newNode <- {"key": key, "value": value, "prev": nil, "next": nil}
+        cache[key] <- newNode
+        AddNodeToHead(state, newNode)
+
+        if cache.length > state["capacity"] then
+            # Evict the least-recently-used node (before the tail sentinel).
+            lruNode <- state["tail"]["prev"]
+            RemoveNode(state, lruNode)
+            cache.remove(lruNode["key"])
+        end if
+    end if
+
+    return state
+end Algorithm
+
+
+# Extract a node from the doubly-linked list (re-link its neighbors).
+Algorithm RemoveNode(state, node)
+    Require: state: Map, node: Map
+    Ensure: Map
+    Complexity: "O(1)"
+
+    prevNode <- node["prev"]
+    nextNode <- node["next"]
+    prevNode["next"] <- nextNode
+    nextNode["prev"] <- prevNode
+
+    return state
+end Algorithm
+
+
+# Place a node immediately after the head sentinel (most-recently-used).
+Algorithm AddNodeToHead(state, node)
+    Require: state: Map, node: Map
+    Ensure: Map
+    Complexity: "O(1)"
+
+    node["prev"] <- state["head"]
+    node["next"] <- state["head"]["next"]
+    state["head"]["next"]["prev"] <- node
+    state["head"]["next"] <- node
+
+    return state
+end Algorithm

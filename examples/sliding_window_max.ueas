@@ -1,0 +1,40 @@
+Algorithm MaxSlidingWindow(data, k)
+    Require: data: List, k: Integer
+    Ensure: List
+    Complexity: "O(N)", N = data.length
+
+    n <- data.length
+    if k > n then
+        k <- n
+    end if
+
+    result <- []
+    dequeIndices <- []
+
+    i <- 0
+    while i < k do
+        while dequeIndices.length > 0 and data[i] >= data[dequeIndices[-1]] do
+            dequeIndices.pop()
+        end while
+        dequeIndices.append(i)
+        i <- i + 1
+    end while
+
+    while i < n do
+        result.append(data[dequeIndices[0]])
+
+        while dequeIndices.length > 0 and dequeIndices[0] <= i - k do
+            dequeIndices.popIndex(0)
+        end while
+
+        while dequeIndices.length > 0 and data[i] >= data[dequeIndices[-1]] do
+            dequeIndices.pop()
+        end while
+
+        dequeIndices.append(i)
+        i <- i + 1
+    end while
+
+    result.append(data[dequeIndices[0]])
+
+    return result

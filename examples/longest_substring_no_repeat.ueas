@@ -1,0 +1,37 @@
+Algorithm LengthOfLongestSubstring(s)
+    Require: s: String
+    Ensure: Integer
+    Complexity: "O(N)", N = s.length
+
+    if s.length == 0 then
+        return 0
+    end if
+
+    lastSeen <- [-1]
+    i <- 0
+    while i < 128 do
+        lastSeen.append(-1)
+        i <- i + 1
+    end while
+
+    maxLen <- 0
+    left <- 0
+    right <- 0
+
+    while right < s.length do
+        ch <- CharCode(s[right])
+        if lastSeen[ch] >= left then
+            left <- lastSeen[ch] + 1
+        end if
+
+        lastSeen[ch] <- right
+
+        currentLen <- right - left + 1
+        if currentLen > maxLen then
+            maxLen <- currentLen
+        end if
+
+        right <- right + 1
+    end while
+
+    return maxLen

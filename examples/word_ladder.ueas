@@ -1,0 +1,74 @@
+Algorithm WordLadder(beginWord, endWord, wordList)
+    Require: beginWord: String, endWord: String, wordList: List
+    Ensure: Integer
+    Complexity: "O(M^2 * N)", M = beginWord.length, N = wordList.length
+
+    # BFS shortest-path over the implicit graph where edges connect words
+    # differing by exactly one character. Each node expands O(M * 26) neighbors.
+    wordSet <- {}
+    for each word in wordList do
+        wordSet.add(word)
+    end for
+
+    if endWord not in wordSet then
+        return 0
+    end if
+
+    queue <- [{beginWord, 1}]
+    visited <- {}
+    visited.add(beginWord)
+
+    while queue.length > 0 do
+        invariant(visited.length <= wordList.length + 1, "Visited bounded by total words")
+        current <- queue.removeFirst()
+        currentWord <- current[0]
+        level <- current[1]
+
+        if currentWord == endWord then
+            return level
+        end if
+
+        # Generate all one-character transformations.
+        wordChars <- StringToCharacters(currentWord)
+        for i <- 0 to wordChars.length - 1 do
+            original <- wordChars[i]
+            for c <- "a" to "z" do
+                wordChars[i] <- c
+                candidate <- CharactersToString(wordChars)
+                if candidate in wordSet and candidate not in visited then
+                    visited.add(candidate)
+                    queue.append({candidate, level + 1})
+                end if
+            end for
+            wordChars[i] <- original
+        end for
+    end while
+
+    return 0
+end Algorithm
+
+
+Algorithm StringToCharacters(s)
+    Require: s: String
+    Ensure: List
+    Complexity: "O(M)"
+
+    chars <- []
+    for i <- 0 to s.length - 1 do
+        chars.append(s[i])
+    end for
+    return chars
+end Algorithm
+
+
+Algorithm CharactersToString(chars)
+    Require: chars: List
+    Ensure: String
+    Complexity: "O(M)"
+
+    result <- ""
+    for each c in chars do
+        result <- result + c
+    end for
+    return result
+end Algorithm
