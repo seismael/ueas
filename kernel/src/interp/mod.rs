@@ -59,7 +59,7 @@ impl SymbolTable {
             .insert(name.to_string(), handle);
         Ok(handle)
     }
-    pub fn lookup(&self, name: &str, heap: &VirtualHeap) -> Option<AstValue> {
+    pub fn lookup(&self, name: &str, heap: &mut VirtualHeap) -> Option<AstValue> {
         for scope in self.scopes.iter().rev() {
             if let Some(h) = scope.symbols.get(name) {
                 return read_value_from_heap(heap, *h).ok();
@@ -99,7 +99,7 @@ fn value_to_bytes(value: &AstValue) -> (Vec<u8>, crate::heap::TypeTag) {
     }
 }
 
-fn read_value_from_heap(heap: &VirtualHeap, handle: HeapHandle) -> Result<AstValue, ExitCode> {
+fn read_value_from_heap(heap: &mut VirtualHeap, handle: HeapHandle) -> Result<AstValue, ExitCode> {
     use crate::heap::TypeTag;
     let tag = heap.allocation_type(handle).unwrap_or(TypeTag::Unknown);
     let size = heap.allocation_size(handle).unwrap_or(0);
@@ -148,6 +148,9 @@ pub struct ExecContext {
     pub symbols: SymbolTable,
     pub profiler: Profiler,
     pub trap: TrapRegister,
+    /// When true, all if-statements execute both branches and compare step
+    /// counts for timing leak detection (ADR 0016 / @ConstantTime).
+    pub constant_time_mode: bool,
 }
 
 impl ExecContext {
@@ -157,6 +160,7 @@ impl ExecContext {
             symbols: SymbolTable::new(),
             profiler: Profiler::new(config),
             trap: TrapRegister::new(),
+            constant_time_mode: false,
         }
     }
     pub fn with_default_config() -> Self {
@@ -183,7 +187,7 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
                 _ => return Err(ExitCode::InvalidOperation),
             };
             ctx.symbols
-                .lookup(name, &ctx.heap)
+                .lookup(name, &mut ctx.heap)
                 .ok_or(ExitCode::NullDereference)
         }
         AstNodeKind::BinaryExpression => eval_binary(ctx, node),
@@ -728,6 +732,46 @@ pub fn execute_if(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exi
     if node.children.is_empty() {
         return Ok(AstValue::None);
     }
+
+    // Timing leak detection (ADR 0016): in @ConstantTime mode, execute both branches
+    // and compare step counts. A divergence means non-constant execution time.
+    if ctx.constant_time_mode && node.children.len() >= 2 {
+        let cond_val = evaluate(ctx, &node.children[0])?;
+        let steps_before = ctx.profiler.step_count();
+
+        // Execute the taken branch
+        let result = if is_truthy(&cond_val) {
+            exec_body(ctx, &node.children[1].children)?
+        } else if node.children.len() > 2 {
+            exec_body(ctx, &node.children[2].children)?
+        } else {
+            AstValue::None
+        };
+
+        let branch_steps = ctx.profiler.step_count() - steps_before;
+
+        // Execute the OPPOSITE branch to compare step counts
+        let steps_before_alt = ctx.profiler.step_count();
+        let _alt_result = if is_truthy(&cond_val) {
+            if node.children.len() > 2 {
+                exec_body(ctx, &node.children[2].children)?
+            } else {
+                AstValue::None
+            }
+        } else {
+            exec_body(ctx, &node.children[1].children)?
+        };
+
+        let alt_steps = ctx.profiler.step_count() - steps_before_alt;
+
+        if branch_steps != alt_steps {
+            ctx.trap.set(ExitCode::TimingLeak);
+            return Err(ExitCode::TimingLeak);
+        }
+
+        return Ok(result);
+    }
+
     if is_truthy(&evaluate(ctx, &node.children[0])?) && node.children.len() > 1 {
         exec_body(ctx, &node.children[1].children)
     } else if node.children.len() > 2 {
@@ -1077,7 +1121,7 @@ mod tests {
         );
         execute_var_decl(&mut c, &decl).unwrap();
         assert_eq!(
-            c.symbols.lookup("count", &c.heap).unwrap(),
+            c.symbols.lookup("count", &mut c.heap).unwrap(),
             AstValue::Integer(42)
         );
     }
@@ -1094,7 +1138,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            c.symbols.lookup("x", &c.heap).unwrap(),
+            c.symbols.lookup("x", &mut c.heap).unwrap(),
             AstValue::Integer(8)
         );
     }
@@ -1194,11 +1238,11 @@ mod tests {
         declare_int(&mut c, "a", 10);
         declare_int(&mut c, "b", 20);
         assert_eq!(
-            c.symbols.lookup("a", &c.heap).unwrap(),
+            c.symbols.lookup("a", &mut c.heap).unwrap(),
             AstValue::Integer(10)
         );
         assert_eq!(
-            c.symbols.lookup("b", &c.heap).unwrap(),
+            c.symbols.lookup("b", &mut c.heap).unwrap(),
             AstValue::Integer(20)
         );
     }
@@ -1230,7 +1274,7 @@ mod tests {
         );
         execute_while(&mut c, &while_node).ok();
         assert_eq!(
-            c.symbols.lookup("x", &c.heap).unwrap(),
+            c.symbols.lookup("x", &mut c.heap).unwrap(),
             AstValue::Integer(3)
         );
     }
@@ -1278,7 +1322,7 @@ mod tests {
         );
         execute_if(&mut c, &if_node).ok();
         assert_eq!(
-            c.symbols.lookup("x", &c.heap).unwrap(),
+            c.symbols.lookup("x", &mut c.heap).unwrap(),
             AstValue::Integer(42)
         );
     }
@@ -1395,7 +1439,7 @@ mod tests {
         );
         execute_while(&mut c, &w).ok();
         assert_eq!(
-            c.symbols.lookup("x", &c.heap).unwrap(),
+            c.symbols.lookup("x", &mut c.heap).unwrap(),
             AstValue::Integer(0)
         );
     }
@@ -1499,7 +1543,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            c.symbols.lookup("novar", &c.heap).unwrap(),
+            c.symbols.lookup("novar", &mut c.heap).unwrap(),
             AstValue::Integer(1)
         );
     }

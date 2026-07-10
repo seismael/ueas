@@ -36,6 +36,8 @@ pub enum ExitCode {
     InvalidComplexityBinding = 10,
     /// Unsupported operation, type mismatch, or unimplemented built-in function.
     InvalidOperation = 11,
+    /// Timing leak detected: divergent step counts between branches in a @ConstantTime block.
+    TimingLeak = 12,
 }
 
 impl ExitCode {
@@ -64,6 +66,7 @@ impl ExitCode {
             ExitCode::InfiniteLoopDetected => "INFINITE_LOOP_DETECTED",
             ExitCode::InvalidComplexityBinding => "INVALID_COMPLEXITY_BINDING",
             ExitCode::InvalidOperation => "INVALID_OPERATION",
+            ExitCode::TimingLeak => "TIMING_LEAK",
         }
     }
 
@@ -89,6 +92,9 @@ impl ExitCode {
             }
             ExitCode::InvalidOperation => {
                 "Unsupported operation, type mismatch, or unimplemented built-in."
+            }
+            ExitCode::TimingLeak => {
+                "Timing leak detected: divergent step counts in @ConstantTime block."
             }
         }
     }
@@ -240,6 +246,7 @@ mod tests {
             ExitCode::InfiniteLoopDetected,
             ExitCode::InvalidComplexityBinding,
             ExitCode::InvalidOperation,
+            ExitCode::TimingLeak,
         ];
         for code in &codes {
             assert!(!code.name().is_empty());

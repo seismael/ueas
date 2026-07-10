@@ -168,7 +168,7 @@ fn conformance_invalid_operation() {
 }
 
 #[test]
-fn conformance_all_12_exit_codes_defined() {
+fn conformance_all_13_exit_codes_defined() {
     let codes = [
         ExitCode::NoError,
         ExitCode::DivisionByZero,
@@ -182,8 +182,9 @@ fn conformance_all_12_exit_codes_defined() {
         ExitCode::InfiniteLoopDetected,
         ExitCode::InvalidComplexityBinding,
         ExitCode::InvalidOperation,
+        ExitCode::TimingLeak,
     ];
-    assert_eq!(codes.len(), 12);
+    assert_eq!(codes.len(), 13);
     for code in &codes {
         assert!(!code.name().is_empty());
     }

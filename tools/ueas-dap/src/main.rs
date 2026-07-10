@@ -508,13 +508,13 @@ impl DapServer {
 
     fn handle_variables(&self, request_seq: i64) {
         let variables: Vec<Value> = {
-            let state = self.state.lock().unwrap();
-            if let Some(ref ctx) = state.context {
+            let mut state = self.state.lock().unwrap();
+            if let Some(ref mut ctx) = state.context {
                 let names = ctx.symbols.variable_names();
                 names
                     .iter()
                     .map(|n| {
-                        let val = ctx.symbols.lookup(n, &ctx.heap);
+                        let val = ctx.symbols.lookup(n, &mut ctx.heap);
                         let display = match &val {
                             Some(v) => format_ast_value(v),
                             None => "null".to_string(),

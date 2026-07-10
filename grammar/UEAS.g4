@@ -47,6 +47,13 @@ OR        : 'or'        | 'Or'        | 'OR';
 NOT       : 'not'       | 'Not'       | 'NOT';
 MOD       : 'mod'       | 'Mod'       | 'MOD';
 AS        : 'as'        | 'As'        | 'AS';
+KB        : 'KB' | 'Kb' | 'kb';
+MB        : 'MB' | 'Mb' | 'mb';
+B         : 'B'  | 'b';
+L1_CACHE  : 'L1';
+L2_CACHE  : 'L2';
+L3_CACHE  : 'L3';
+CACHE_LINE: 'CacheLine';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -99,6 +106,8 @@ program : importDecl* algorithmDecl+ EOF;
 importDecl : 'Import:' IDENTIFIER ('.' IDENTIFIER)* NEWLINE?;
 
 algorithmDecl : complexityDecorator?
+                hardwareProfile?
+                constantTimeDecorator?
                 ALGORITHM IDENTIFIER
                 LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN NEWLINE
                 requireBlock?
@@ -117,6 +126,12 @@ complexityDecorator : COMPLEXITY COLON? STRING_LIT
                       (COMMA variableBinding)* NEWLINE?;
 
 memoryDecorator : MEMORY COLON? STRING_LIT NEWLINE?;
+
+hardwareProfile : '@HardwareProfile' LPAREN cacheDef (COMMA cacheDef)* RPAREN NEWLINE?;
+
+constantTimeDecorator : '@ConstantTime' NEWLINE?;
+
+cacheDef : (L1_CACHE | L2_CACHE | L3_CACHE | CACHE_LINE) BIND INTEGER_LIT (KB | MB | B);
 
 variableBinding : IDENTIFIER BIND expression;
 
