@@ -13,6 +13,7 @@
 pub mod cpp;
 pub mod java;
 pub mod javascript;
+pub mod latex;
 pub mod lean4;
 pub mod mcp;
 pub mod tla;

@@ -3,5 +3,6 @@ members = [
     "kernel",
     "backends",
     "tools/ueas-cli",
+    "tools/ueas-mcp",
 ]
 resolver = "2"

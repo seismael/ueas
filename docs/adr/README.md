@@ -59,6 +59,8 @@ What other options were evaluated? Why were they not chosen?
 | 0009 | Distributed Systems Simulation Model | Accepted | 2026-07-10 |
 | 0010 | Quantum Algorithm Specification | Accepted | 2026-07-10 |
 | 0011 | Tensor Architecture for Machine Learning Workloads | Accepted | 2026-07-10 |
+| 0012 | Academic Bridge (LaTeX Target) | Accepted | 2026-07-10 |
+| 0013 | AI Agent Integration (MCP Server) | Accepted | 2026-07-10 |
 
 ---
 
