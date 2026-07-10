@@ -1,0 +1,10 @@
+{
+  "name": "ueas-mcp",
+  "version": "0.1.0",
+  "description": "Universal Executable Algorithm Standard (UEAS) - Formally verify and draft algorithms in a mathematically rigorous environment before transpiling to production code.",
+  "type": "stdio",
+  "command": "ueas-mcp",
+  "args": [],
+  "repo": "https://github.com/seismael/ueas",
+  "tags": ["algorithms", "formal-verification", "transpiler", "rust"]
+}

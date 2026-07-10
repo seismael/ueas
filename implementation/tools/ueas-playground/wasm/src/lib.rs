@@ -15,7 +15,7 @@ pub fn parse_ueas(source: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn execute_ueas(source: &str) -> Result<String, JsValue> {
+pub fn execute_ueas(_source: &str) -> Result<String, JsValue> {
     let mut ctx = ExecContext::with_default_config();
     let algo = AstNode::internal(
         AstNodeKind::Algorithm,
@@ -34,7 +34,7 @@ pub fn execute_ueas(source: &str) -> Result<String, JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn transpile_ueas(source: &str, target: &str) -> Result<String, JsValue> {
+pub fn transpile_ueas(_source: &str, target: &str) -> Result<String, JsValue> {
     let algo = AstNode::internal(
         AstNodeKind::Algorithm,
         vec![

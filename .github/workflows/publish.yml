@@ -1,0 +1,38 @@
+name: Publish
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  crates:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: implementation } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo publish -p ueas-kernel --token ${{ secrets.CARGO_TOKEN }} --dry-run
+
+  pypi:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: implementation/tools/ueas-jupyter } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+
+  release-binary:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults: { run: { working-directory: implementation } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release -p ueas-cli
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: implementation/target/release/ueas*
