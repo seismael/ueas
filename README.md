@@ -128,6 +128,24 @@ ueas transpile examples/linear_search.ueas --target rust
 ### Standard Library
 UEAS ships with a comprehensive [standard algorithm library](library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
 
+### Examples
+**30 reference implementations** organized by algorithmic technique:
+
+| Category | Count | Highlights |
+|----------|-------|------------|
+| core | 4 | Euclidean, Linear/Binary Search, Matrix Multiply |
+| sorting | 3 | Quicksort, Merge Sort, Randomized QuickSort |
+| graph | 3 | BFS, DFS, Dijkstra |
+| dynamic_programming | 4 | Kadane, Regex Match, Longest Substring, Median of Two Sorted |
+| backtracking | 4 | Subsets, N-Queens, Sudoku, Word Ladder |
+| arrays | 7 | Two Sum, Sliding Window, Trap Rain Water, Dutch Flag |
+| stack | 2 | Valid Parentheses, Largest Rectangle |
+| heap | 1 | Top K Frequent |
+| design | 1 | LRU Cache |
+| intervals | 1 | Merge Intervals |
+
+All examples validated with `ueas check examples/<category>/<name>.ueas`.
+
 ---
 
 ## 6. Roadmap & Status
