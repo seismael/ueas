@@ -18,6 +18,13 @@ pub mod lean4;
 pub mod mcp;
 pub mod tla;
 
+pub use cpp::CppTarget;
+pub use java::JavaTarget;
+pub use javascript::JavaScriptTarget;
+pub use latex::LatexTarget;
+pub use lean4::LeanTarget;
+pub use tla::TlaTarget;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 

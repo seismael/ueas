@@ -3,7 +3,10 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
-use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
+use ueas_backends::{
+    CppTarget, JavaScriptTarget, JavaTarget, LatexTarget, LeanTarget, PythonTarget, RustTarget,
+    TargetGenerator, TlaTarget,
+};
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind};
 use ueas_kernel::interp::{execute_program, ExecContext};
 
@@ -40,6 +43,14 @@ enum Command {
 enum Target {
     Python,
     Rust,
+    Cpp,
+    Java,
+    Javascript,
+    #[value(name = "lean4")]
+    Lean4,
+    #[value(name = "tlaplus")]
+    TlaPlus,
+    Latex,
 }
 
 fn main() -> Result<()> {
@@ -548,6 +559,24 @@ fn cmd_transpile(file: &PathBuf, target: &Target) -> Result<()> {
             .generate(&ast_json)
             .map_err(|e| anyhow::anyhow!("{}", e.message))?,
         Target::Rust => RustTarget
+            .generate(&ast_json)
+            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
+        Target::Cpp => CppTarget
+            .generate(&ast_json)
+            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
+        Target::Java => JavaTarget
+            .generate(&ast_json)
+            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
+        Target::Javascript => JavaScriptTarget
+            .generate(&ast_json)
+            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
+        Target::Lean4 => LeanTarget
+            .generate(&ast_json)
+            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
+        Target::TlaPlus => TlaTarget::default()
+            .generate(&ast_json)
+            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
+        Target::Latex => LatexTarget
             .generate(&ast_json)
             .map_err(|e| anyhow::anyhow!("{}", e.message))?,
     };
