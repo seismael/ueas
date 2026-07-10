@@ -102,11 +102,13 @@ pub fn handle_transpile(
         "lean4" => Box::new(crate::lean4::LeanTarget),
         "tlaplus" => Box::new(crate::tla::TlaTarget::new()),
         "latex" => Box::new(crate::latex::LatexTarget),
-        _ => return Err(McpErrorResponse {
-            error_code: "UNSUPPORTED_TARGET".to_string(),
-            message: format!("Target '{}' is not supported", request.target),
-            node_kind: None,
-        }),
+        _ => {
+            return Err(McpErrorResponse {
+                error_code: "UNSUPPORTED_TARGET".to_string(),
+                message: format!("Target '{}' is not supported", request.target),
+                node_kind: None,
+            })
+        }
     };
 
     let source = target.generate(&ast_json).map_err(|e| McpErrorResponse {

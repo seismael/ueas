@@ -24,7 +24,15 @@ impl TlaTarget {
             var_names: Vec::new(),
         }
     }
+}
 
+impl Default for TlaTarget {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TlaTarget {
     fn gather_body_stats(&mut self, body: &[serde_json::Value]) -> Result<(), TranspilationError> {
         for stmt in body {
             self.gather_statement_vars(stmt)?;
