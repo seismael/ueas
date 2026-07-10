@@ -6,6 +6,7 @@
 
 use anyhow::Result;
 use serde_json::{json, Value};
+use socket2::{Domain, Socket, Type};
 use std::io::{self, BufRead, Write};
 use std::net::SocketAddr;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -41,18 +42,18 @@ async fn main() -> Result<()> {
 }
 
 async fn bind_with_retry(addr: SocketAddr) -> Result<TcpListener, anyhow::Error> {
-    let mut attempt = 0u32;
-    loop {
-        attempt += 1;
-        match TcpListener::bind(addr).await {
-            Ok(l) => return Ok(l),
-            Err(e) if attempt < 10 => {
-                eprintln!("MCP: bind attempt {} failed: {} — retrying 2s", attempt, e);
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            }
-            Err(e) => return Err(anyhow::anyhow!("Bind failed after {}: {}", attempt, e)),
-        }
-    }
+    let domain = if addr.is_ipv4() {
+        Domain::IPV4
+    } else {
+        Domain::IPV6
+    };
+    let socket = Socket::new(domain, Type::STREAM, None)?;
+    socket.set_reuse_address(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(128)?;
+    socket.set_nonblocking(true)?;
+    let std_listener: std::net::TcpListener = socket.into();
+    Ok(TcpListener::from_std(std_listener)?)
 }
 
 fn run_stdio_mode() {
