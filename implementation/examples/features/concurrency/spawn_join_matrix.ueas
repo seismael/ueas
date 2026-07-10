@@ -1,0 +1,21 @@
+Algorithm SpawnJoinMatrix(A, B)
+    Require: A: Matrix, B: Matrix
+    Ensure: Matrix
+    Complexity: "O(N^3 / P)", Work = O(N^3), Span = O(log N)
+
+    N <- A.rows
+
+    parallel for each i in range(0, N) do
+        j <- 0
+        while j < N do
+            k <- 0
+            while k < N do
+                spawn C[i][j] <- A[i][k] * B[k][j]
+                k <- k + 1
+            end while
+            j <- j + 1
+        end while
+    end for
+
+    sync
+    return C

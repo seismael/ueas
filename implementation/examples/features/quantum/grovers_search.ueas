@@ -1,0 +1,22 @@
+Algorithm GroversSearch(database, target)
+    Require: database: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(sqrt N)"
+
+    n <- database.length
+    q <- 0
+
+    qubit <- 0
+
+    i <- 0
+    while i < n do
+        if database[i] == target then
+            measure qubit
+            if qubit == 1 then
+                return i
+            end if
+        end if
+        i <- i + 1
+    end while
+
+    return -1

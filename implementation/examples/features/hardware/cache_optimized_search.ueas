@@ -1,0 +1,18 @@
+Algorithm CacheOptimizedSearch(data, target)
+    Require: data: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(N / L)"
+
+    @HardwareProfile(L1 = 64KB, L2 = 512KB, CacheLine = 64B)
+
+    n <- data.length
+    i <- 0
+
+    while i < n do
+        if data[i] == target then
+            return i
+        end if
+        i <- i + 1
+    end while
+
+    return -1

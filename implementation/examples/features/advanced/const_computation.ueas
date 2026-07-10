@@ -1,0 +1,12 @@
+Algorithm ConstComputation(radius)
+    Require: radius: Real
+    Ensure: Real
+    Complexity: "O(1)"
+
+    const PI <- 3.14159265359
+    const TWO <- 2.0
+
+    area <- PI * radius * radius
+    circumference <- TWO * PI * radius
+
+    return area + circumference

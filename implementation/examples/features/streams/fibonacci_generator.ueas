@@ -1,0 +1,18 @@
+Algorithm FibonacciGenerator(limit)
+    Require: limit: Integer
+    Ensure: Stream
+    Complexity: "O(N)", Memory = "O(1)"
+
+    Stream Result Integer
+
+    a <- 0
+    b <- 1
+
+    i <- 0
+    while i < limit do
+        yield a
+        next <- a + b
+        a <- b
+        b <- next
+        i <- i + 1
+    end while

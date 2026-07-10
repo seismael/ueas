@@ -1,0 +1,17 @@
+Algorithm ParallelSum(data)
+    Require: data: List
+    Ensure: Integer
+    Complexity: "O(N / P + log P)", Work = O(N)
+
+    parallel for each chunk in data do
+        size <- chunk.length
+        partial <- 0
+        i <- 0
+        while i < size do
+            partial <- partial + chunk[i]
+            i <- i + 1
+        end while
+    end for
+
+    result <- partial
+    return result

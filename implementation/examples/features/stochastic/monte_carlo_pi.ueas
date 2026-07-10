@@ -1,0 +1,23 @@
+Algorithm MonteCarloPi(iterations)
+    Require: iterations: Integer
+    Ensure: Real
+    Complexity: "O(N)", Expected = "O(N)"
+
+    inside <- 0
+    i <- 0
+
+    while i < iterations do
+        x <- random(0, 10000)
+        y <- random(0, 10000)
+
+        dist <- x * x + y * y
+
+        if dist <= 100000000 then
+            inside <- inside + 1
+        end if
+
+        i <- i + 1
+    end while
+
+    pi <- (4.0 * inside) / iterations
+    return pi

@@ -1,0 +1,23 @@
+Algorithm GraphDemo(g, source)
+    Require: g: Graph, source: Integer
+    Ensure: Integer
+    Complexity: "O(V + E)", V = g.nodes, E = g.edges
+
+    Directed
+
+    visited <- 0
+    queue <- [source]
+
+    while queue.length > 0 do
+        current <- queue.pop(0)
+        visited <- visited + 1
+
+        for each neighbor in g.adjacent(current) do
+            if neighbor > 0 then
+                queue.append(neighbor)
+            end if
+        end for
+    end while
+
+    return visited
+end Algorithm

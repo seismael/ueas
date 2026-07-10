@@ -5,8 +5,8 @@
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](implementation/kernel/)  
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
-[![Examples](https://img.shields.io/badge/Examples-30-orange)](implementation/examples/)
-[![Version](https://img.shields.io/badge/Version-4.0.0-blue)](VERSION)
+[![Examples](https://img.shields.io/badge/Examples-45-orange)](implementation/examples/)
+[![Version](https://img.shields.io/badge/Version-4.0.1-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
 
@@ -150,6 +150,22 @@ UEAS ships with a comprehensive [standard algorithm library](implementation/libr
 | heap | 1 | Top K Frequent |
 | design | 1 | LRU Cache |
 | intervals | 1 | Merge Intervals |
+
+### Feature Examples
+**15 specification capability demos** organized by feature domain:
+
+| Category | Count | Demonstrated Features |
+|----------|-------|----------------------|
+| concurrency | 2 | spawn/sync, parallel for, Work-Span |
+| distributed | 1 | send/receive messaging |
+| quantum | 1 | Qubit type, Measure statement |
+| tensor | 1 | Tensor<T,Dims>, broadcasting |
+| cryptographic | 1 | Secret<T>, @ConstantTime |
+| stochastic | 1 | random(), Expected complexity |
+| streams | 2 | Stream<T>, yield/await |
+| hardware | 1 | @HardwareProfile cache config |
+| modules | 1 | Import: namespace resolution |
+| advanced | 4 | const, Graph, Directed, Memory, Infinity, NaN |
 
 All examples validated with `ueas check examples/<category>/<name>.ueas`.
 

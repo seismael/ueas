@@ -1,0 +1,20 @@
+Algorithm ConstantTimeCompare(a, b)
+    Require: a: Secret, b: Secret
+    Ensure: Boolean
+    Complexity: "O(1)"
+
+    @ConstantTime
+
+    result <- 0
+    i <- 0
+
+    while i < a.length do
+        if a[i] == b[i] then
+            result <- result + 1
+        else
+            result <- result - 1
+        end if
+        i <- i + 1
+    end while
+
+    return result == a.length

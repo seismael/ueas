@@ -1,0 +1,16 @@
+Algorithm TokenRingLeader(nodes)
+    Require: nodes: List
+    Ensure: Integer
+    Complexity: "O(N)"
+
+    token <- 0
+    i <- 0
+
+    for each node in nodes do
+        send token to node
+        receive reply from node
+        token <- token + 1
+        i <- i + 1
+    end for
+
+    return token

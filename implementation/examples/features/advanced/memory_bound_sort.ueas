@@ -1,0 +1,18 @@
+Algorithm MemoryBoundSort(data)
+    Require: data: List
+    Ensure: List
+    Complexity: "O(N log N)", Memory = "O(N)"
+
+    n <- data.length
+
+    if n <= 1 then
+        return data
+    end if
+
+    mid <- n / 2
+    left <- data[0:mid]
+    right <- data[mid:n]
+
+    result <- Merge(left, right)
+    return result
+end Algorithm

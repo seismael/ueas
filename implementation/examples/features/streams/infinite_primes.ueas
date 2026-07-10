@@ -1,0 +1,29 @@
+Algorithm PrimeGenerator()
+    Require:
+    Ensure: Stream
+    Complexity: "O(N log log N)"
+
+    Stream Result Integer
+
+    yield 2
+    candidate <- 3
+
+    while true do
+        isPrime <- 1
+        divisor <- 3
+
+        while divisor * divisor <= candidate do
+            if candidate mod divisor == 0 then
+                isPrime <- 0
+                divisor <- candidate
+            end if
+            divisor <- divisor + 2
+        end while
+
+        if isPrime == 1 then
+            yield candidate
+        end if
+
+        candidate <- candidate + 2
+    end while
+end Algorithm

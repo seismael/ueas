@@ -1,0 +1,20 @@
+Algorithm TensorBroadcast(A, scalar)
+    Require: A: Tensor, scalar: Real
+    Ensure: Tensor
+    Complexity: "O(N^D)", D = 2
+
+    tensor A Real 2
+
+    result <- zeroTensorLike(A)
+
+    i <- 0
+    while i < A.dim[0] do
+        j <- 0
+        while j < A.dim[1] do
+            result[i][j] <- A[i][j] * scalar
+            j <- j + 1
+        end while
+        i <- i + 1
+    end while
+
+    return result
