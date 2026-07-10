@@ -11,6 +11,12 @@ use ueas_kernel::interp::{evaluate, execute_program, ExecContext};
 use ueas_kernel::profiling::{ComplexityContract, ComplexityKind, Profiler, ProfilingConfig};
 use ueas_kernel::traps::ExitCode;
 
+fn declare_int(ctx: &mut ExecContext, name: &str, val: i64) {
+    ctx.symbols
+        .declare(name, &AstValue::Integer(val), &mut ctx.heap)
+        .unwrap();
+}
+
 #[test]
 fn conformance_euclidean_no_error() {
     let mut ctx = ExecContext::with_default_config();
@@ -191,4 +197,89 @@ fn conformance_all_13_exit_codes_defined() {
     for code in &codes {
         assert!(!code.name().is_empty());
     }
+}
+
+#[test]
+fn conformance_timing_leak_detected_on_divergent_branches() {
+    let mut ctx = ExecContext::with_default_config();
+    ctx.constant_time_mode = true;
+    ctx.secret_variables.insert("k".to_string());
+    declare_int(&mut ctx, "k", 1);
+
+    // then-body: single return (cheap)
+    let then_body = AstNode::internal(
+        AstNodeKind::If,
+        vec![AstNodeFactory::return_stmt(Some(
+            AstNodeFactory::integer_literal("1"),
+        ))],
+        None,
+    );
+    // else-body: complex expression (more steps)
+    let else_body = AstNode::internal(
+        AstNodeKind::If,
+        vec![AstNodeFactory::return_stmt(Some(
+            AstNodeFactory::binary_expression(
+                "+",
+                AstNodeFactory::binary_expression(
+                    "+",
+                    AstNodeFactory::integer_literal("1"),
+                    AstNodeFactory::integer_literal("2"),
+                ),
+                AstNodeFactory::integer_literal("3"),
+            ),
+        ))],
+        None,
+    );
+    let if_node = AstNode::internal(
+        AstNodeKind::If,
+        vec![
+            AstNodeFactory::binary_expression(
+                "==",
+                AstNodeFactory::identifier("k"),
+                AstNodeFactory::integer_literal("1"),
+            ),
+            then_body,
+            else_body,
+        ],
+        None,
+    );
+    let algo = AstNodeFactory::algorithm("TestTiming", vec![], None, "O(1)", vec![], vec![if_node]);
+    let program = AstNodeFactory::program(vec![algo]);
+    let result = execute_program(&mut ctx, &program);
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), ExitCode::TimingLeak);
+}
+
+#[test]
+fn conformance_prng_is_deterministic_across_runs() {
+    let mut ctx1 = ExecContext::with_default_config();
+    ctx1.prng_state = 12345;
+    let mut ctx2 = ExecContext::with_default_config();
+    ctx2.prng_state = 12345;
+    for _ in 0..20 {
+        assert_eq!(ctx1.rand_int(0, 100), ctx2.rand_int(0, 100));
+    }
+}
+
+#[test]
+fn conformance_complexity_contract_with_expected_field() {
+    // Verify that ComplexityContract stores the expected complexity field
+    let contract = ComplexityContract {
+        kind: ComplexityKind::Linear { n: 1 },
+        expected_complexity: Some("O(N)".to_string()),
+    };
+    assert_eq!(contract.expected_complexity, Some("O(N)".to_string()));
+}
+
+#[test]
+fn conformance_profiler_stream_mode_default_off() {
+    let config = ProfilingConfig::default();
+    assert!(!config.stream_mode);
+}
+
+#[test]
+fn conformance_heap_cache_config_default() {
+    let heap = VirtualHeap::with_default_config();
+    assert!(!heap.cache_config.enabled);
+    assert_eq!(heap.cache_config.l1_size, 64 * 1024);
 }

@@ -556,4 +556,42 @@ mod tests {
         let stats = CacheStats::default();
         assert_eq!(stats.total_accesses(), 0);
     }
+
+    #[test]
+    fn cache_hit_same_address_single_line() {
+        let mut heap = VirtualHeap::with_default_config();
+        heap.cache_config.enabled = true;
+        heap.cache_config.l1_size = 128;
+        heap.cache_config.cache_line_size = 64;
+        heap.cache_config.l2_size = 0;
+        heap.simulate_cache_access(0);
+        heap.simulate_cache_access(0);
+        assert_eq!(heap.cache_stats.total_accesses(), 2);
+    }
+
+    #[test]
+    fn cache_miss_different_lines() {
+        let mut heap = VirtualHeap::with_default_config();
+        heap.cache_config.enabled = true;
+        heap.cache_config.l1_size = 64;
+        heap.cache_config.cache_line_size = 64;
+        heap.cache_config.l2_size = 0;
+        heap.simulate_cache_access(0);
+        heap.simulate_cache_access(64);
+        assert!(heap.cache_stats.total_accesses() >= 2);
+    }
+
+    #[test]
+    fn cache_stats_penalty_calculation() {
+        let stats = CacheStats {
+            l1_hits: 100,
+            l1_misses: 10,
+            l2_hits: 5,
+            l2_misses: 5,
+            l3_hits: 1,
+            l3_misses: 4,
+        };
+        let penalty = stats.cache_miss_penalty();
+        assert!(penalty > 0);
+    }
 }

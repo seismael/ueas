@@ -467,4 +467,37 @@ mod tests {
         assert_eq!(contract.expected_complexity, Some("O(N log N)".to_string()));
         assert_eq!(contract.expected_cost(), 1);
     }
+
+    #[test]
+    fn stream_mode_can_be_enabled() {
+        let mut config = ProfilingConfig::default();
+        config.stream_mode = true;
+        assert!(config.stream_mode);
+    }
+
+    #[test]
+    fn default_complexity_contract_has_no_expected() {
+        let contract = ComplexityContract {
+            kind: ComplexityKind::Linear { n: 1 },
+            expected_complexity: None,
+        };
+        assert!(contract.expected_complexity.is_none());
+    }
+
+    #[test]
+    fn prng_seed_stored_in_config() {
+        let mut config = ProfilingConfig::default();
+        config.prng_seed = 42;
+        assert_eq!(config.prng_seed, 42);
+    }
+
+    #[test]
+    fn expected_complexity_can_be_constant() {
+        let contract = ComplexityContract {
+            kind: ComplexityKind::Constant,
+            expected_complexity: Some("O(1)".to_string()),
+        };
+        assert_eq!(contract.kind, ComplexityKind::Constant);
+        assert_eq!(contract.expected_complexity, Some("O(1)".to_string()));
+    }
 }

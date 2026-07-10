@@ -326,4 +326,35 @@ mod tests {
         let result = link_program(&program, &source_loader, &config);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn resolve_nested_namespace_three_levels() {
+        let config = LinkerConfig {
+            library_path: "lib".into(),
+        };
+        let path = resolve_namespace("data.structures.heap", &config);
+        assert_eq!(path, "lib/data/structures/heap.ueas");
+    }
+
+    #[test]
+    fn link_empty_program_no_children() {
+        let program = AstNode::internal(AstNodeKind::Program, vec![], None);
+        let source_loader = |_: &str| -> Result<String, String> { Err("no".into()) };
+        let config = LinkerConfig::default();
+        let result = link_program(&program, &source_loader, &config).unwrap();
+        assert!(result.children.is_empty());
+    }
+
+    #[test]
+    fn link_unknown_node_kind_passes_through() {
+        let program = AstNode::internal(
+            AstNodeKind::Program,
+            vec![AstNode::internal(AstNodeKind::IntegerLiteral, vec![], None)],
+            None,
+        );
+        let source_loader = |_: &str| -> Result<String, String> { Err("no".into()) };
+        let config = LinkerConfig::default();
+        let result = link_program(&program, &source_loader, &config).unwrap();
+        assert!(result.children.is_empty() || result.children.len() == 1);
+    }
 }

@@ -474,7 +474,7 @@ impl LatexTarget {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ueas_kernel::ast::AstNodeFactory;
+    use ueas_kernel::ast::*;
 
     #[test]
     fn latex_target_language_is_latex() {
@@ -531,5 +531,50 @@ mod tests {
         assert!(result.contains("\\caption{EuclideanDistance(x1)}"));
         assert!(result.contains("\\Return{$"));
         assert!(result.contains("\\end{algorithm}"));
+    }
+
+    #[test]
+    fn latex_generates_for_each_loop() {
+        let assign = AstNodeFactory::assignment(
+            AstNodeFactory::identifier("x"),
+            AstNodeFactory::identifier("item"),
+        );
+        let for_loop =
+            AstNodeFactory::for_loop("item", AstNodeFactory::identifier("data"), vec![assign]);
+        let algo = AstNodeFactory::algorithm("Loop", vec![], None, "O(N)", vec![], vec![for_loop]);
+        let program = AstNodeFactory::program(vec![algo]);
+        let json = serde_json::to_string(&program).unwrap();
+        let target = LatexTarget;
+        let output = target.generate(&json).unwrap();
+        assert!(output.contains("\\ForEach"));
+    }
+
+    #[test]
+    fn latex_generates_if_else() {
+        let then_body = AstNode::internal(
+            AstNodeKind::If,
+            vec![AstNodeFactory::return_stmt(Some(
+                AstNodeFactory::integer_literal("1"),
+            ))],
+            None,
+        );
+        let else_body = AstNode::internal(
+            AstNodeKind::If,
+            vec![AstNodeFactory::return_stmt(Some(
+                AstNodeFactory::integer_literal("0"),
+            ))],
+            None,
+        );
+        let if_stmt = AstNode::internal(
+            AstNodeKind::If,
+            vec![AstNodeFactory::boolean_literal(true), then_body, else_body],
+            None,
+        );
+        let algo = AstNodeFactory::algorithm("IfElse", vec![], None, "O(1)", vec![], vec![if_stmt]);
+        let program = AstNodeFactory::program(vec![algo]);
+        let json = serde_json::to_string(&program).unwrap();
+        let target = LatexTarget;
+        let output = target.generate(&json).unwrap();
+        assert!(output.contains("\\eIf"));
     }
 }

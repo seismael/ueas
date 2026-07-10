@@ -383,4 +383,41 @@ mod tests {
         assert!(result.contains("function add(a, b)"));
         assert!(result.contains("return (a + b);"));
     }
+
+    #[test]
+    fn js_generates_empty_algorithm() {
+        let target = JavaScriptTarget;
+        let ast = r#"{"kind":"Algorithm","children":[{"kind":"Identifier","value":"Empty"}]}"#;
+        let output = target.generate(ast).unwrap();
+        assert!(output.contains("function Empty("));
+    }
+
+    #[test]
+    fn js_generates_for_of_loop() {
+        let target = JavaScriptTarget;
+        let ast = r#"{
+            "kind": "Algorithm",
+            "children": [
+                {"kind": "Identifier", "value": "Loop"},
+                {"kind": "ForLoop", "children": [
+                    {"kind": "Identifier", "value": "item"},
+                    {"kind": "Identifier", "value": "data"},
+                    {"kind": "Assignment", "children": [
+                        {"kind": "Identifier", "value": "x"},
+                        {"kind": "Identifier", "value": "item"}
+                    ]}
+                ]}
+            ]
+        }"#;
+        let output = target.generate(ast).unwrap();
+        assert!(output.contains("for ("));
+    }
+
+    #[test]
+    fn js_type_map_has_all_primitives() {
+        let target = JavaScriptTarget;
+        let map = target.type_map();
+        assert!(map.contains(&("Integer", "Number")));
+        assert!(map.contains(&("Boolean", "boolean")));
+    }
 }

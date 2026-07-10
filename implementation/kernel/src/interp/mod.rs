@@ -1952,4 +1952,201 @@ mod tests {
         });
         assert!(has_expected, "Expected binding should be present");
     }
+
+    #[test]
+    fn exec_yield_returns_expression_value() {
+        let mut c = ctx();
+        let y = AstNode::internal(
+            AstNodeKind::Yield,
+            vec![AstNodeFactory::integer_literal("42")],
+            None,
+        );
+        let result = exec_yield(&mut c, &y).unwrap();
+        assert_eq!(result, AstValue::Integer(42));
+    }
+
+    #[test]
+    fn exec_await_not_found_returns_declared() {
+        let mut c = ctx();
+        declare_int(&mut c, "x", 99);
+        let a = AstNode::internal(
+            AstNodeKind::Await,
+            vec![AstNodeFactory::identifier("x")],
+            None,
+        );
+        let result = exec_await(&mut c, &a).unwrap();
+        assert_eq!(result, AstValue::Integer(99));
+    }
+
+    #[test]
+    fn secret_variable_tracks_across_scopes() {
+        let mut c = ctx();
+        c.constant_time_mode = true;
+        let secret_i = AstNodeFactory::type_node("Integer", vec![]);
+        let secret_t = AstNode::internal(AstNodeKind::SecretType, vec![secret_i], None);
+        let decl = AstNode::internal(
+            AstNodeKind::VariableDeclaration,
+            vec![
+                AstNodeFactory::identifier("key"),
+                secret_t.clone(),
+                AstNodeFactory::integer_literal("0"),
+            ],
+            None,
+        );
+        execute_var_decl(&mut c, &decl).unwrap();
+        assert!(c.secret_variables.contains("key"));
+    }
+
+    #[test]
+    fn condition_uses_secret_finds_nested() {
+        let mut c = ctx();
+        c.constant_time_mode = true;
+        c.secret_variables.insert("key".to_string());
+        let cond = AstNodeFactory::binary_expression(
+            "==",
+            AstNodeFactory::identifier("key"),
+            AstNodeFactory::integer_literal("1"),
+        );
+        assert!(condition_uses_secret(&c, &cond));
+    }
+
+    #[test]
+    fn condition_uses_secret_returns_false_for_non_secret() {
+        let mut c = ctx();
+        c.constant_time_mode = true;
+        let cond = AstNodeFactory::binary_expression(
+            "==",
+            AstNodeFactory::identifier("x"),
+            AstNodeFactory::integer_literal("1"),
+        );
+        assert!(!condition_uses_secret(&c, &cond));
+    }
+
+    #[test]
+    fn random_integer_only_range_produces_same_value() {
+        let mut c1 = ctx();
+        let mut c2 = ctx();
+        c1.prng_state = 42;
+        c2.prng_state = 42;
+        for _ in 0..10 {
+            assert_eq!(c1.rand_int(7, 7), 7);
+            assert_eq!(c2.rand_int(7, 7), 7);
+        }
+    }
+
+    #[test]
+    fn random_different_seeds_produce_different() {
+        let mut c1 = ctx();
+        let mut c2 = ctx();
+        c1.prng_state = 1;
+        c2.prng_state = 2;
+        let v1 = c1.rand_int(0, 1000);
+        let v2 = c2.rand_int(0, 1000);
+        assert_ne!(v1, v2);
+    }
+
+    #[test]
+    fn eval_binary_gte_real_literals() {
+        let mut c = ctx();
+        let n = AstNodeFactory::binary_expression(
+            ">=",
+            AstNodeFactory::real_literal(0.0),
+            AstNodeFactory::real_literal(0.0),
+        );
+        assert_eq!(evaluate(&mut c, &n).unwrap(), AstValue::Boolean(true));
+    }
+
+    #[test]
+    fn exec_const_decl_immutable() {
+        let mut c = ctx();
+        let typ = AstNodeFactory::type_node("Integer", vec![]);
+        let d = AstNode::internal(
+            AstNodeKind::ConstDeclaration,
+            vec![
+                AstNodeFactory::identifier("C"),
+                typ,
+                AstNodeFactory::integer_literal("42"),
+            ],
+            None,
+        );
+        execute_const_decl(&mut c, &d).unwrap();
+        assert_eq!(
+            c.symbols.lookup("C", &mut c.heap).unwrap(),
+            AstValue::Integer(42)
+        );
+    }
+
+    #[test]
+    fn exec_while_with_complex_cond() {
+        let mut c = ctx();
+        declare_int(&mut c, "x", 5);
+        let w = AstNode::internal(
+            AstNodeKind::WhileLoop,
+            vec![
+                AstNodeFactory::binary_expression(
+                    ">",
+                    AstNodeFactory::identifier("x"),
+                    AstNodeFactory::integer_literal("0"),
+                ),
+                AstNode::internal(
+                    AstNodeKind::WhileLoop,
+                    vec![AstNodeFactory::assignment(
+                        AstNodeFactory::identifier("x"),
+                        AstNodeFactory::binary_expression(
+                            "-",
+                            AstNodeFactory::identifier("x"),
+                            AstNodeFactory::integer_literal("1"),
+                        ),
+                    )],
+                    None,
+                ),
+            ],
+            None,
+        );
+        execute_while(&mut c, &w).ok();
+        assert_eq!(
+            c.symbols.lookup("x", &mut c.heap).unwrap(),
+            AstValue::Integer(0)
+        );
+    }
+
+    #[test]
+    fn exec_for_zero_iterations() {
+        let mut c = ctx();
+        let f = AstNode::internal(
+            AstNodeKind::ForLoop,
+            vec![
+                AstNodeFactory::identifier("i"),
+                AstNodeFactory::integer_literal("0"),
+            ],
+            None,
+        );
+        let result = execute_for(&mut c, &f).unwrap();
+        assert_eq!(result, AstValue::None);
+    }
+
+    #[test]
+    fn for_loop_inner_assignment_visible_after() {
+        let mut c = ctx();
+        declare_int(&mut c, "sum", 0);
+        let f = AstNode::internal(
+            AstNodeKind::ForLoop,
+            vec![
+                AstNodeFactory::identifier("i"),
+                AstNodeFactory::integer_literal("3"),
+                AstNodeFactory::assignment(
+                    AstNodeFactory::identifier("sum"),
+                    AstNodeFactory::binary_expression(
+                        "+",
+                        AstNodeFactory::identifier("sum"),
+                        AstNodeFactory::identifier("i"),
+                    ),
+                ),
+            ],
+            None,
+        );
+        execute_for(&mut c, &f).ok();
+        let v = c.symbols.lookup("sum", &mut c.heap).unwrap();
+        assert_eq!(v, AstValue::Integer(3));
+    }
 }

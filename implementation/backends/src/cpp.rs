@@ -1,12 +1,13 @@
-//! Java 17 transpiler target for UEAS Epoch 6.
+//! C++17 transpiler target for UEAS Epoch 6.
 
 use super::*;
 
-pub struct JavaTarget;
+/// C++17 transpiler target.
+pub struct CppTarget;
 
-impl TargetGenerator for JavaTarget {
+impl TargetGenerator for CppTarget {
     fn language(&self) -> &str {
-        "java"
+        "cpp"
     }
 
     fn version(&self) -> &str {
@@ -22,7 +23,11 @@ impl TargetGenerator for JavaTarget {
             "Program" => {
                 let mut output = String::new();
                 let mut declared = HashSet::new();
-                output.push_str("import java.util.*;\n\n");
+                output.push_str("#include <cstdint>\n");
+                output.push_str("#include <cmath>\n");
+                output.push_str("#include <cassert>\n");
+                output.push_str("#include <vector>\n");
+                output.push_str("#include <string>\n\n");
                 if let Some(algorithms) = root["children"].as_array() {
                     for algo in algorithms {
                         self.generate_algo(algo, &mut output, &mut declared)?;
@@ -57,15 +62,15 @@ impl TargetGenerator for JavaTarget {
 
     fn type_map(&self) -> Vec<(&str, &str)> {
         vec![
-            ("Integer", "long"),
+            ("Integer", "int64_t"),
             ("Real", "double"),
-            ("Boolean", "boolean"),
-            ("String", "String"),
+            ("Boolean", "bool"),
+            ("String", "std::string"),
         ]
     }
 }
 
-impl JavaTarget {
+impl CppTarget {
     fn generate_algo(
         &self,
         node: &serde_json::Value,
@@ -95,11 +100,11 @@ impl JavaTarget {
                 break;
             }
         }
-        output.push_str(&format!("public static long {}(", name));
+        output.push_str(&format!("int64_t {}(", name));
         output.push_str(
             &params
                 .iter()
-                .map(|p| format!("long {}", p))
+                .map(|p| format!("int64_t {}", p))
                 .collect::<Vec<_>>()
                 .join(", "),
         );
@@ -126,7 +131,7 @@ impl JavaTarget {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
                 let name = c[0]["value"].as_str().unwrap_or("_").to_string();
                 declared.insert(name.clone());
-                output.push_str(&format!("{}long {} = ", prefix, name));
+                output.push_str(&format!("{}int64_t {} = ", prefix, name));
                 if c.len() > 2 {
                     self.generate_node(&c[2], output)?;
                 } else {
@@ -141,7 +146,7 @@ impl JavaTarget {
                     output.push_str(&format!("{}{} = ", prefix, target));
                 } else {
                     declared.insert(target.clone());
-                    output.push_str(&format!("{}var {} = ", prefix, target));
+                    output.push_str(&format!("{}auto {} = ", prefix, target));
                 }
                 self.generate_node(&c[1], output)?;
                 output.push_str(";\n");
@@ -195,7 +200,7 @@ impl JavaTarget {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
                 let iterator = c[0]["value"].as_str().unwrap_or("_");
                 declared.insert(iterator.to_string());
-                output.push_str(&format!("{}for (var {} : ", prefix, iterator));
+                output.push_str(&format!("{}for (auto {} : ", prefix, iterator));
                 self.generate_node(&c[1], output)?;
                 output.push_str(") {\n");
                 for child in &c[2..] {
@@ -205,9 +210,9 @@ impl JavaTarget {
             }
             "Assert" => {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
-                output.push_str(&format!("{}assert ", prefix));
+                output.push_str(&format!("{}assert(", prefix));
                 self.generate_node(&c[0], output)?;
-                output.push_str(" : \"assertion failed\";\n");
+                output.push_str(");\n");
             }
             "Invariant" => {
                 let c = children.ok_or_else(|| TranspilationError::new("No children"))?;
@@ -233,8 +238,13 @@ impl JavaTarget {
 
         match kind {
             "IntegerLiteral" => {
-                let val = node["value"].as_str().unwrap_or("0");
-                output.push_str(val);
+                if let Some(val) = node["value"].as_str() {
+                    output.push_str(val);
+                } else if let Some(val) = node["value"].as_i64() {
+                    output.push_str(&val.to_string());
+                } else {
+                    output.push('0');
+                }
             }
             "RealLiteral" => {
                 let val = node["value"].as_f64().unwrap_or(0.0);
@@ -254,7 +264,7 @@ impl JavaTarget {
                     ));
                 }
                 let op = children[0]["value"].as_str().unwrap_or("?");
-                let java_op = match op {
+                let cpp_op = match op {
                     "+" | "-" | "*" => op,
                     "/" => "/",
                     "mod" => "%",
@@ -264,7 +274,7 @@ impl JavaTarget {
                 output.push('(');
                 self.generate_node(&children[1], output)?;
                 output.push(' ');
-                output.push_str(java_op);
+                output.push_str(cpp_op);
                 output.push(' ');
                 self.generate_node(&children[2], output)?;
                 output.push(')');
@@ -290,7 +300,7 @@ impl JavaTarget {
                     .ok_or_else(|| TranspilationError::new("FunctionCall missing children"))?;
                 let name = children[0]["value"].as_str().unwrap_or("unknown");
                 match name {
-                    "sqrt" => output.push_str("Math.sqrt"),
+                    "sqrt" => output.push_str("std::sqrt"),
                     "length" => output.push_str("size"),
                     "cardinality" => output.push_str("size"),
                     _ => output.push_str(name),
@@ -318,55 +328,100 @@ impl JavaTarget {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ueas_kernel::ast::AstNodeFactory;
 
     #[test]
-    fn java_target_language_is_java() {
-        let target = JavaTarget;
-        assert_eq!(target.language(), "java");
+    fn cmp_target_language_is_cpp() {
+        let target = CppTarget;
+        assert_eq!(target.language(), "cpp");
     }
 
     #[test]
-    fn java_target_version_is_17() {
-        let target = JavaTarget;
+    fn cmp_target_version_is_17() {
+        let target = CppTarget;
         assert_eq!(target.version(), "17");
     }
 
     #[test]
-    fn java_generates_integer_literal() {
-        let target = JavaTarget;
-        let ast = r#"{"kind":"IntegerLiteral","value":"42"}"#;
-        let result = target.generate(ast).unwrap();
+    fn cmp_generates_integer_literal() {
+        let target = CppTarget;
+        let node = AstNodeFactory::integer_literal("42");
+        let json = serde_json::to_string(&node).unwrap();
+        let result = target.generate(&json).unwrap();
         assert_eq!(result, "42");
     }
 
     #[test]
-    fn java_generates_addition() {
-        let target = JavaTarget;
-        let ast = r#"{
-            "kind": "BinaryExpression",
-            "children": [
-                {"kind": "Identifier", "value": "+"},
-                {"kind": "IntegerLiteral", "value": "1"},
-                {"kind": "IntegerLiteral", "value": "2"}
-            ]
-        }"#;
-        let result = target.generate(ast).unwrap();
+    fn cmp_generates_addition() {
+        let target = CppTarget;
+        let left = AstNodeFactory::integer_literal("1");
+        let right = AstNodeFactory::integer_literal("2");
+        let expr = AstNodeFactory::binary_expression("+", left, right);
+        let json = serde_json::to_string(&expr).unwrap();
+        let result = target.generate(&json).unwrap();
         assert_eq!(result, "(1 + 2)");
     }
 
     #[test]
-    fn java_generates_function_definition() {
-        let target = JavaTarget;
-        let ast = r#"{
-            "kind": "Algorithm",
-            "children": [
-                {"kind": "Identifier", "value": "testFunc"},
-                {"kind": "ReturnType", "value": "Integer"},
-                {"kind": "Return", "children": [{"kind": "IntegerLiteral", "value": "42"}]}
-            ]
-        }"#;
-        let result = target.generate(ast).unwrap();
-        assert!(result.contains("public static long testFunc()"));
+    fn cmp_generates_function_definition() {
+        let target = CppTarget;
+        let algo = AstNodeFactory::algorithm(
+            "test",
+            vec![],
+            None,
+            "O(1)",
+            vec![],
+            vec![AstNodeFactory::return_stmt(Some(
+                AstNodeFactory::integer_literal("42"),
+            ))],
+        );
+        let program = AstNodeFactory::program(vec![algo]);
+        let json = serde_json::to_string(&program).unwrap();
+        let result = target.generate(&json).unwrap();
+        assert!(result.contains("#include <cstdint>"));
+        assert!(result.contains("int64_t test("));
         assert!(result.contains("return 42;"));
+    }
+
+    #[test]
+    fn cmp_generates_empty_algorithm() {
+        let algo = AstNodeFactory::algorithm("Empty", vec![], None, "O(1)", vec![], vec![]);
+        let program = AstNodeFactory::program(vec![algo]);
+        let json = serde_json::to_string(&program).unwrap();
+        let target = CppTarget;
+        let output = target.generate(&json).unwrap();
+        assert!(output.contains("int64_t Empty("));
+    }
+
+    #[test]
+    fn cmp_generates_nested_if() {
+        let cond = AstNodeFactory::binary_expression(
+            "==",
+            AstNodeFactory::integer_literal("1"),
+            AstNodeFactory::integer_literal("1"),
+        );
+        let inner = AstNodeFactory::if_stmt(
+            cond.clone(),
+            vec![AstNodeFactory::return_stmt(Some(
+                AstNodeFactory::integer_literal("1"),
+            ))],
+            None,
+        );
+        let outer = AstNodeFactory::if_stmt(cond, vec![inner], None);
+        let algo = AstNodeFactory::algorithm("Nested", vec![], None, "O(1)", vec![], vec![outer]);
+        let program = AstNodeFactory::program(vec![algo]);
+        let json = serde_json::to_string(&program).unwrap();
+        let target = CppTarget;
+        let output = target.generate(&json).unwrap();
+        assert!(output.contains("if ("));
+    }
+
+    #[test]
+    fn cmp_type_map_has_all_primitives() {
+        let target = CppTarget;
+        let map = target.type_map();
+        assert!(map.contains(&("Integer", "int64_t")));
+        assert!(map.contains(&("Real", "double")));
+        assert!(map.contains(&("Boolean", "bool")));
     }
 }
