@@ -9,6 +9,9 @@ __pycache__/
 *.egg-info/
 .venv/
 
+# Ruff Cache
+.ruff_cache
+
 # ANTLR4
 *.tokens
 *.interp

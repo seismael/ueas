@@ -62,6 +62,7 @@ SECRET      : 'secret' | 'Secret' | 'SECRET';
 SPAWN       : 'spawn' | 'Spawn' | 'SPAWN';
 SYNC        : 'sync'  | 'Sync'  | 'SYNC';
 PARALLEL    : 'parallel' | 'Parallel' | 'PARALLEL';
+TENSOR      : 'tensor' | 'Tensor' | 'TENSOR';
 SEND        : 'send'    | 'Send'    | 'SEND';
 RECEIVE     : 'receive' | 'Receive' | 'RECEIVE';
 TO          : 'to'      | 'To'      | 'TO';
@@ -256,6 +257,7 @@ typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void' | 'Qubit'
                | 'Map' LT typeAnnotation COMMA typeAnnotation GT
                | 'Graph' LT typeAnnotation COMMA typeAnnotation GT
                | 'Matrix' LT matrixDim COMMA matrixDim COMMA typeAnnotation GT
+               | 'Tensor' LT typeAnnotation COMMA INTEGER_LIT GT
                | IDENTIFIER ;
 
 matrixDim : INTEGER_LIT | IDENTIFIER ;

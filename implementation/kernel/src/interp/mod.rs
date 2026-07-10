@@ -629,6 +629,15 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
             AstNodeKind::ParallelFor => {
                 last = exec_parallel_for(ctx, child)?;
             }
+            AstNodeKind::Measure => {
+                last = exec_measure(ctx, child)?;
+            }
+            AstNodeKind::Send => {
+                last = exec_send(ctx, child)?;
+            }
+            AstNodeKind::Receive => {
+                last = exec_receive(ctx, child)?;
+            }
             _ => {
                 if let Ok(v) = evaluate(ctx, child) {
                     last = v;
@@ -971,6 +980,9 @@ pub fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exit
         AstNodeKind::Spawn => exec_spawn(ctx, node),
         AstNodeKind::Sync => exec_sync(ctx, node),
         AstNodeKind::ParallelFor => exec_parallel_for(ctx, node),
+        AstNodeKind::Measure => exec_measure(ctx, node),
+        AstNodeKind::Send => exec_send(ctx, node),
+        AstNodeKind::Receive => exec_receive(ctx, node),
         AstNodeKind::If => execute_if(ctx, node),
         AstNodeKind::WhileLoop => execute_while(ctx, node),
         AstNodeKind::ForLoop => execute_for(ctx, node),
@@ -1051,6 +1063,47 @@ pub fn exec_parallel_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstVal
     ctx.profiler.exit_recursion();
     ctx.symbols.pop_scope();
     Ok(last)
+}
+
+pub fn exec_send(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    if node.children.len() < 2 {
+        return Err(ExitCode::InvalidOperation);
+    }
+    let _message = evaluate(ctx, &node.children[0])?;
+    let _destination = evaluate(ctx, &node.children[1])?;
+    ctx.profiler.record_work(1);
+    ctx.profiler.record_span(1);
+    Ok(AstValue::None)
+}
+
+pub fn exec_receive(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    if node.children.len() < 2 {
+        return Err(ExitCode::InvalidOperation);
+    }
+    let name = match &node.children[0].value {
+        Some(AstValue::String(s)) => s.clone(),
+        _ => return Err(ExitCode::InvalidOperation),
+    };
+    let _source = evaluate(ctx, &node.children[1])?;
+    let default_val = AstValue::None;
+    ctx.symbols.declare(&name, &default_val, &mut ctx.heap)?;
+    ctx.profiler.record_work(1);
+    ctx.profiler.record_span(1);
+    Ok(default_val)
+}
+
+pub fn exec_measure(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    let name = match node.children.first().and_then(|n| n.value.as_ref()) {
+        Some(AstValue::String(s)) => s.as_str(),
+        _ => return Err(ExitCode::InvalidOperation),
+    };
+    let result = if ctx.rand_int(0, 1) == 0 {
+        AstValue::Boolean(false)
+    } else {
+        AstValue::Boolean(true)
+    };
+    ctx.symbols.declare(name, &result, &mut ctx.heap)?;
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -2252,5 +2305,94 @@ mod tests {
         exec_parallel_for(&mut c, &pf).unwrap();
         assert!(c.profiler.work() > 0);
         assert!(c.profiler.span() > 0);
+    }
+
+    #[test]
+    fn measure_produces_boolean() {
+        let mut c = ctx();
+        let m = AstNodeFactory::measure_stmt("q0");
+        for _ in 0..100 {
+            let result = exec_measure(&mut c, &m).unwrap();
+            match result {
+                AstValue::Boolean(true) | AstValue::Boolean(false) => {}
+                other => panic!("expected Boolean, got {:?}", other),
+            }
+        }
+    }
+
+    #[test]
+    fn qubit_variable_declaration() {
+        let mut c = ctx();
+        let typ = AstNodeFactory::type_node("Qubit", vec![]);
+        let init = AstNodeFactory::boolean_literal(false);
+        let decl = AstNodeFactory::variable_declaration("q0", typ, Some(init));
+        execute_var_decl(&mut c, &decl).unwrap();
+        assert_eq!(
+            c.symbols.lookup("q0", &mut c.heap).unwrap(),
+            AstValue::Boolean(false)
+        );
+    }
+
+    #[test]
+    fn send_receive_basic() {
+        let mut c = ctx();
+        let send_node = AstNode::internal(
+            AstNodeKind::Send,
+            vec![
+                AstNodeFactory::string_literal("hello"),
+                AstNodeFactory::string_literal("node2"),
+            ],
+            None,
+        );
+        let w_before = c.profiler.work();
+        let s_before = c.profiler.span();
+        exec_send(&mut c, &send_node).unwrap();
+        assert!(c.profiler.work() > w_before);
+        assert!(c.profiler.span() > s_before);
+
+        let recv_node = AstNode::internal(
+            AstNodeKind::Receive,
+            vec![
+                AstNodeFactory::identifier("msg"),
+                AstNodeFactory::string_literal("node2"),
+            ],
+            None,
+        );
+        let result = exec_receive(&mut c, &recv_node).unwrap();
+        assert_eq!(result, AstValue::None);
+        assert!(c.symbols.lookup("msg", &mut c.heap).is_some());
+    }
+
+    #[test]
+    fn distributed_send_noop() {
+        let mut c = ctx();
+        let send_node = AstNode::internal(
+            AstNodeKind::Send,
+            vec![
+                AstNodeFactory::integer_literal("42"),
+                AstNodeFactory::string_literal("target"),
+            ],
+            None,
+        );
+        let result = exec_send(&mut c, &send_node);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), AstValue::None);
+        assert!(!c.trap.is_trapped());
+    }
+
+    #[test]
+    fn distributed_receive_declares() {
+        let mut c = ctx();
+        let recv_node = AstNode::internal(
+            AstNodeKind::Receive,
+            vec![
+                AstNodeFactory::identifier("incoming"),
+                AstNodeFactory::string_literal("sender"),
+            ],
+            None,
+        );
+        let result = exec_receive(&mut c, &recv_node).unwrap();
+        assert_eq!(result, AstValue::None);
+        assert!(c.symbols.lookup("incoming", &mut c.heap).is_some());
     }
 }

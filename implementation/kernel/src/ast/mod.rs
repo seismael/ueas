@@ -62,6 +62,9 @@ pub enum AstNodeKind {
     WorkSpan,
     QubitType,
     Measure,
+    Send,
+    Receive,
+    TensorType,
 }
 
 /// Source location in the UEAS source file.
@@ -483,6 +486,31 @@ impl AstNodeFactory {
             None,
         )
     }
+
+    pub fn send(message: AstNode, destination: AstNode) -> AstNode {
+        AstNode::internal(AstNodeKind::Send, vec![message, destination], None)
+    }
+
+    pub fn receive(name: &str, source: AstNode) -> AstNode {
+        AstNode::internal(
+            AstNodeKind::Receive,
+            vec![
+                AstNode::leaf(
+                    AstNodeKind::Identifier,
+                    Some(AstValue::String(name.to_string())),
+                ),
+                source,
+            ],
+            None,
+        )
+    }
+
+    pub fn tensor_type(inner: AstNode, dimensions: u64) -> AstNode {
+        let mut node = AstNode::internal(AstNodeKind::TensorType, vec![inner], None);
+        node.metadata
+            .insert("dimensions".to_string(), dimensions.to_string());
+        node
+    }
 }
 
 // ===== Type System =====
@@ -604,6 +632,8 @@ pub trait AstVisitor {
     fn visit_send(&mut self, _node: &AstNode) {}
     fn visit_receive(&mut self, _node: &AstNode) {}
 
+    fn visit_tensor_type(&mut self, _node: &AstNode) {}
+
     /// Traverse an AST node by dispatching to the appropriate visit method,
     /// then recursively visiting all children.
     fn traverse(&mut self, node: &AstNode) {
@@ -653,6 +683,7 @@ pub trait AstVisitor {
             AstNodeKind::Measure => self.visit_measure(node),
             AstNodeKind::Send => self.visit_send(node),
             AstNodeKind::Receive => self.visit_receive(node),
+            AstNodeKind::TensorType => self.visit_tensor_type(node),
         }
         for child in &node.children {
             self.traverse(child);
@@ -726,6 +757,11 @@ mod tests {
             AstNodeKind::Sync,
             AstNodeKind::ParallelFor,
             AstNodeKind::WorkSpan,
+            AstNodeKind::QubitType,
+            AstNodeKind::Measure,
+            AstNodeKind::Send,
+            AstNodeKind::Receive,
+            AstNodeKind::TensorType,
         ];
         for kind in kinds {
             let json = serde_json::to_string(&kind).unwrap();
@@ -1070,6 +1106,15 @@ mod tests {
             fn visit_work_span(&mut self, _: &AstNode) {
                 self.count += 1;
             }
+            fn visit_send(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_receive(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_tensor_type(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
         }
         let algo = AstNodeFactory::algorithm(
             "Test",
@@ -1149,5 +1194,43 @@ mod tests {
         let node = AstNodeFactory::parallel_for(iter, coll, scope);
         assert_eq!(node.kind, AstNodeKind::ParallelFor);
         assert_eq!(node.children.len(), 3);
+    }
+    #[test]
+    fn qubit_type_serialization() {
+        let node = AstNodeFactory::qubit_type();
+        assert_eq!(node.kind, AstNodeKind::QubitType);
+        assert!(node.children.is_empty());
+        let json = serde_json::to_string(&node).unwrap();
+        let restored: AstNode = serde_json::from_str(&json).unwrap();
+        assert_eq!(node, restored);
+    }
+    #[test]
+    fn measure_stmt_node_created() {
+        let node = AstNodeFactory::measure_stmt("q0");
+        assert_eq!(node.kind, AstNodeKind::Measure);
+        assert_eq!(node.children.len(), 1);
+        assert_eq!(
+            node.children[0].value,
+            Some(AstValue::String("q0".to_string()))
+        );
+    }
+    #[test]
+    fn send_node_created() {
+        let msg = AstNodeFactory::string_literal("hello");
+        let dest = AstNodeFactory::string_literal("node2");
+        let node = AstNodeFactory::send(msg, dest);
+        assert_eq!(node.kind, AstNodeKind::Send);
+        assert_eq!(node.children.len(), 2);
+    }
+    #[test]
+    fn receive_node_created() {
+        let src = AstNodeFactory::string_literal("node2");
+        let node = AstNodeFactory::receive("msg", src);
+        assert_eq!(node.kind, AstNodeKind::Receive);
+        assert_eq!(node.children.len(), 2);
+        assert_eq!(
+            node.children[0].value,
+            Some(AstValue::String("msg".to_string()))
+        );
     }
 }
