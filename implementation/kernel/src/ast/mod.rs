@@ -56,6 +56,10 @@ pub enum AstNodeKind {
     Yield,
     Await,
     SecretType,
+    Spawn,
+    Sync,
+    ParallelFor,
+    WorkSpan,
 }
 
 /// Source location in the UEAS source file.
@@ -436,6 +440,32 @@ impl AstNodeFactory {
     pub fn secret_type(inner: AstNode) -> AstNode {
         AstNode::internal(AstNodeKind::SecretType, vec![inner], None)
     }
+
+    pub fn spawn(name: &str, expr: AstNode) -> AstNode {
+        AstNode::internal(
+            AstNodeKind::Spawn,
+            vec![
+                AstNode::leaf(
+                    AstNodeKind::Identifier,
+                    Some(AstValue::String(name.to_string())),
+                ),
+                expr,
+            ],
+            None,
+        )
+    }
+
+    pub fn sync_stmt() -> AstNode {
+        AstNode::internal(AstNodeKind::Sync, vec![], None)
+    }
+
+    pub fn parallel_for(iterator: AstNode, collection: AstNode, scope: AstNode) -> AstNode {
+        AstNode::internal(
+            AstNodeKind::ParallelFor,
+            vec![iterator, collection, scope],
+            None,
+        )
+    }
 }
 
 // ===== Type System =====
@@ -548,6 +578,11 @@ pub trait AstVisitor {
     fn visit_yield(&mut self, _node: &AstNode) {}
     fn visit_await(&mut self, _node: &AstNode) {}
 
+    fn visit_spawn(&mut self, _node: &AstNode) {}
+    fn visit_sync(&mut self, _node: &AstNode) {}
+    fn visit_parallel_for(&mut self, _node: &AstNode) {}
+    fn visit_work_span(&mut self, _node: &AstNode) {}
+
     /// Traverse an AST node by dispatching to the appropriate visit method,
     /// then recursively visiting all children.
     fn traverse(&mut self, node: &AstNode) {
@@ -589,6 +624,10 @@ pub trait AstVisitor {
             AstNodeKind::StreamType => self.visit_stream_type(node),
             AstNodeKind::Yield => self.visit_yield(node),
             AstNodeKind::Await => self.visit_await(node),
+            AstNodeKind::Spawn => self.visit_spawn(node),
+            AstNodeKind::Sync => self.visit_sync(node),
+            AstNodeKind::ParallelFor => self.visit_parallel_for(node),
+            AstNodeKind::WorkSpan => self.visit_work_span(node),
         }
         for child in &node.children {
             self.traverse(child);
@@ -658,6 +697,10 @@ mod tests {
             AstNodeKind::StreamType,
             AstNodeKind::Yield,
             AstNodeKind::Await,
+            AstNodeKind::Spawn,
+            AstNodeKind::Sync,
+            AstNodeKind::ParallelFor,
+            AstNodeKind::WorkSpan,
         ];
         for kind in kinds {
             let json = serde_json::to_string(&kind).unwrap();
@@ -990,6 +1033,18 @@ mod tests {
             fn visit_secret_type(&mut self, _: &AstNode) {
                 self.count += 1;
             }
+            fn visit_spawn(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_sync(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_parallel_for(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
+            fn visit_work_span(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
         }
         let algo = AstNodeFactory::algorithm(
             "Test",
@@ -1048,5 +1103,26 @@ mod tests {
         let node = AstNodeFactory::await_stmt("x");
         assert_eq!(node.kind, AstNodeKind::Await);
         assert_eq!(node.children.len(), 1);
+    }
+    #[test]
+    fn spawn_node_created() {
+        let node = AstNodeFactory::spawn("t", AstNodeFactory::integer_literal("42"));
+        assert_eq!(node.kind, AstNodeKind::Spawn);
+        assert_eq!(node.children.len(), 2);
+    }
+    #[test]
+    fn sync_node_created() {
+        let node = AstNodeFactory::sync_stmt();
+        assert_eq!(node.kind, AstNodeKind::Sync);
+        assert!(node.children.is_empty());
+    }
+    #[test]
+    fn parallel_for_node_created() {
+        let iter = AstNodeFactory::identifier("i");
+        let coll = AstNodeFactory::integer_literal("10");
+        let scope = AstNodeFactory::return_stmt(Some(AstNodeFactory::integer_literal("1")));
+        let node = AstNodeFactory::parallel_for(iter, coll, scope);
+        assert_eq!(node.kind, AstNodeKind::ParallelFor);
+        assert_eq!(node.children.len(), 3);
     }
 }

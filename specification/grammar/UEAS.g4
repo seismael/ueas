@@ -59,6 +59,9 @@ L2_CACHE  : 'L2';
 L3_CACHE  : 'L3';
 CACHE_LINE: 'CacheLine';
 SECRET      : 'secret' | 'Secret' | 'SECRET';
+SPAWN       : 'spawn' | 'Spawn' | 'SPAWN';
+SYNC        : 'sync'  | 'Sync'  | 'SYNC';
+PARALLEL    : 'parallel' | 'Parallel' | 'PARALLEL';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -154,6 +157,8 @@ statement : assignmentOrCall NEWLINE
            | invariantStmt NEWLINE
            | yieldStmt NEWLINE
            | awaitStmt NEWLINE
+           | spawnStmt NEWLINE
+           | syncStmt NEWLINE
            | PASS NEWLINE
            | BREAK NEWLINE
            | CONTINUE NEWLINE ;
@@ -185,9 +190,13 @@ ifStmt : IF expression THEN NEWLINE block
          (ELSE NEWLINE block)?
          END IF NEWLINE ;
 
-forLoop : FOR EACH? IDENTIFIER IN expression DO NEWLINE block END FOR NEWLINE ;
+forLoop : PARALLEL? FOR EACH? IDENTIFIER IN expression DO NEWLINE block END FOR NEWLINE ;
 
 whileLoop : WHILE expression DO NEWLINE block END WHILE NEWLINE ;
+
+spawnStmt : SPAWN IDENTIFIER ASSIGN expression NEWLINE ;
+
+syncStmt  : SYNC NEWLINE ;
 
 // Expressions (ordered by precedence)
 expression : logicalOr (AS typeAnnotation)? ;

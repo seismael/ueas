@@ -180,12 +180,24 @@ impl ComplexityKind {
     }
 }
 
+/// A node in the parallel execution DAG for work-span analysis.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DagNode {
+    pub id: u64,
+    pub work_cost: u64,
+    pub span_cost: u64,
+    pub dependencies: Vec<u64>,
+}
+
 /// Manages step counting and complexity enforcement.
 #[derive(Debug, Clone)]
 pub struct Profiler {
     step_count: StepCount,
     config: ProfilingConfig,
     recursion_depth: u64,
+    work: u64,
+    span: u64,
+    dag_nodes: Vec<DagNode>,
 }
 
 impl Profiler {
@@ -195,6 +207,9 @@ impl Profiler {
             step_count: StepCount::new(),
             config,
             recursion_depth: 0,
+            work: 0,
+            span: 0,
+            dag_nodes: Vec::new(),
         }
     }
 
@@ -243,6 +258,37 @@ impl Profiler {
             return Err(ExitCode::ComplexityViolation);
         }
         Ok(())
+    }
+
+    pub fn record_work(&mut self, cost: u64) {
+        self.work = self.work.saturating_add(cost);
+    }
+
+    pub fn record_span(&mut self, cost: u64) {
+        self.span = self.span.saturating_add(cost);
+    }
+
+    pub fn work(&self) -> u64 {
+        self.work
+    }
+
+    pub fn span(&self) -> u64 {
+        self.span
+    }
+
+    pub fn add_dag_node(&mut self, node: DagNode) {
+        self.dag_nodes.push(node);
+    }
+
+    /// Parallel efficiency: work / (span * num_threads).
+    /// Returns 1.0 when span == 0 (degenerate case).
+    pub fn parallel_efficiency(&self) -> f64 {
+        let num_threads = (self.dag_nodes.len() as u64).max(1);
+        if self.span == 0 {
+            1.0
+        } else {
+            self.work as f64 / (self.span as f64 * num_threads as f64)
+        }
     }
 }
 
@@ -499,5 +545,77 @@ mod tests {
         };
         assert_eq!(contract.kind, ComplexityKind::Constant);
         assert_eq!(contract.expected_complexity, Some("O(1)".to_string()));
+    }
+
+    #[test]
+    fn work_starts_at_zero() {
+        let profiler = Profiler::new(ProfilingConfig::default());
+        assert_eq!(profiler.work(), 0);
+    }
+
+    #[test]
+    fn span_starts_at_zero() {
+        let profiler = Profiler::new(ProfilingConfig::default());
+        assert_eq!(profiler.span(), 0);
+    }
+
+    #[test]
+    fn record_work_increments() {
+        let mut profiler = Profiler::new(ProfilingConfig::default());
+        profiler.record_work(10);
+        profiler.record_work(5);
+        assert_eq!(profiler.work(), 15);
+    }
+
+    #[test]
+    fn record_span_increments() {
+        let mut profiler = Profiler::new(ProfilingConfig::default());
+        profiler.record_span(3);
+        profiler.record_span(7);
+        assert_eq!(profiler.span(), 10);
+    }
+
+    #[test]
+    fn add_dag_node_tracks_node() {
+        let mut profiler = Profiler::new(ProfilingConfig::default());
+        profiler.add_dag_node(DagNode {
+            id: 1,
+            work_cost: 5,
+            span_cost: 2,
+            dependencies: vec![],
+        });
+        profiler.add_dag_node(DagNode {
+            id: 2,
+            work_cost: 3,
+            span_cost: 4,
+            dependencies: vec![1],
+        });
+        assert_eq!(profiler.dag_nodes.len(), 2);
+    }
+
+    #[test]
+    fn parallel_efficiency_zero_span_returns_one() {
+        let profiler = Profiler::new(ProfilingConfig::default());
+        assert_eq!(profiler.parallel_efficiency(), 1.0);
+    }
+
+    #[test]
+    fn parallel_efficiency_calculation() {
+        let mut profiler = Profiler::new(ProfilingConfig::default());
+        profiler.record_work(100);
+        profiler.record_span(25);
+        profiler.add_dag_node(DagNode {
+            id: 1,
+            work_cost: 50,
+            span_cost: 25,
+            dependencies: vec![],
+        });
+        profiler.add_dag_node(DagNode {
+            id: 2,
+            work_cost: 50,
+            span_cost: 0,
+            dependencies: vec![],
+        });
+        assert!((profiler.parallel_efficiency() - 2.0).abs() < 1e-9);
     }
 }

@@ -6,7 +6,7 @@
 
 use crate::ast::{AstNode, AstNodeKind, AstValue};
 use crate::heap::{HeapHandle, TypeTag, VirtualHeap};
-use crate::profiling::{ComplexityContract, ComplexityKind, Profiler, ProfilingConfig};
+use crate::profiling::{ComplexityContract, ComplexityKind, DagNode, Profiler, ProfilingConfig};
 use crate::traps::{ExitCode, TrapRegister};
 use std::collections::{HashMap, HashSet};
 
@@ -620,6 +620,15 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
             AstNodeKind::Await => {
                 last = exec_await(ctx, child)?;
             }
+            AstNodeKind::Spawn => {
+                last = exec_spawn(ctx, child)?;
+            }
+            AstNodeKind::Sync => {
+                last = exec_sync(ctx, child)?;
+            }
+            AstNodeKind::ParallelFor => {
+                last = exec_parallel_for(ctx, child)?;
+            }
             _ => {
                 if let Ok(v) = evaluate(ctx, child) {
                     last = v;
@@ -959,6 +968,9 @@ pub fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exit
         }
         AstNodeKind::Yield => exec_yield(ctx, node),
         AstNodeKind::Await => exec_await(ctx, node),
+        AstNodeKind::Spawn => exec_spawn(ctx, node),
+        AstNodeKind::Sync => exec_sync(ctx, node),
+        AstNodeKind::ParallelFor => exec_parallel_for(ctx, node),
         AstNodeKind::If => execute_if(ctx, node),
         AstNodeKind::WhileLoop => execute_while(ctx, node),
         AstNodeKind::ForLoop => execute_for(ctx, node),
@@ -989,6 +1001,56 @@ pub fn exec_await(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exi
     ctx.symbols
         .lookup(name, &mut ctx.heap)
         .ok_or(ExitCode::NullDereference)
+}
+
+pub fn exec_spawn(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    if node.children.len() < 2 {
+        return Err(ExitCode::InvalidOperation);
+    }
+    let name = match &node.children[0].value {
+        Some(AstValue::String(s)) => s.clone(),
+        _ => return Err(ExitCode::InvalidOperation),
+    };
+    let value = evaluate(ctx, &node.children[1])?;
+    ctx.symbols.declare(&name, &value, &mut ctx.heap)?;
+    ctx.profiler.record_work(1);
+    ctx.profiler.record_span(1);
+    Ok(value)
+}
+
+pub fn exec_sync(ctx: &mut ExecContext, _node: &AstNode) -> Result<AstValue, ExitCode> {
+    ctx.profiler.record_work(1);
+    ctx.profiler.record_span(1);
+    Ok(AstValue::None)
+}
+
+pub fn exec_parallel_for(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    if node.children.len() < 3 {
+        return Ok(AstValue::None);
+    }
+    let iter_name = match &node.children[0].value {
+        Some(AstValue::String(s)) => s.clone(),
+        _ => return Err(ExitCode::InvalidOperation),
+    };
+    let n: i64 = match evaluate(ctx, &node.children[1])? {
+        AstValue::Integer(x) => x,
+        _ => 1,
+    };
+    ctx.symbols.push_scope();
+    ctx.profiler.enter_recursion()?;
+    let mut last = AstValue::None;
+    let body = &node.children[2];
+    for i in 0..n.max(1) {
+        ctx.profiler.step()?;
+        ctx.profiler.record_work(1);
+        ctx.symbols
+            .declare(&iter_name, &AstValue::Integer(i), &mut ctx.heap)?;
+        last = exec_stmt(ctx, body)?;
+    }
+    ctx.profiler.record_span(n.max(1) as u64);
+    ctx.profiler.exit_recursion();
+    ctx.symbols.pop_scope();
+    Ok(last)
 }
 
 #[cfg(test)]
@@ -2148,5 +2210,47 @@ mod tests {
         execute_for(&mut c, &f).ok();
         let v = c.symbols.lookup("sum", &mut c.heap).unwrap();
         assert_eq!(v, AstValue::Integer(3));
+    }
+
+    #[test]
+    fn spawn_sync_records_work_span() {
+        let mut c = ctx();
+        let s = AstNode::internal(
+            AstNodeKind::Spawn,
+            vec![
+                AstNodeFactory::identifier("t"),
+                AstNodeFactory::integer_literal("42"),
+            ],
+            None,
+        );
+        exec_spawn(&mut c, &s).unwrap();
+        assert!(c.profiler.work() > 0);
+        assert!(c.profiler.span() > 0);
+    }
+
+    #[test]
+    fn sync_increments_work() {
+        let mut c = ctx();
+        let w_before = c.profiler.work();
+        exec_sync(&mut c, &AstNode::internal(AstNodeKind::Sync, vec![], None)).unwrap();
+        assert!(c.profiler.work() > w_before);
+    }
+
+    #[test]
+    fn parallel_for_increments_work() {
+        let mut c = ctx();
+        let body = AstNodeFactory::return_stmt(Some(AstNodeFactory::integer_literal("1")));
+        let pf = AstNode::internal(
+            AstNodeKind::ParallelFor,
+            vec![
+                AstNodeFactory::identifier("i"),
+                AstNodeFactory::integer_literal("4"),
+                body,
+            ],
+            None,
+        );
+        exec_parallel_for(&mut c, &pf).unwrap();
+        assert!(c.profiler.work() > 0);
+        assert!(c.profiler.span() > 0);
     }
 }
