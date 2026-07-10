@@ -25,15 +25,34 @@ async fn main() -> Result<()> {
     } else {
         let addr: SocketAddr = format!("0.0.0.0:{}", port).parse()?;
         eprintln!("MCP HTTP server listening on {}", addr);
-        let std_listener = std::net::TcpListener::bind(addr)?;
-        std_listener.set_nonblocking(true)?;
-        let listener = TcpListener::from_std(std_listener)?;
+
+        // Retry bind for Render cold starts (old process may not have released port)
+        let listener =
+            tokio::time::timeout(std::time::Duration::from_secs(30), bind_with_retry(addr))
+                .await
+                .map_err(|_| anyhow::anyhow!("TIMEOUT: Could not bind to {} after 30s", addr))??;
+
         loop {
             let (stream, _) = listener.accept().await?;
             tokio::spawn(handle_http(stream));
         }
     }
     Ok(())
+}
+
+async fn bind_with_retry(addr: SocketAddr) -> Result<TcpListener, anyhow::Error> {
+    let mut attempt = 0u32;
+    loop {
+        attempt += 1;
+        match TcpListener::bind(addr).await {
+            Ok(l) => return Ok(l),
+            Err(e) if attempt < 10 => {
+                eprintln!("MCP: bind attempt {} failed: {} — retrying 2s", attempt, e);
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            }
+            Err(e) => return Err(anyhow::anyhow!("Bind failed after {}: {}", attempt, e)),
+        }
+    }
 }
 
 fn run_stdio_mode() {
