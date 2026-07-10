@@ -64,7 +64,7 @@ What other options were evaluated? Why were they not chosen?
 | 0014 | Interactive Debugger (DAP Protocol) | Accepted | 2026-07-10 |
 | 0015 | Jupyter Kernel Integration | Accepted | 2026-07-10 |
 | 0016 | Timing Leak Validation | Accepted | 2026-07-10 |
-
+| 0017 | Specification Decoupling | Accepted | 2026-07-10 |
 ---
 
 *ADRs are immutable once accepted. Superseded ADRs remain in the index for historical reference.*
