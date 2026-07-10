@@ -114,10 +114,10 @@ impl LatexTarget {
         let mut param_types: Vec<String> = Vec::new();
         let mut return_type_ueas: Option<String> = None;
         let mut _complexity = "O(1)";
-        let mut body_start = 1;
 
         for child in children.iter().skip(1) {
-            if child["kind"] == "Parameter" {
+            let kind = child["kind"].as_str().unwrap_or("");
+            if kind == "Parameter" {
                 if let Some(pc) = child["children"].as_array() {
                     let pname = pc[0]["value"].as_str().unwrap_or("_").to_string();
                     params.push(pname);
@@ -132,19 +132,14 @@ impl LatexTarget {
                         param_types.push("Integer".to_string());
                     }
                 }
-                body_start += 1;
-            } else if child["kind"] == "Type" {
+            } else if kind == "Type" {
                 return_type_ueas = child["children"]
                     .as_array()
                     .and_then(|tc| tc.first())
                     .and_then(|t| t["value"].as_str())
                     .map(|s| s.to_string());
-                body_start += 1;
-            } else if child["kind"] == "StringLiteral" {
+            } else if kind == "StringLiteral" {
                 _complexity = child["value"].as_str().unwrap_or("O(1)");
-                body_start += 1;
-            } else {
-                break;
             }
         }
 
@@ -195,8 +190,12 @@ impl LatexTarget {
             output.push_str(&format!("\\SetKwFunction{{{}}}{{{}}}\n", name, name));
         }
 
-        for child in children.iter().skip(body_start) {
-            self.generate_statement(child, output)?;
+        for child in children.iter().skip(1) {
+            let kind = child["kind"].as_str().unwrap_or("");
+            match kind {
+                "Parameter" | "Type" | "StringLiteral" | "VariableBinding" => {}
+                _ => self.generate_statement(child, output)?,
+            }
         }
 
         output.push_str("\\end{algorithm}\n");

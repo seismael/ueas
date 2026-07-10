@@ -192,22 +192,30 @@ impl PythonTarget {
                 output.push_str(&format!("def {}(", name));
                 // parameters: children[1..]
                 let mut params = Vec::new();
-                let mut body_start = 1;
                 for child in children.iter().skip(1) {
                     if child["kind"] == "Parameter" {
-                        let pname = child["children"][0]["value"].as_str().unwrap_or("_");
-                        params.push(pname.to_string());
-                        body_start += 1;
-                    } else {
-                        break;
+                        if let Some(c) = child["children"].as_array() {
+                            if !c.is_empty() {
+                                let pname = c[0]["value"].as_str().unwrap_or("_");
+                                params.push(pname.to_string());
+                            }
+                        }
                     }
                 }
                 output.push_str(&params.join(", "));
                 output.push_str("):\n");
 
                 // Body statements
-                for child in children.iter().skip(body_start + 1) {
-                    self.generate_statement(child, output, 1)?;
+                for child in children.iter().skip(1) {
+                    let child_kind = child["kind"].as_str().unwrap_or("");
+                    match child_kind {
+                        "Parameter" | "Type" | "StringLiteral" | "VariableBinding" => {
+                            // skip return type, complexity, parameters, and preconditions/postconditions
+                        }
+                        _ => {
+                            self.generate_statement(child, output, 1)?;
+                        }
+                    }
                 }
                 output.push('\n');
                 Ok(())
@@ -599,7 +607,6 @@ impl RustTarget {
         }
         let name = children[0]["value"].as_str().unwrap_or("unnamed");
         let mut params = Vec::new();
-        let mut body_start = 1;
         for child in children.iter().skip(1) {
             if child["kind"] == "Parameter" {
                 if let Some(pc) = child["children"].as_array() {
@@ -609,9 +616,6 @@ impl RustTarget {
                         params.push(pname);
                     }
                 }
-                body_start += 1;
-            } else {
-                break;
             }
         }
         output.push_str(&format!("fn {}(", name));
@@ -623,8 +627,16 @@ impl RustTarget {
                 .join(", "),
         );
         output.push_str(") -> i64 {\n");
-        for child in children.iter().skip(body_start + 1) {
-            self.generate_statement(child, output, 1, declared)?;
+        for child in children.iter().skip(1) {
+            let child_kind = child["kind"].as_str().unwrap_or("");
+            match child_kind {
+                "Parameter" | "Type" | "StringLiteral" | "VariableBinding" => {
+                    // skip
+                }
+                _ => {
+                    self.generate_statement(child, output, 1, declared)?;
+                }
+            }
         }
         output.push_str("}\n\n");
         Ok(())

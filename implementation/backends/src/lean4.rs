@@ -115,11 +115,11 @@ impl LeanTarget {
         let name = children[0]["value"].as_str().unwrap_or("unnamed");
 
         let mut params = Vec::new();
-        let mut return_type_str = "ℕ";
-        let mut body_start = 1;
+        let mut return_type_str = "ℕ".to_string();
 
         for child in children.iter().skip(1) {
-            if child["kind"] == "Parameter" {
+            let kind = child["kind"].as_str().unwrap_or("");
+            if kind == "Parameter" {
                 if let Some(pc) = child["children"].as_array() {
                     if pc.len() >= 2 {
                         let pname = pc[0]["value"].as_str().unwrap_or("_").to_string();
@@ -137,17 +137,13 @@ impl LeanTarget {
                         params.push((pname, "ℕ".to_string()));
                     }
                 }
-                body_start += 1;
-            } else if child["kind"] == "Type" {
+            } else if kind == "Type" {
                 let return_type = child["children"]
                     .as_array()
                     .and_then(|tc| tc.first())
                     .and_then(|t| t["value"].as_str())
                     .unwrap_or("Integer");
-                return_type_str = self.ueas_type_to_lean(return_type);
-                body_start += 1;
-            } else {
-                break;
+                return_type_str = self.ueas_type_to_lean(return_type).to_string();
             }
         }
 
@@ -172,9 +168,15 @@ impl LeanTarget {
 
         // body statements
         let mut body_lines = 0;
-        for child in children.iter().skip(body_start + 1) {
-            self.generate_statement(child, output, 1, declared)?;
-            body_lines += 1;
+        for child in children.iter().skip(1) {
+            let kind = child["kind"].as_str().unwrap_or("");
+            match kind {
+                "Parameter" | "Type" | "StringLiteral" | "VariableBinding" => {}
+                _ => {
+                    self.generate_statement(child, output, 1, declared)?;
+                    body_lines += 1;
+                }
+            }
         }
 
         if body_lines == 0 {

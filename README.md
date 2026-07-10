@@ -19,7 +19,7 @@
 ## Live Deployments
 
 - **Interactive Playground (Vercel):** [https://ueas-three.vercel.app/](https://ueas-three.vercel.app/) — Write UEAS algorithms directly in your browser. Powered by a client-side WebAssembly (WASM) kernel compilation, allowing real-time execution and parsing without any backend server.
-- **MCP AI Agent Server (Render):** [https://ueas.onrender.com](https://ueas.onrender.com) — Connect your AI agents (Claude, cursor, etc.) to the UEAS interpreter via the Model Context Protocol. Hosted via Docker with `socat` TCP-to-STDIO bridging.
+- **MCP AI Agent Server (Render):** [https://ueas.onrender.com](https://ueas.onrender.com) — Connect your AI agents (Claude, cursor, etc.) to the UEAS interpreter via the Model Context Protocol. Hosted via Docker with a Python HTTP-to-STDIO JSON-RPC bridge.
 
 ---
 

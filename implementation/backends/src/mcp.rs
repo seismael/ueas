@@ -93,39 +93,33 @@ pub fn handle_transpile(
         node_kind: None,
     })?;
 
-    match request.target.as_str() {
-        "python" => {
-            let target = crate::PythonTarget;
-            let source = target.generate(&ast_json).map_err(|e| McpErrorResponse {
-                error_code: "TRANSPILATION_FAILED".to_string(),
-                message: e.message,
-                node_kind: e.node_kind,
-            })?;
-            Ok(McpTranspileResponse {
-                source,
-                warnings: vec![],
-                target_version: target.version().to_string(),
-            })
-        }
-        "rust" => {
-            let target = crate::RustTarget;
-            let source = target.generate(&ast_json).map_err(|e| McpErrorResponse {
-                error_code: "TRANSPILATION_FAILED".to_string(),
-                message: e.message,
-                node_kind: e.node_kind,
-            })?;
-            Ok(McpTranspileResponse {
-                source,
-                warnings: vec![],
-                target_version: target.version().to_string(),
-            })
-        }
-        _ => Err(McpErrorResponse {
+    let target: Box<dyn TargetGenerator> = match request.target.as_str() {
+        "python" => Box::new(crate::PythonTarget),
+        "rust" => Box::new(crate::RustTarget),
+        "cpp" => Box::new(crate::cpp::CppTarget),
+        "java" => Box::new(crate::java::JavaTarget),
+        "javascript" => Box::new(crate::javascript::JavaScriptTarget),
+        "lean4" => Box::new(crate::lean4::LeanTarget),
+        "tlaplus" => Box::new(crate::tla::TlaTarget::new()),
+        "latex" => Box::new(crate::latex::LatexTarget),
+        _ => return Err(McpErrorResponse {
             error_code: "UNSUPPORTED_TARGET".to_string(),
             message: format!("Target '{}' is not supported", request.target),
             node_kind: None,
         }),
-    }
+    };
+
+    let source = target.generate(&ast_json).map_err(|e| McpErrorResponse {
+        error_code: "TRANSPILATION_FAILED".to_string(),
+        message: e.message,
+        node_kind: e.node_kind,
+    })?;
+
+    Ok(McpTranspileResponse {
+        source,
+        warnings: vec![],
+        target_version: target.version().to_string(),
+    })
 }
 
 #[cfg(test)]
@@ -174,7 +168,7 @@ mod tests {
     fn mcp_transpile_unsupported_target() {
         let request = McpTranspileRequest {
             ast: serde_json::json!({"kind": "IntegerLiteral", "value": "1"}),
-            target: "javascript".to_string(),
+            target: "unknown_language".to_string(),
             options: McpTranspileOptions::default(),
         };
         let err = handle_transpile(&request).unwrap_err();

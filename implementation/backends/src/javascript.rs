@@ -79,7 +79,6 @@ impl JavaScriptTarget {
         }
         let name = children[0]["value"].as_str().unwrap_or("unnamed");
         let mut params = Vec::new();
-        let mut body_start = 1;
         for child in children.iter().skip(1) {
             if child["kind"] == "Parameter" {
                 if let Some(pc) = child["children"].as_array() {
@@ -89,16 +88,17 @@ impl JavaScriptTarget {
                         params.push(pname);
                     }
                 }
-                body_start += 1;
-            } else {
-                break;
             }
         }
         output.push_str(&format!("function {}(", name));
         output.push_str(&params.join(", "));
         output.push_str(") {\n");
-        for child in children.iter().skip(body_start) {
-            self.generate_statement(child, output, 1, declared)?;
+        for child in children.iter().skip(1) {
+            let kind = child["kind"].as_str().unwrap_or("");
+            match kind {
+                "Parameter" | "Type" | "StringLiteral" | "VariableBinding" => {}
+                _ => self.generate_statement(child, output, 1, declared)?,
+            }
         }
         output.push_str("}\n\n");
         Ok(())

@@ -4,6 +4,11 @@
 //! Requires: cargo install wasm-pack
 
 use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
+use ueas_backends::cpp::CppTarget;
+use ueas_backends::java::JavaTarget;
+use ueas_backends::javascript::JavaScriptTarget;
+use ueas_backends::lean4::LeanTarget;
+use ueas_backends::tla::TlaTarget;
 use ueas_kernel::ast::AstNodeFactory;
 use ueas_kernel::interp::{execute_program, ExecContext};
 use wasm_bindgen::prelude::*;
@@ -46,6 +51,21 @@ pub fn transpile_ueas(source: &str, target: &str) -> Result<String, JsValue> {
             .generate(&ast_json)
             .map_err(|e| JsValue::from_str(&e.message)),
         "rust" => RustTarget
+            .generate(&ast_json)
+            .map_err(|e| JsValue::from_str(&e.message)),
+        "cpp" => CppTarget
+            .generate(&ast_json)
+            .map_err(|e| JsValue::from_str(&e.message)),
+        "java" => JavaTarget
+            .generate(&ast_json)
+            .map_err(|e| JsValue::from_str(&e.message)),
+        "javascript" => JavaScriptTarget
+            .generate(&ast_json)
+            .map_err(|e| JsValue::from_str(&e.message)),
+        "lean4" => LeanTarget
+            .generate(&ast_json)
+            .map_err(|e| JsValue::from_str(&e.message)),
+        "tlaplus" => TlaTarget::new()
             .generate(&ast_json)
             .map_err(|e| JsValue::from_str(&e.message)),
         _ => Err(JsValue::from_str("unsupported target")),

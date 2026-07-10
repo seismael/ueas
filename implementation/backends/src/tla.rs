@@ -16,7 +16,7 @@ pub struct TlaTarget {
 }
 
 impl TlaTarget {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             init_conds: Vec::new(),
             next_disjuncts: Vec::new(),
@@ -525,7 +525,6 @@ impl TlaTarget {
             .unwrap_or("O(1)");
 
         let mut params: Vec<String> = Vec::new();
-        let mut body_start = 1;
         for child in children.iter().skip(1) {
             if child["kind"] == "Parameter" {
                 if let Some(pc) = child["children"].as_array() {
@@ -537,15 +536,21 @@ impl TlaTarget {
                         params.push(pname);
                     }
                 }
-                body_start += 1;
-            } else if child["kind"] == "StringLiteral" {
-                body_start += 1;
-            } else {
-                break;
             }
         }
 
-        let body: Vec<&serde_json::Value> = children.iter().skip(body_start + 1).collect();
+        let mut body: Vec<&serde_json::Value> = Vec::new();
+        for child in children.iter().skip(1) {
+            let child_kind = child["kind"].as_str().unwrap_or("");
+            match child_kind {
+                "Parameter" | "Type" | "StringLiteral" | "VariableBinding" => {
+                    // skip
+                }
+                _ => {
+                    body.push(child);
+                }
+            }
+        }
         let body_clone: Vec<serde_json::Value> = body.iter().map(|v| (*v).clone()).collect();
 
         state.gather_body_stats(&body_clone)?;
