@@ -1,11 +1,12 @@
 # Universal Executable Algorithm Standard (UEAS)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-326-brightgreen)](implementation/kernel/)
+[![Tests](https://img.shields.io/badge/Tests-351-brightgreen)](implementation/kernel/)
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](implementation/kernel/)  
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
 [![Examples](https://img.shields.io/badge/Examples-30-orange)](implementation/examples/)
+[![Version](https://img.shields.io/badge/Version-4.0.0-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
 
@@ -158,12 +159,9 @@ All examples validated with `ueas check examples/<category>/<name>.ueas`.
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| **Phase 1: Combinatorial Core** | ANTLR4 grammar, type system, AST JSON schema | ✅ Complete |
-| **Phase 2: Profiling Kernel** | Abstract interpreter, complexity engine, virtual heap | ✅ Complete |
-| **Phase 3: Universal Bridge** | Transpilers (Python, Rust, C++, Java), CLI, Standard Library | ✅ Complete |
-| **Phase 4: Real-World Ecosystem** | DAP Debugger, Jupyter Kernel, `@HardwareProfile`, Modules | ✅ Complete |
-| **Phase 5: Core Math Frontiers** | Stochastic `random`, Infinite `Stream<T>`, `@ConstantTime` Cryptography | ✅ Complete |
-| **Phase 6: Formal Verification** | Lean 4 + TLA+ backend transpilers | ✅ Complete |
+| **Phase 1-6** | Grammar, Kernel, Backends, CLI, Library, Frontends | ✅ Complete |
+| **Phase 4-6 (Ecosystem)** | DAP, Jupyter, Hardware, Modules, Cryptography, Streams | ✅ Complete |
+| **Phase 7 (Concurrency, Quantum, ML)** | Work-Span, distributed, qubit, tensor primitives | ✅ Complete |
 
 ---
 

@@ -1,0 +1,24 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  implementation:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: implementation } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --workspace
+      - run: cargo clippy --workspace -- -D warnings
+      - run: cargo fmt --all -- --check
+
+  specification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate grammar files exist
+        run: |
+          test -f specification/grammar/UEAS.g4
+          test -f specification/SPEC.md
+          test -d specification/docs/adr
+          test -d specification/docs/rfcs
