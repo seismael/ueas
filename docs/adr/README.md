@@ -55,6 +55,10 @@ What other options were evaluated? Why were they not chosen?
 | 0005 | Concurrency via Work/Span DAG Profiling | Accepted | 2026-07-10 |
 | 0006 | Formal Verification Target Generation | Accepted | 2026-07-10 |
 | 0007 | WebAssembly (WASM) Playground Architecture | Accepted | 2026-07-10 |
+| 0008 | Language Frontends (Reverse Transpilation) | Accepted | 2026-07-10 |
+| 0009 | Distributed Systems Simulation Model | Accepted | 2026-07-10 |
+| 0010 | Quantum Algorithm Specification | Accepted | 2026-07-10 |
+| 0011 | Tensor Architecture for Machine Learning Workloads | Accepted | 2026-07-10 |
 
 ---
 

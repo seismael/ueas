@@ -13,7 +13,9 @@
 pub mod cpp;
 pub mod java;
 pub mod javascript;
+pub mod lean4;
 pub mod mcp;
+pub mod tla;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
