@@ -14,19 +14,19 @@ Standard). Write, format, and preview transpiled output for 7 target languages.
 
 ## Deployment
 
-Serve the directory with any static file server:
+The playground is fully configured for Vercel deployment and uses a WebAssembly (WASM) build of the Rust kernel to parse and transpile UEAS algorithms natively in the browser.
 
 ```bash
-# Python
-python -m http.server 8080
+# Build the WASM module locally
+npm run build
 
-# Or deploy to GitHub Pages:
-# Settings > Pages > Source: main branch, folder: /tools/ueas-playground
+# Serve locally
+npx serve
 ```
 
 ## Roadmap
 
-- [ ] WASM-compiled kernel for real-time execution
+- [x] WASM-compiled kernel for real-time execution
 - [ ] Step-count profiler visualization
 - [ ] Complexity contract enforcement in-browser
 - [ ] Cross-target equivalence verification

@@ -4,6 +4,7 @@
   "private": true,
   "description": "UEAS Playground — browser-based algorithm editor",
   "scripts": {
-    "build": "rustup target add wasm32-unknown-unknown && cd wasm && wasm-pack build --target web"
+    "serve": "serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

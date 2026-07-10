@@ -22,16 +22,18 @@ COPY implementation/ ./implementation/
 RUN cargo build --manifest-path implementation/Cargo.toml --release -p ueas-mcp
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates socat procps \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates python3 curl \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /ueas/implementation/target/release/ueas-mcp /usr/local/bin/ueas-mcp
+COPY implementation/tools/mcp_bridge.py /usr/local/bin/mcp_bridge.py
 
-# Expose the MCP server over a raw TCP socket using socat.
-# Render will detect the bound port and mark the deploy as successful.
+# Expose the MCP server over HTTP using the Python bridge
+# Render's HTTP load balancer will proxy requests to this bridge
 ENV PORT=7860
+ENV PYTHONUNBUFFERED=1
 EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD pgrep socat || exit 1
+    CMD curl -f http://localhost:${PORT:-7860}/ || exit 1
 
-# socat listens on $PORT and forks the ueas-mcp process for every new connection, bridging TCP to STDIO
-CMD sh -c "socat TCP-LISTEN:${PORT:-7860},fork,reuseaddr EXEC:/usr/local/bin/ueas-mcp"
+# Start the Python HTTP bridge
+CMD ["python3", "/usr/local/bin/mcp_bridge.py"]
