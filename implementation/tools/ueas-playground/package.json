@@ -5,6 +5,7 @@
   "description": "UEAS Playground — browser-based algorithm editor",
   "scripts": {
     "serve": "serve .",
+    "build": "cd wasm && wasm-pack build --target web --release",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
