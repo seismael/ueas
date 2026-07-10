@@ -21,16 +21,17 @@ COPY implementation/ ./implementation/
 
 RUN cargo build --manifest-path implementation/Cargo.toml --release -p ueas-mcp
 
-# Stage 2: Runtime
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates socat procps \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /ueas/implementation/target/release/ueas-mcp /usr/local/bin/ueas-mcp
 
-# MCP over stdio — no TCP port needed. SSE mode uses PORT env if configured.
+# Expose the MCP server over a raw TCP socket using socat.
+# Render will detect the bound port and mark the deploy as successful.
 ENV PORT=7860
 EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD pgrep ueas-mcp || exit 1
+    CMD pgrep socat || exit 1
 
-CMD ["ueas-mcp"]
+# socat listens on $PORT and forks the ueas-mcp process for every new connection, bridging TCP to STDIO
+CMD sh -c "socat TCP-LISTEN:${PORT:-7860},fork,reuseaddr EXEC:/usr/local/bin/ueas-mcp"
