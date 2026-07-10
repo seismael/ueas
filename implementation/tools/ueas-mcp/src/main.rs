@@ -25,7 +25,9 @@ async fn main() -> Result<()> {
     } else {
         let addr: SocketAddr = format!("0.0.0.0:{}", port).parse()?;
         eprintln!("MCP HTTP server listening on {}", addr);
-        let listener = TcpListener::bind(addr).await?;
+        let std_listener = std::net::TcpListener::bind(addr)?;
+        std_listener.set_nonblocking(true)?;
+        let listener = TcpListener::from_std(std_listener)?;
         loop {
             let (stream, _) = listener.accept().await?;
             tokio::spawn(handle_http(stream));
