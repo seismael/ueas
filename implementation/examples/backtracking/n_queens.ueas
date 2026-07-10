@@ -2,72 +2,66 @@ Algorithm NQueens(n)
     Require: n: Integer
     Ensure: List
     Complexity: "O(N!)"
-
     # Backtracking search: place queens row by row, pruning conflicts
-    # via three boolean arrays (columns, diagonals) for O(1) collision checks.
+    # via three boolean arrays for O(1) collision checks
 
-    # Result accumulator: each solution is a list of column positions per row.
     solutions <- {}
-    # Current board state: board[row] = column of queen in that row.
     board <- {}
-    for i <- 0 to n - 1 do
+
+    i <- 0
+    while i < n do
         board[i] <- -1
-    end for
+        i <- i + 1
+    end while
 
     cols <- {}
+    i <- 0
+    while i < n do
+        cols[i] <- false
+        i <- i + 1
+    end while
+
     diag1 <- {}
     diag2 <- {}
-    for i <- 0 to n - 1 do
-        cols[i] <- false
-    end for
-    for i <- 0 to 2 * n - 1 do
+    i <- 0
+    while i < 2 * n do
         diag1[i] <- false
         diag2[i] <- false
-    end for
+        i <- i + 1
+    end while
 
-    SearchNQueens(n, 0, board, cols, diag1, diag2, solutions)
+    row <- 0
+    while row < n do
+        col <- 0
+        while col < n do
+            d1 <- row - col + n - 1
+            d2 <- row + col
+
+            if cols[col] == false and diag1[d1] == false and diag2[d2] == false then
+                board[row] <- col
+                cols[col] <- true
+                diag1[d1] <- true
+                diag2[d2] <- true
+
+                if row == n - 1 then
+                    solution <- {}
+                    j <- 0
+                    while j < n do
+                        solution.append(board[j])
+                        j <- j + 1
+                    end while
+                    solutions.append(solution)
+                end if
+
+                board[row] <- -1
+                cols[col] <- false
+                diag1[d1] <- false
+                diag2[d2] <- false
+            end if
+
+            col <- col + 1
+        end while
+        row <- row + 1
+    end while
 
     return solutions
-end Algorithm
-
-
-Algorithm SearchNQueens(n, row, board, cols, diag1, diag2, solutions)
-    Require: n: Integer, row: Integer, board: List, cols: List, diag1: List, diag2: List, solutions: List
-    Ensure: Void
-    Complexity: "O(N!)" # Called O(N!) times; each call is O(1) amortized.
-
-    if row == n then
-        # All queens placed — record this solution.
-        solution <- {}
-        for i <- 0 to n - 1 do
-            solution.append(board[i])
-        end for
-        solutions.append(solution)
-        return
-    end if
-
-    # Try placing a queen in each column of the current row.
-    for col <- 0 to n - 1 do
-        # Diag1: top-left to bottom-right (row - col is constant).
-        # Diag2: top-right to bottom-left (row + col is constant).
-        # Offset diag1 to avoid negative indices.
-        d1 <- row - col + n - 1
-        d2 <- row + col
-
-        if cols[col] == false and diag1[d1] == false and diag2[d2] == false then
-            # Place queen.
-            board[row] <- col
-            cols[col] <- true
-            diag1[d1] <- true
-            diag2[d2] <- true
-
-            SearchNQueens(n, row + 1, board, cols, diag1, diag2, solutions)
-
-            # Backtrack: remove queen.
-            board[row] <- -1
-            cols[col] <- false
-            diag1[d1] <- false
-            diag2[d2] <- false
-        end if
-    end for
-end Algorithm

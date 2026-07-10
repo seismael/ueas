@@ -3,8 +3,6 @@ Algorithm WordLadder(beginWord, endWord, wordList)
     Ensure: Integer
     Complexity: "O(M^2 * N)", M = beginWord.length, N = wordList.length
 
-    # BFS shortest-path over the implicit graph where edges connect words
-    # differing by exactly one character. Each node expands O(M * 26) neighbors.
     wordSet <- {}
     for each word in wordList do
         wordSet.add(word)
@@ -18,6 +16,8 @@ Algorithm WordLadder(beginWord, endWord, wordList)
     visited <- {}
     visited.add(beginWord)
 
+    alphabet <- {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
+
     while queue.length > 0 do
         invariant(visited.length <= wordList.length + 1, "Visited bounded by total words")
         current <- queue.removeFirst()
@@ -28,11 +28,11 @@ Algorithm WordLadder(beginWord, endWord, wordList)
             return level
         end if
 
-        # Generate all one-character transformations.
         wordChars <- StringToCharacters(currentWord)
-        for i <- 0 to wordChars.length - 1 do
+        i <- 0
+        while i < wordChars.length do
             original <- wordChars[i]
-            for c <- "a" to "z" do
+            for each c in alphabet do
                 wordChars[i] <- c
                 candidate <- CharactersToString(wordChars)
                 if candidate in wordSet and candidate not in visited then
@@ -41,7 +41,8 @@ Algorithm WordLadder(beginWord, endWord, wordList)
                 end if
             end for
             wordChars[i] <- original
-        end for
+            i <- i + 1
+        end while
     end while
 
     return 0
@@ -54,9 +55,11 @@ Algorithm StringToCharacters(s)
     Complexity: "O(M)"
 
     chars <- []
-    for i <- 0 to s.length - 1 do
+    i <- 0
+    while i < s.length do
         chars.append(s[i])
-    end for
+        i <- i + 1
+    end while
     return chars
 end Algorithm
 

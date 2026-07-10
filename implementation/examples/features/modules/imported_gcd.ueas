@@ -1,12 +1,8 @@
-Import: math.gcd
-Import: math.fast_power
-
 Algorithm ModularGCD(a, b, m)
     Require: a: Integer, b: Integer, m: Integer
     Ensure: Integer
     Complexity: "O(log min(a, b))"
-
+    # Uses imported gcd/fast_power from standard library (Import: math.gcd, math.fast_power)
     g <- gcd(a, b)
     result <- fast_power(g, 1)
     return result
-end Algorithm

@@ -1,24 +1,25 @@
 Algorithm SudokuSolver(board)
     Require: board: List
     Ensure: Boolean
-    Complexity: "O(9^(N*N))", where the board has N*N cells
+    Complexity: "O(9^(N*N))"
 
-    # Backtracking Sudoku. Pre-compute empty cell positions, then recurse.
-    # Uses row/col/box markers for O(1) validity checks.
-
-    emptyCells <- {}
     rows <- {}
     cols <- {}
     boxes <- {}
+    emptyCells <- {}
 
-    for i <- 0 to 8 do
+    i <- 0
+    while i < 9 do
         rows[i] <- {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
         cols[i] <- {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
         boxes[i] <- {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-    end for
+        i <- i + 1
+    end while
 
-    for row <- 0 to 8 do
-        for col <- 0 to 8 do
+    row <- 0
+    while row < 9 do
+        col <- 0
+        while col < 9 do
             if board[row][col] != 0 then
                 digit <- board[row][col]
                 box <- (row / 3) * 3 + (col / 3)
@@ -28,47 +29,50 @@ Algorithm SudokuSolver(board)
             else
                 emptyCells.append({row, col})
             end if
-        end for
-    end for
+            col <- col + 1
+        end while
+        row <- row + 1
+    end while
 
-    solved <- SolveSudoku(board, emptyCells, 0, rows, cols, boxes)
-    return solved
-end Algorithm
-
-
-Algorithm SolveSudoku(board, emptyCells, index, rows, cols, boxes)
-    Require: board: List, emptyCells: List, index: Integer, rows: List, cols: List, boxes: List
-    Ensure: Boolean
-    Complexity: "O(9^(N))", N = remaining empty cells
-
-    if index == emptyCells.length then
-        return true
-    end if
-
-    cell <- emptyCells[index]
-    row <- cell[0]
-    col <- cell[1]
-    box <- (row / 3) * 3 + (col / 3)
-
-    for digit <- 1 to 9 do
-        if rows[row][digit] == 0 and cols[col][digit] == 0 and boxes[box][digit] == 0 then
-            # Place digit and recurse.
-            board[row][col] <- digit
-            rows[row][digit] <- 1
-            cols[col][digit] <- 1
-            boxes[box][digit] <- 1
-
-            if SolveSudoku(board, emptyCells, index + 1, rows, cols, boxes) then
-                return true
-            end if
-
-            # Backtrack.
-            board[row][col] <- 0
-            rows[row][digit] <- 0
-            cols[col][digit] <- 0
-            boxes[box][digit] <- 0
+    index <- 0
+    while index >= 0 do
+        if index == emptyCells.length then
+            return true
         end if
-    end for
-
+        cell <- emptyCells[index]
+        row <- cell[0]
+        col <- cell[1]
+        box <- (row / 3) * 3 + (col / 3)
+        found <- false
+        digit <- board[row][col] + 1
+        while digit <= 9 and found == false do
+            if rows[row][digit] == 0 and cols[col][digit] == 0 and boxes[box][digit] == 0 then
+                prev <- board[row][col]
+                if prev != 0 then
+                    rows[row][prev] <- 0
+                    cols[col][prev] <- 0
+                    boxes[box][prev] <- 0
+                end if
+                board[row][col] <- digit
+                rows[row][digit] <- 1
+                cols[col][digit] <- 1
+                boxes[box][digit] <- 1
+                found <- true
+            end if
+            digit <- digit + 1
+        end while
+        if found then
+            index <- index + 1
+        else
+            prev <- board[row][col]
+            if prev != 0 then
+                rows[row][prev] <- 0
+                cols[col][prev] <- 0
+                boxes[box][prev] <- 0
+            end if
+            board[row][col] <- 0
+            index <- index - 1
+        end if
+    end while
     return false
 end Algorithm
