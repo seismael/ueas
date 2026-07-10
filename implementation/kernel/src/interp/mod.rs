@@ -6,7 +6,7 @@
 
 use crate::ast::{AstNode, AstNodeKind, AstValue};
 use crate::heap::{HeapHandle, TypeTag, VirtualHeap};
-use crate::profiling::{ComplexityContract, ComplexityKind, DagNode, Profiler, ProfilingConfig};
+use crate::profiling::{ComplexityContract, ComplexityKind, Profiler, ProfilingConfig};
 use crate::traps::{ExitCode, TrapRegister};
 use std::collections::{HashMap, HashSet};
 
