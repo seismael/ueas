@@ -881,7 +881,8 @@ The UCTS consists of:
 
 ### 9.3. Benchmark Algorithms
 
-Every conformant implementation MUST correctly handle:
+Every conformant implementation MUST correctly handle the following benchmark
+algorithms (see `examples/` and `library/` for reference implementations):
 
 1. **Euclidean Distance** (O(1))
 2. **Linear Search** (O(N))
@@ -890,6 +891,12 @@ Every conformant implementation MUST correctly handle:
 5. **Matrix Multiplication** (O(N^3))
 6. **Dijkstra's Shortest Path** (O((V+E) log V))
 7. **Traveling Salesman (Held-Karp)** (O(N^2 * 2^N))
+
+The [Standard Algorithm Library](library/INDEX.md) extends this core set with
+45 additional verified algorithms covering sorting, searching, graph theory,
+dynamic programming, number theory, string processing, and data structures.
+All library algorithms are specified in v3.0 academic pseudocode syntax with
+`Complexity:` contracts.
 
 ### 9.4. CI/CD Compliance Gates
 

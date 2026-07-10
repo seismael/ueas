@@ -322,6 +322,48 @@ Recommended settings for VS Code (`.vscode/settings.json`):
 }
 ```
 
+### 5.5. CLI Development
+
+The `ueas` CLI lives in `tools/ueas-cli/` as a workspace member.
+
+```bash
+# Build the CLI
+cargo build --workspace
+
+# Run the CLI directly
+cargo run -- run examples/euclidean.ueas
+cargo run -- check library/sorting/quicksort.ueas
+cargo run -- transpile examples/linear_search.ueas --target python
+
+# Install globally
+cargo install --path tools/ueas-cli
+```
+
+### 5.6. Library Contribution
+
+New algorithms in `library/` must follow these rules:
+
+1. Use v3.0 academic pseudocode syntax (`<-`, `then`/`do`/`end` closures,
+   `Require:`/`Ensure:`/`Complexity:` preamble)
+2. Place in the correct category directory (`sorting/`, `graph/`, `dp/`, etc.)
+3. Declare an accurate `Complexity:` contract with bindings
+4. Pass `ueas check <file>` — no parse errors
+5. Update `library/INDEX.md` with the new entry
+6. Use descriptive algorithm and parameter names
+
+**Library quality checklist:**
+
+- [ ] Algorithm header uses `Algorithm Name(params)` format
+- [ ] `Require:` block declares all parameter types
+- [ ] `Ensure:` block declares the return type
+- [ ] `Complexity:` matches the algorithm's theoretical bound
+- [ ] Bindings provided for all complexity variables (e.g., `N = data.length`)
+- [ ] All assignments use `<-` operator
+- [ ] Control flow uses `then`/`do`/`end if`/`end for`/`end while` closures
+- [ ] No semicolons, no curly braces, no `let` keyword
+- [ ] Self-contained (no imports for core logic)
+- [ ] `index <- 0` initialized before `for each` loops needing iteration tracking
+
 ---
 
 ## 6. Branching & Workflow

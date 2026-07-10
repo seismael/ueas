@@ -1,9 +1,10 @@
 # Universal Executable Algorithm Standard (UEAS)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-161-brightgreen)](kernel/)
+[![Tests](https://img.shields.io/badge/Tests-201-brightgreen)](kernel/)
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](kernel/)
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](grammar/)
+[![Library](https://img.shields.io/badge/Algorithms-45-blue)](library/)
 
 > The Universal Executable Algorithm Standard (UEAS). An executable, language-agnostic pseudocode specification. UEAS allows algorithms to be written universally, mathematically verified, and natively tested, eliminating language-specific syntax constraints for technical evaluations, research, and core engineering.
 
@@ -180,6 +181,50 @@ The AST produced by this algorithm can be:
 
 ---
 
+## Getting Started
+
+### Install
+
+```bash
+cargo install ueas
+```
+
+### CLI Usage
+
+```bash
+# Parse and execute an algorithm
+ueas run examples/euclidean.ueas
+
+# Validate syntax
+ueas check library/sorting/quicksort.ueas
+
+# Transpile to a target language
+ueas transpile examples/linear_search.ueas --target python
+ueas transpile examples/linear_search.ueas --target rust
+```
+
+### Standard Library
+
+UEAS ships with a comprehensive [standard algorithm library](library/INDEX.md) —
+**45 verified algorithms** across 7 categories:
+
+| Category | Count | Highlights |
+|----------|-------|------------|
+| Sorting | 8 | quicksort, mergesort, heapsort, insertion, counting, radix, bucket, timsort |
+| Searching | 3 | ternary search, jump search, exponential search |
+| Graph | 9 | BFS, DFS, Dijkstra, Kruskal, Prim, Floyd-Warshall, Bellman-Ford, topological sort, Kosaraju |
+| Dynamic Programming | 5 | LCS, knapsack (0/1), edit distance, matrix chain, coin change |
+| Mathematics | 8 | GCD, prime sieve, fast power, Miller-Rabin, FFT, CRT, extended Euclid, modular inverse |
+| String Algorithms | 5 | KMP, Rabin-Karp, Boyer-Moore, Z-algorithm, suffix array |
+| Data Structures | 6 | BST, AVL tree, min-heap, union-find, trie, segment tree |
+
+Validate all library algorithms:
+```bash
+ueas check library/sorting/quicksort.ueas
+```
+
+---
+
 ## Roadmap & Status
 
 | Epoch | Scope | Status |
@@ -187,6 +232,9 @@ The AST produced by this algorithm can be:
 | **1: Combinatorial Core** | ANTLR4 grammar, type system, AST JSON schema | ✅ Complete |
 | **2: Profiling Kernel** | Abstract interpreter, complexity engine, virtual heap | ✅ Complete |
 | **3: Universal Bridge** | Transpiler plugins, Python + Rust targets, MCP API | ✅ Complete |
+| **4: Developer Tooling** | `ueas` CLI (run, check, transpile, fmt) | ✅ Complete |
+| **5: Standard Library** | 45 algorithms in 7 categories | ✅ Complete |
+| **6: Backend Expansion** | C++17, Java 17, JavaScript transpilers | 🔨 Planned |
 
 ---
 

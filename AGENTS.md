@@ -711,8 +711,18 @@ ueas/
 │   ├── dfs.ueas           O(V+E)
 │   └── matrix_multiply.ueas  O(R*C*K)
 │   └── quicksort_randomized.ueas  O(N log N) with const + randInt
-├── tools/                 CI, containers
-│   └── Dockerfile         Reproducible CI environment
+├── library/                 Standard algorithm library (45 algorithms, 7 categories)
+│   ├── INDEX.md            Catalog with name, category, complexity
+│   ├── sorting/            8 algorithms (quicksort, mergesort, heapsort, etc.)
+│   ├── searching/          3 algorithms (ternary, jump, exponential search)
+│   ├── graph/              9 algorithms (BFS, DFS, Dijkstra, Kruskal, etc.)
+│   ├── dp/                 5 algorithms (LCS, knapsack, edit distance, etc.)
+│   ├── math/               8 algorithms (GCD, FFT, Miller-Rabin, etc.)
+│   ├── strings/            5 algorithms (KMP, Rabin-Karp, Boyer-Moore, etc.)
+│   └── data_structures/    6 algorithms (BST, AVL, heap, union-find, etc.)
+├── tools/                 CI, containers, CLI
+│   ├── Dockerfile         Reproducible CI environment
+│   └── ueas-cli/          `ueas` CLI (run, check, transpile, fmt)
 └── docs/
     ├── CONTRIBUTING.md    Contribution guide (full contributor lifecycle)
     ├── CLA.md             Contributor License Agreement (ICLA + CCLA)
