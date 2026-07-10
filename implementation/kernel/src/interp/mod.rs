@@ -235,6 +235,20 @@ pub fn evaluate(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitC
                     .as_u64(),
             ))
         }
+        AstNodeKind::TensorType => {
+            let dimensions: u64 = node
+                .metadata
+                .get("dimensions")
+                .and_then(|d| d.parse().ok())
+                .unwrap_or(1);
+            let size = (dimensions as usize).saturating_mul(8);
+            Ok(AstValue::Pointer(
+                ctx.heap
+                    .allocate(size, TypeTag::Matrix)
+                    .map_err(|_| ExitCode::HeapExhaustion)?
+                    .as_u64(),
+            ))
+        }
         _ => Err(ExitCode::InvalidOperation),
     }
 }
@@ -638,6 +652,9 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
             AstNodeKind::Receive => {
                 last = exec_receive(ctx, child)?;
             }
+            AstNodeKind::TensorType => {
+                last = evaluate(ctx, child)?;
+            }
             _ => {
                 if let Ok(v) = evaluate(ctx, child) {
                     last = v;
@@ -771,6 +788,16 @@ pub fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), Exi
     }
     let init = if node.children.len() > 2 {
         Some(evaluate(ctx, &node.children[2])?)
+    } else if node.children.len() > 1 && node.children[1].kind == AstNodeKind::TensorType {
+        let tensor_node = &node.children[1];
+        let dimensions: u64 = tensor_node
+            .metadata
+            .get("dimensions")
+            .and_then(|d| d.parse().ok())
+            .unwrap_or(1);
+        let size = (dimensions as usize).saturating_mul(8);
+        let handle = ctx.heap.allocate(size, TypeTag::Matrix)?;
+        Some(AstValue::Pointer(handle.as_u64()))
     } else {
         None
     };
@@ -981,6 +1008,7 @@ pub fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exit
         AstNodeKind::Sync => exec_sync(ctx, node),
         AstNodeKind::ParallelFor => exec_parallel_for(ctx, node),
         AstNodeKind::Measure => exec_measure(ctx, node),
+        AstNodeKind::TensorType => evaluate(ctx, node),
         AstNodeKind::Send => exec_send(ctx, node),
         AstNodeKind::Receive => exec_receive(ctx, node),
         AstNodeKind::If => execute_if(ctx, node),
@@ -2394,5 +2422,16 @@ mod tests {
         let result = exec_receive(&mut c, &recv_node).unwrap();
         assert_eq!(result, AstValue::None);
         assert!(c.symbols.lookup("incoming", &mut c.heap).is_some());
+    }
+
+    #[test]
+    fn tensor_declaration_allocates() {
+        let mut c = ctx();
+        let inner = AstNodeFactory::type_node("Real", vec![]);
+        let tensor_type_node = AstNodeFactory::tensor_type(inner, 4);
+        let decl = AstNodeFactory::variable_declaration("T", tensor_type_node, None);
+        execute_var_decl(&mut c, &decl).unwrap();
+        let val = c.symbols.lookup("T", &mut c.heap).unwrap();
+        assert!(matches!(val, AstValue::Pointer(_)));
     }
 }

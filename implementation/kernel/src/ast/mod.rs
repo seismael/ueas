@@ -1233,4 +1233,24 @@ mod tests {
             Some(AstValue::String("msg".to_string()))
         );
     }
+    #[test]
+    fn tensor_type_serialization() {
+        let inner = AstNodeFactory::type_node("Real", vec![]);
+        let node = AstNodeFactory::tensor_type(inner, 4);
+        assert_eq!(node.kind, AstNodeKind::TensorType);
+        assert_eq!(node.children.len(), 1);
+        let json = serde_json::to_string(&node).unwrap();
+        let restored: AstNode = serde_json::from_str(&json).unwrap();
+        assert_eq!(node.kind, restored.kind);
+        assert_eq!(node.children.len(), restored.children.len());
+        assert_eq!(node.metadata, restored.metadata);
+    }
+    #[test]
+    fn tensor_factory_creates_correct_dimensions() {
+        let inner = AstNodeFactory::type_node("Real", vec![]);
+        let node = AstNodeFactory::tensor_type(inner, 3);
+        assert_eq!(node.kind, AstNodeKind::TensorType);
+        let dims = node.metadata.get("dimensions").unwrap();
+        assert_eq!(dims, "3");
+    }
 }
