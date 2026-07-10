@@ -237,7 +237,7 @@ ueas check library/sorting/quicksort.ueas
 | **6: Backend Expansion** | C++17, Java 17, JavaScript transpilers | ✅ Complete |
 | **7: Concurrency** | Work/Span model, parallel for, spawn/join | 🔨 Planned |
 | **8: Formal Verification** | Lean 4 + TLA+ backend transpilers | 🔨 Planned |
-| **9: WASM Playground** | Browser-based IDE, URL-shareable algorithms | 🔨 Planned |
+| **9: WASM Playground** | Browser-based IDE, URL-shareable algorithms | ⚡ In Progress |
 
 ---
 

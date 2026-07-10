@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UEAS Playground — Universal Executable Algorithm Standard</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1><span class="accent">&Sigma;</span> UEAS Playground</h1>
+    <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
+  </div>
+  <div class="badges">
+    <span class="badge">v3.2.0</span>
+    <span class="badge">7 targets</span>
+    <span class="badge">241 tests</span>
+  </div>
+</header>
+
+<main>
+  <aside class="sidebar">
+    <h2>Examples</h2>
+    <div id="examples-list"></div>
+    <div class="sidebar-footer">
+      <a href="https://github.com/seismael/ueas" target="_blank">GitHub</a>
+      <a href="https://github.com/seismael/ueas/blob/main/SPEC.md" target="_blank">SPEC</a>
+      <a href="https://github.com/seismael/ueas/blob/main/library/INDEX.md" target="_blank">Library (45)</a>
+    </div>
+  </aside>
+
+  <section class="editor-panel">
+    <div id="editor"></div>
+    <div class="controls">
+      <select id="target-select">
+        <option value="python">Python 3.11</option>
+        <option value="rust">Rust 2021</option>
+        <option value="cpp">C++17</option>
+        <option value="java">Java 17</option>
+        <option value="javascript">JavaScript ES2020</option>
+        <option value="lean4">Lean 4 (proof)</option>
+        <option value="tlaplus">TLA+ (model check)</option>
+      </select>
+      <button onclick="formatCode()">Format</button>
+      <button onclick="copyToClipboard()">Copy</button>
+      <button class="primary" onclick="simulateTranspile()">Transpile &darr;</button>
+    </div>
+    <div class="output-panel">
+      <div class="output-tabs">
+        <span class="tab active" onclick="switchTab('transpiled')">Transpiled</span>
+        <span class="tab" onclick="switchTab('ast')">AST (JSON)</span>
+      </div>
+      <pre id="output-transpiled" class="output active">Select a target and click Transpile to see generated code.</pre>
+      <pre id="output-ast" class="output">AST preview not available in static mode.</pre>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>UEAS is released under the <a href="https://github.com/seismael/ueas/blob/main/LICENSE">Apache License 2.0</a>. The playground runs client-side only.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
