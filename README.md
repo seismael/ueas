@@ -6,6 +6,7 @@
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
 [![Examples](https://img.shields.io/badge/Examples-45-orange)](implementation/examples/)
+[![Playground](https://img.shields.io/badge/Playground-Live-success)](https://ueas-three.vercel.app/)
 [![Version](https://img.shields.io/badge/Version-4.1.0-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
