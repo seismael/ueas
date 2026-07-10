@@ -737,6 +737,7 @@ Each target's output MUST satisfy:
 | Rust (2021 edition) | Pass `cargo clippy -- -D warnings` with zero warnings. |
 | C++17+ | Pass `clang-tidy` with zero warnings under `-Wall -Wextra -Wpedantic`. |
 | Java 17+ | Pass `javac -Xlint:all` with zero warnings. |
+| JavaScript ES2020+ | Valid per ECMAScript strict mode; no lint warnings with ESLint recommended config. |
 
 ### 7.3. Semantic Equivalence Guarantee
 

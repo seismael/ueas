@@ -11,25 +11,28 @@
 Epoch 5 (`PLAN.md`) mandates the implementation of a Standard Algorithm Library that includes classical data structures such as Binary Search Trees, AVL Trees, Heaps, and Tries. 
 Currently, `SPEC.md` does not support User-Defined Types (Structs, Records, or Classes). The grammar only supports `algorithmDecl`, and the type system strictly defines a set of primitive and collection types (`List`, `Map`, `Graph`, etc.).
 
-Without the ability to define a custom type (e.g., a `Node` with `left` and `right` fields), implementing these data structures natively in UEAS is impossible. Workarounds involving parallel arrays or maps violate the design principles of producing human-readable, academic pseudocode. This RFC proposes adding `Record` types to the UEAS specification to close this gap.
+Without the ability to define a custom type (e.g., a `TreeNode` with `left` and `right` fields), implementing these data structures natively in UEAS is impossible. However, UEAS explicitly enforces a **strict single-ownership, value-semantic memory model** (Section 7.4) and forbids reference cycles (Section 6.7). Therefore, we cannot implement textbook data structures using direct recursive object pointers (which would cause infinite copying or illegal cycles in a value-semantic language).
+
+To support Epoch 5 while rigorously preserving the UEAS memory axioms, we must introduce **Value-Semantic Record Types**. This allows algorithms to define standard structs and use the **Arena Pattern** (storing nodes in a flat `Map` or `List` and using `Integer` indices as pointers) to safely model cyclic graphs or trees with parent pointers.
 
 ## Proposed Change
 
-We propose adding a `record` declaration to the top-level UEAS grammar, allowing users to define named composite types consisting of typed fields. 
+We propose adding a `record` declaration to the top-level UEAS grammar, allowing users to define named, non-recursive composite types consisting of typed fields. 
 
-Example syntax:
+Example syntax (using the Arena Pattern):
 ```ueas
-record Node
+record TreeNode
     value: Integer
-    left: Option<Node>
-    right: Option<Node>
+    left: Integer    # Arena index
+    right: Integer   # Arena index
+    parent: Integer  # Arena index
 end record
 ```
 
-These records can then be instantiated and their fields accessed via dot-notation:
+These records can then be instantiated and their fields accessed via dot-notation. Because they are strict value types, they can be safely stored in the virtual heap without violating single-ownership.
 ```ueas
-let root <- Node(value = 5, left = None, right = None)
-root.value <- 10
+let root <- TreeNode(value = 5, left = -1, right = -1, parent = -1)
+arena.put(0, root)
 ```
 
 ## Impact Analysis
@@ -55,8 +58,9 @@ root.value <- 10
 - Update `"Type"` schema to resolve custom record names.
 
 ### Kernel changes
-- **Virtual Heap:** Needs support for allocating custom record sizes based on the number of fields.
+- **Virtual Heap:** Needs support for allocating custom record sizes based on the number of fields. Records are strict value types (pass-by-value).
 - **Symbol Table:** Needs to track record definitions in the global scope to enforce type-checking upon instantiation.
+- **Reference Cycle Prevention:** The parser must strictly forbid recursive record definitions (e.g., `record Node { next: Node }`). All self-referential structures MUST use the Arena pattern (e.g., `next: Integer`).
 - **New Trap Codes:** `MISSING_FIELD_INITIALIZATION` if a record is instantiated without all fields, or `INVALID_FIELD_ACCESS` for unrecognized fields.
 
 ### Backward compatibility
@@ -64,8 +68,8 @@ root.value <- 10
 
 ## Alternatives Considered
 
-1. **Tuple Indexing:** Using `Tuple<Integer, Option<Tuple>, Option<Tuple>>` instead of Records. *Rejected* because positional indexing (`node[1]`) is unreadable and error-prone compared to field names (`node.left`).
-2. **Parallel Collections:** Using `Map<Integer, Integer>` to track left and right children. *Rejected* as it introduces manual memory management and index tracking into what should be abstract algorithmic logic.
+1. **Recursive Object Pointers (`Option<Node>`):** *Rejected.* While this is common in GC'd languages (Java/Python), it catastrophically violates UEAS's single-ownership axiom (Section 7.4). A tree with a parent pointer would create a reference cycle, breaking deterministic memory deallocation and causing infinite loops in pass-by-value assignments. The Arena pattern with flat Records is the only mathematically sound approach.
+2. **Tuple Indexing:** Using `Tuple<Integer, Integer, Integer, Integer>` instead of Records in the Arena. *Rejected* because positional indexing (`node[1]`) is unreadable and error-prone compared to academic field names (`node.left`).
 
 ## Reference Implementation Plan
 

@@ -46,8 +46,15 @@ What other options were evaluated? Why were they not chosen?
 ## ADR Index
 
 | ADR | Title | Status | Date |
+| ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| —   | (No decisions recorded yet) | — | — |
+| 0001 | Academic Pseudocode Syntax | Accepted | 2026-07-09 |
+| 0002 | CLI Tooling | Accepted | 2026-07-10 |
+| 0003 | Standard Library | Accepted | 2026-07-10 |
+| 0004 | Backend Expansion | Accepted | 2026-07-10 |
+| 0005 | Concurrency via Work/Span DAG Profiling | Accepted | 2026-07-10 |
+| 0006 | Formal Verification Target Generation | Accepted | 2026-07-10 |
+| 0007 | WebAssembly (WASM) Playground Architecture | Accepted | 2026-07-10 |
 
 ---
 

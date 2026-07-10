@@ -90,10 +90,10 @@ Python, or C++. If you need to prove that your algorithm is correct, use UEAS.
    execution if declared complexity bounds are breached.
 
 3. **Back-End (Transpilation Engine)** — A plugin architecture maps the
-    verified AST to idiomatic source code. Each target language (Python, Rust)
-    implements the `TargetGenerator` interface. Additional targets (C++, Java)
-    are planned for future releases. An MCP endpoint
-   enables AI agents to generate context-specific code directly from the AST.
+    verified AST to idiomatic source code. Five target languages (Python,
+    Rust, C++17, Java 17, JavaScript ES2020) implement the `TargetGenerator`
+    interface. An MCP endpoint enables AI agents to generate context-specific
+    code directly from the AST.
 
 ---
 
@@ -234,7 +234,10 @@ ueas check library/sorting/quicksort.ueas
 | **3: Universal Bridge** | Transpiler plugins, Python + Rust targets, MCP API | ✅ Complete |
 | **4: Developer Tooling** | `ueas` CLI (run, check, transpile, fmt) | ✅ Complete |
 | **5: Standard Library** | 45 algorithms in 7 categories | ✅ Complete |
-| **6: Backend Expansion** | C++17, Java 17, JavaScript transpilers | 🔨 Planned |
+| **6: Backend Expansion** | C++17, Java 17, JavaScript transpilers | ✅ Complete |
+| **7: Concurrency** | Work/Span model, parallel for, spawn/join | 🔨 Planned |
+| **8: Formal Verification** | Lean 4 + TLA+ backend transpilers | 🔨 Planned |
+| **9: WASM Playground** | Browser-based IDE, URL-shareable algorithms | 🔨 Planned |
 
 ---
 

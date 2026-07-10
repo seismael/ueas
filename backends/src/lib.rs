@@ -10,6 +10,9 @@
 //! to single-ownership semantics. Garbage-collected runtimes are exempt
 //! from explicit ownership mapping.
 
+pub mod cpp;
+pub mod java;
+pub mod javascript;
 pub mod mcp;
 
 use serde::{Deserialize, Serialize};
