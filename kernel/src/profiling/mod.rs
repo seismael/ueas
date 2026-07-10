@@ -41,7 +41,7 @@ impl StepCount {
     }
 }
 
-/// Configuration for complexity profiling.
+/// Configuration for complexity profiling and PRNG seeding.
 #[derive(Debug, Clone)]
 pub struct ProfilingConfig {
     /// Maximum constant multiplier before complexity violation is flagged.
@@ -53,6 +53,10 @@ pub struct ProfilingConfig {
     /// Maximum recursion depth before STACK_OVERFLOW trap.
     /// Default 10^4.
     pub max_recursion_depth: u64,
+    /// PRNG seed for reproducible stochastic paths (RFC 0009).
+    pub prng_seed: u64,
+    /// Stream mode — shift verification from Time to Space complexity.
+    pub stream_mode: bool,
 }
 
 impl Default for ProfilingConfig {
@@ -61,13 +65,15 @@ impl Default for ProfilingConfig {
             c_max: 10_000,
             global_max_steps: 1_000_000_000_000,
             max_recursion_depth: 10_000,
+            prng_seed: 0xCAFE_F00D_D15C_0001,
+            stream_mode: false,
         }
     }
 }
 
-/// Complexity contract forms per SPEC.md Section 6.4 and Appendix C.
+/// Complexity class variants per SPEC.md Section 6.4 and Appendix C.
 #[derive(Debug, Clone, PartialEq)]
-pub enum ComplexityContract {
+pub enum ComplexityKind {
     /// O(1) — constant time.
     Constant,
     /// O(N) — linear in n.
@@ -90,7 +96,27 @@ pub enum ComplexityContract {
     Factorial { n: u64 },
 }
 
+/// Complexity contract with optional expected (stochastic) bound (RFC 0009).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ComplexityContract {
+    pub kind: ComplexityKind,
+    /// Optional expected-case complexity annotation for stochastic algorithms.
+    pub expected_complexity: Option<String>,
+}
+
 impl ComplexityContract {
+    /// Compute the expected asymptotic cost E(n_1, ..., n_k).
+    pub fn expected_cost(&self) -> u64 {
+        self.kind.expected_cost()
+    }
+
+    /// Check whether the step count `s` violates this contract.
+    pub fn is_violated(&self, step_count: u64, c_max: u64) -> bool {
+        self.kind.is_violated(step_count, c_max)
+    }
+}
+
+impl ComplexityKind {
     /// Compute the expected asymptotic cost E(n_1, ..., n_k).
     pub fn expected_cost(&self) -> u64 {
         match self {
@@ -144,14 +170,9 @@ impl ComplexityContract {
     }
 
     /// Check whether the step count `s` violates this contract.
-    ///
-    /// Returns `true` if the complexity has been breached
-    /// (`s > C_max * E`), `false` if the contract is satisfied.
     pub fn is_violated(&self, step_count: u64, c_max: u64) -> bool {
         let expected = self.expected_cost();
-        // Guard against overflow in multiplication
         let bound = c_max.saturating_mul(expected);
-        // If bound overflowed to u64::MAX, treat as no violation
         if bound == u64::MAX && expected > 0 {
             return false;
         }
@@ -229,6 +250,13 @@ impl Profiler {
 mod tests {
     use super::*;
 
+    fn c(kind: ComplexityKind) -> ComplexityContract {
+        ComplexityContract {
+            kind,
+            expected_complexity: None,
+        }
+    }
+
     #[test]
     fn step_count_starts_at_zero() {
         let count = StepCount::new();
@@ -252,7 +280,7 @@ mod tests {
 
     #[test]
     fn constant_complexity_never_violated_for_small_steps() {
-        let contract = ComplexityContract::Constant;
+        let contract = c(ComplexityKind::Constant);
         assert!(!contract.is_violated(0, 10_000));
         assert!(!contract.is_violated(5000, 10_000));
         assert!(contract.is_violated(10_001, 10_000));
@@ -260,8 +288,7 @@ mod tests {
 
     #[test]
     fn linear_complexity_check() {
-        let contract = ComplexityContract::Linear { n: 100 };
-        // E = 100, C_max = 10, bound = 1000
+        let contract = c(ComplexityKind::Linear { n: 100 });
         assert!(!contract.is_violated(500, 10));
         assert!(!contract.is_violated(1000, 10));
         assert!(contract.is_violated(1001, 10));
@@ -269,8 +296,7 @@ mod tests {
 
     #[test]
     fn quadratic_complexity_check() {
-        let contract = ComplexityContract::Quadratic { n: 10 };
-        // E = 100, C_max = 10, bound = 1000
+        let contract = c(ComplexityKind::Quadratic { n: 10 });
         assert!(!contract.is_violated(500, 10));
         assert!(!contract.is_violated(1000, 10));
         assert!(contract.is_violated(1001, 10));
@@ -278,8 +304,7 @@ mod tests {
 
     #[test]
     fn cubic_complexity_check() {
-        let contract = ComplexityContract::Polynomial { n: 10, k: 3 };
-        // E = 1000, C_max = 10, bound = 10000
+        let contract = c(ComplexityKind::Polynomial { n: 10, k: 3 });
         assert!(!contract.is_violated(5000, 10));
         assert!(!contract.is_violated(10000, 10));
         assert!(contract.is_violated(10001, 10));
@@ -287,14 +312,13 @@ mod tests {
 
     #[test]
     fn logarithmic_complexity_empty_input() {
-        let contract = ComplexityContract::Logarithmic { n: 0 };
+        let contract = c(ComplexityKind::Logarithmic { n: 0 });
         assert!(!contract.is_violated(0, 10_000));
     }
 
     #[test]
     fn logarithmic_complexity_check() {
-        let contract = ComplexityContract::Logarithmic { n: 1024 };
-        // log2(1024) = 10, C_max = 10, bound = 100
+        let contract = c(ComplexityKind::Logarithmic { n: 1024 });
         assert!(!contract.is_violated(50, 10));
         assert!(!contract.is_violated(100, 10));
         assert!(contract.is_violated(101, 10));
@@ -302,8 +326,7 @@ mod tests {
 
     #[test]
     fn linearithmic_complexity_check() {
-        let contract = ComplexityContract::Linearithmic { n: 100 };
-        // log2(100) = 6 (floor), n*log = 600, C_max = 10, bound = 6000
+        let contract = c(ComplexityKind::Linearithmic { n: 100 });
         assert!(!contract.is_violated(3000, 10));
         assert!(!contract.is_violated(6000, 10));
         assert!(contract.is_violated(6001, 10));
@@ -311,10 +334,9 @@ mod tests {
 
     #[test]
     fn sum_complexity_check() {
-        let contract = ComplexityContract::Sum {
+        let contract = c(ComplexityKind::Sum {
             terms: vec![100, 200],
-        };
-        // E = 300, C_max = 10, bound = 3000
+        });
         assert!(!contract.is_violated(1500, 10));
         assert!(!contract.is_violated(3000, 10));
         assert!(contract.is_violated(3001, 10));
@@ -322,11 +344,10 @@ mod tests {
 
     #[test]
     fn mixed_log_linear_complexity_check() {
-        // Dijkstra: O((V+E) log V), V=10, E=20 => sum=30, log2(10)=3, E=90, C_max=10, bound=900
-        let contract = ComplexityContract::MixedLogLinear {
+        let contract = c(ComplexityKind::MixedLogLinear {
             sum: 30,
             log_term: 10,
-        };
+        });
         assert!(!contract.is_violated(450, 10));
         assert!(!contract.is_violated(900, 10));
         assert!(contract.is_violated(901, 10));
@@ -334,8 +355,7 @@ mod tests {
 
     #[test]
     fn exponential_complexity_check() {
-        let contract = ComplexityContract::Exponential { n: 5 };
-        // E = 2^5 = 32, C_max = 10, bound = 320
+        let contract = c(ComplexityKind::Exponential { n: 5 });
         assert!(!contract.is_violated(160, 10));
         assert!(!contract.is_violated(320, 10));
         assert!(contract.is_violated(321, 10));
@@ -343,8 +363,7 @@ mod tests {
 
     #[test]
     fn factorial_complexity_check() {
-        let contract = ComplexityContract::Factorial { n: 5 };
-        // E = 120, C_max = 10, bound = 1200
+        let contract = c(ComplexityKind::Factorial { n: 5 });
         assert!(!contract.is_violated(600, 10));
         assert!(!contract.is_violated(1200, 10));
         assert!(contract.is_violated(1201, 10));
@@ -393,7 +412,7 @@ mod tests {
         for _ in 0..50 {
             profiler.step().unwrap();
         }
-        let contract = ComplexityContract::Linear { n: 100 };
+        let contract = c(ComplexityKind::Linear { n: 100 });
         assert!(profiler.verify_complexity(&contract).is_ok());
     }
 
@@ -406,7 +425,7 @@ mod tests {
         for _ in 0..200 {
             profiler.step().unwrap();
         }
-        let contract = ComplexityContract::Linear { n: 100 };
+        let contract = c(ComplexityKind::Linear { n: 100 });
         assert_eq!(
             profiler.verify_complexity(&contract).unwrap_err(),
             ExitCode::ComplexityViolation
@@ -418,16 +437,16 @@ mod tests {
     }
     #[test]
     fn is_violated_cmax_zero() {
-        assert!(ComplexityContract::Constant.is_violated(1, 0));
+        assert!(c(ComplexityKind::Constant).is_violated(1, 0));
     }
     #[test]
     fn expected_cost_exp_overflow() {
         assert_eq!(
-            ComplexityContract::Exponential { n: 64 }.expected_cost(),
+            ComplexityKind::Exponential { n: 64 }.expected_cost(),
             u64::MAX
         );
         assert_eq!(
-            ComplexityContract::Exponential { n: 63 }.expected_cost(),
+            ComplexityKind::Exponential { n: 63 }.expected_cost(),
             1u64 << 63
         );
     }
@@ -437,5 +456,15 @@ mod tests {
         assert_eq!(c.c_max, 10000);
         assert_eq!(c.global_max_steps, 1_000_000_000_000);
         assert_eq!(c.max_recursion_depth, 10000);
+        assert!(!c.stream_mode);
+    }
+    #[test]
+    fn expected_complexity_stored() {
+        let contract = ComplexityContract {
+            kind: ComplexityKind::Constant,
+            expected_complexity: Some("O(N log N)".to_string()),
+        };
+        assert_eq!(contract.expected_complexity, Some("O(N log N)".to_string()));
+        assert_eq!(contract.expected_cost(), 1);
     }
 }

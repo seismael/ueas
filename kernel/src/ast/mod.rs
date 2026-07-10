@@ -52,6 +52,10 @@ pub enum AstNodeKind {
     NanLiteral,
     Type,
     Import,
+    StreamType,
+    Yield,
+    Await,
+    SecretType,
 }
 
 /// Source location in the UEAS source file.
@@ -409,6 +413,29 @@ impl AstNodeFactory {
         children.extend(type_arguments);
         AstNode::internal(AstNodeKind::Type, children, None)
     }
+
+    pub fn stream_type(inner: AstNode) -> AstNode {
+        AstNode::internal(AstNodeKind::StreamType, vec![inner], None)
+    }
+
+    pub fn yield_stmt(expr: AstNode) -> AstNode {
+        AstNode::internal(AstNodeKind::Yield, vec![expr], None)
+    }
+
+    pub fn await_stmt(name: &str) -> AstNode {
+        AstNode::internal(
+            AstNodeKind::Await,
+            vec![AstNode::leaf(
+                AstNodeKind::Identifier,
+                Some(AstValue::String(name.to_string())),
+            )],
+            None,
+        )
+    }
+
+    pub fn secret_type(inner: AstNode) -> AstNode {
+        AstNode::internal(AstNodeKind::SecretType, vec![inner], None)
+    }
 }
 
 // ===== Type System =====
@@ -513,8 +540,13 @@ pub trait AstVisitor {
     fn visit_infinity_literal(&mut self, _node: &AstNode) {}
     fn visit_nan_literal(&mut self, _node: &AstNode) {}
     fn visit_type(&mut self, _node: &AstNode) {}
+    fn visit_secret_type(&mut self, _node: &AstNode) {}
 
     fn visit_import(&mut self, _node: &AstNode) {}
+
+    fn visit_stream_type(&mut self, _node: &AstNode) {}
+    fn visit_yield(&mut self, _node: &AstNode) {}
+    fn visit_await(&mut self, _node: &AstNode) {}
 
     /// Traverse an AST node by dispatching to the appropriate visit method,
     /// then recursively visiting all children.
@@ -553,6 +585,10 @@ pub trait AstVisitor {
             AstNodeKind::NanLiteral => self.visit_nan_literal(node),
             AstNodeKind::Type => self.visit_type(node),
             AstNodeKind::Import => self.visit_import(node),
+            AstNodeKind::SecretType => self.visit_secret_type(node),
+            AstNodeKind::StreamType => self.visit_stream_type(node),
+            AstNodeKind::Yield => self.visit_yield(node),
+            AstNodeKind::Await => self.visit_await(node),
         }
         for child in &node.children {
             self.traverse(child);
@@ -618,6 +654,10 @@ mod tests {
             AstNodeKind::NanLiteral,
             AstNodeKind::Type,
             AstNodeKind::Import,
+            AstNodeKind::SecretType,
+            AstNodeKind::StreamType,
+            AstNodeKind::Yield,
+            AstNodeKind::Await,
         ];
         for kind in kinds {
             let json = serde_json::to_string(&kind).unwrap();
@@ -947,6 +987,9 @@ mod tests {
             fn visit_integer_literal(&mut self, _: &AstNode) {
                 self.count += 1;
             }
+            fn visit_secret_type(&mut self, _: &AstNode) {
+                self.count += 1;
+            }
         }
         let algo = AstNodeFactory::algorithm(
             "Test",
@@ -981,5 +1024,29 @@ mod tests {
     #[test]
     fn primitive_type_as_str_void() {
         assert_eq!(crate::ast::PrimitiveType::Void.as_str(), "Void");
+    }
+    #[test]
+    fn stream_type_serialization_round_trip() {
+        let inner = AstNodeFactory::type_node("Integer", vec![]);
+        let stream = AstNodeFactory::stream_type(inner);
+        let json = serde_json::to_string(&stream).unwrap();
+        let restored: AstNode = serde_json::from_str(&json).unwrap();
+        assert_eq!(stream.kind, AstNodeKind::StreamType);
+        assert_eq!(restored.kind, AstNodeKind::StreamType);
+        assert_eq!(stream.children.len(), 1);
+        assert_eq!(restored.children.len(), 1);
+    }
+    #[test]
+    fn yield_node_created() {
+        let expr = AstNodeFactory::integer_literal("42");
+        let node = AstNodeFactory::yield_stmt(expr);
+        assert_eq!(node.kind, AstNodeKind::Yield);
+        assert_eq!(node.children.len(), 1);
+    }
+    #[test]
+    fn await_node_created() {
+        let node = AstNodeFactory::await_stmt("x");
+        assert_eq!(node.kind, AstNodeKind::Await);
+        assert_eq!(node.children.len(), 1);
     }
 }

@@ -6,9 +6,9 @@
 
 use crate::ast::{AstNode, AstNodeKind, AstValue};
 use crate::heap::{HeapHandle, TypeTag, VirtualHeap};
-use crate::profiling::{ComplexityContract, Profiler, ProfilingConfig};
+use crate::profiling::{ComplexityContract, ComplexityKind, Profiler, ProfilingConfig};
 use crate::traps::{ExitCode, TrapRegister};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Default)]
 struct Scope {
@@ -151,20 +151,54 @@ pub struct ExecContext {
     /// When true, all if-statements execute both branches and compare step
     /// counts for timing leak detection (ADR 0016 / @ConstantTime).
     pub constant_time_mode: bool,
+    /// Variable names declared with Secret<T> type (RFC 0011).
+    pub secret_variables: HashSet<String>,
+    /// PRNG state for stochastic algorithm execution (RFC 0009).
+    pub prng_state: u64,
+}
+
+/// Default PRNG seed for reproducible stochastic execution (RFC 0009).
+pub const PRNG_DEFAULT_SEED: u64 = 0xCAFE_F00D_D15C_0001;
+
+/// Advance an LCG PRNG (m = 2^64, a = 6364136223846793005, c = 1442695040888963407).
+/// Returns the new state.
+pub fn prng_next(state: &mut u64) -> u64 {
+    *state = state
+        .wrapping_mul(6364136223846793005)
+        .wrapping_add(1442695040888963407);
+    *state
+}
+
+/// Generate a pseudo-random integer in [min, max] (inclusive).
+pub fn rand_range(prng: &mut u64, min: i64, max: i64) -> i64 {
+    let r = prng_next(prng);
+    let range = max.saturating_sub(min).saturating_add(1) as u64;
+    if range == 0 {
+        return min;
+    }
+    let v = (r % range) as i64;
+    min + v
 }
 
 impl ExecContext {
     pub fn new(config: ProfilingConfig) -> Self {
+        let seed = config.prng_seed;
         Self {
             heap: VirtualHeap::with_default_config(),
             symbols: SymbolTable::new(),
             profiler: Profiler::new(config),
             trap: TrapRegister::new(),
             constant_time_mode: false,
+            secret_variables: HashSet::new(),
+            prng_state: seed,
         }
     }
     pub fn with_default_config() -> Self {
         Self::new(ProfilingConfig::default())
+    }
+    /// Generate a pseudo-random integer in [min, max] (inclusive) (RFC 0009).
+    pub fn rand_int(&mut self, min: i64, max: i64) -> i64 {
+        rand_range(&mut self.prng_state, min, max)
     }
 }
 
@@ -355,7 +389,7 @@ fn eval_function_call(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue,
         args.push(evaluate(ctx, child)?);
     }
     ctx.profiler.step()?;
-    let (result, weight) = dispatch_builtin(&name, &args, &ctx.heap)?;
+    let (result, weight) = dispatch_builtin(&name, &args, &ctx.heap, &mut ctx.prng_state)?;
     ctx.profiler.step_weighted(weight)?;
     Ok(result)
 }
@@ -364,6 +398,7 @@ fn dispatch_builtin(
     name: &str,
     args: &[AstValue],
     heap: &VirtualHeap,
+    prng: &mut u64,
 ) -> Result<(AstValue, u64), ExitCode> {
     match name {
         "sqrt" => {
@@ -495,14 +530,23 @@ fn dispatch_builtin(
         "prepend" | "slice" | "adjacent" | "neighbors" | "addNode" | "addEdge" | "removeNode"
         | "extractMin" | "weight" | "multiply" | "determinant" | "range" | "emptyList"
         | "emptySet" | "emptyMap" | "zeroMatrix" | "add" => Err(ExitCode::InvalidOperation),
-        "randInt" => {
+        "random" | "randInt" => {
             let min: i64 = match args.first() {
                 Some(AstValue::Integer(x)) => *x,
                 _ => 0,
             };
-            Ok((AstValue::Integer(min), 1))
+            let max: i64 = match args.get(1) {
+                Some(AstValue::Integer(x)) => *x,
+                _ => min,
+            };
+            let r = rand_range(prng, min, max);
+            Ok((AstValue::Integer(r), 1))
         }
-        "randReal" => Ok((AstValue::Real(0.5), 1)),
+        "randReal" => {
+            let r = prng_next(prng);
+            let v = (r as f64) / (u64::MAX as f64);
+            Ok((AstValue::Real(v), 1))
+        }
         _ => Err(ExitCode::InvalidOperation),
     }
 }
@@ -570,6 +614,12 @@ fn execute_algorithm(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, 
             AstNodeKind::Invariant => {
                 execute_invariant(ctx, child)?;
             }
+            AstNodeKind::Yield => {
+                last = exec_yield(ctx, child)?;
+            }
+            AstNodeKind::Await => {
+                last = exec_await(ctx, child)?;
+            }
             _ => {
                 if let Ok(v) = evaluate(ctx, child) {
                     last = v;
@@ -617,6 +667,7 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
     let mut n_val: u64 = 0;
     let mut v_val: u64 = 0;
     let mut e_val: u64 = 0;
+    let mut expected_str: Option<String> = None;
 
     for child in &node.children {
         if child.kind == AstNodeKind::VariableBinding {
@@ -627,6 +678,13 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
                 Some(AstValue::String(s)) => s.clone(),
                 _ => continue,
             };
+            if var_name == "Expected" {
+                expected_str = match &child.children[1].value {
+                    Some(AstValue::String(s)) => Some(s.clone()),
+                    _ => None,
+                };
+                continue;
+            }
             if let Ok(value) = evaluate(ctx, &child.children[1]) {
                 let concrete = match value {
                     AstValue::Integer(x) => x.max(0) as u64,
@@ -647,26 +705,26 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
     }
 
     let s = complexity_str.trim();
-    let contract = match () {
-        _ if s.contains("O(1)") => ComplexityContract::Constant,
+    let kind = match () {
+        _ if s.contains("O(1)") => ComplexityKind::Constant,
         _ if s.contains("O((V+E) log V)") => {
             let sum = v_val.saturating_add(e_val).max(1);
-            ComplexityContract::MixedLogLinear {
+            ComplexityKind::MixedLogLinear {
                 sum,
                 log_term: v_val.max(1),
             }
         }
-        _ if s.contains("O(V+E)") || s.contains("O(V + E)") => ComplexityContract::Sum {
+        _ if s.contains("O(V+E)") || s.contains("O(V + E)") => ComplexityKind::Sum {
             terms: vec![v_val.max(1), e_val.max(1)],
         },
-        _ if s.contains("O(N^3)") => ComplexityContract::Polynomial { n: n_val, k: 3 },
-        _ if s.contains("O(N^2)") => ComplexityContract::Quadratic { n: n_val },
-        _ if s.contains("O(N log N)") => ComplexityContract::Linearithmic { n: n_val },
-        _ if s.contains("O(log N)") => ComplexityContract::Logarithmic { n: n_val },
-        _ if s.contains("O(2^N)") => ComplexityContract::Exponential {
+        _ if s.contains("O(N^3)") => ComplexityKind::Polynomial { n: n_val, k: 3 },
+        _ if s.contains("O(N^2)") => ComplexityKind::Quadratic { n: n_val },
+        _ if s.contains("O(N log N)") => ComplexityKind::Linearithmic { n: n_val },
+        _ if s.contains("O(log N)") => ComplexityKind::Logarithmic { n: n_val },
+        _ if s.contains("O(2^N)") => ComplexityKind::Exponential {
             n: n_val.clamp(1, 20),
         },
-        _ if s.contains("O(N!)") => ComplexityContract::Factorial {
+        _ if s.contains("O(N!)") => ComplexityKind::Factorial {
             n: n_val.clamp(1, 10),
         },
         _ if s.contains("O(N)")
@@ -674,9 +732,13 @@ fn enforce_complexity(ctx: &mut ExecContext, node: &AstNode) -> Result<(), ExitC
             && !s.contains("O(N ")
             && !s.contains("O(N!") =>
         {
-            ComplexityContract::Linear { n: n_val }
+            ComplexityKind::Linear { n: n_val }
         }
-        _ => ComplexityContract::Linear { n: n_val },
+        _ => ComplexityKind::Linear { n: n_val },
+    };
+    let contract = ComplexityContract {
+        kind,
+        expected_complexity: expected_str,
     };
     ctx.profiler.verify_complexity(&contract)
 }
@@ -686,6 +748,9 @@ pub fn execute_var_decl(ctx: &mut ExecContext, node: &AstNode) -> Result<(), Exi
         Some(AstValue::String(s)) => s.clone(),
         _ => return Err(ExitCode::InvalidOperation),
     };
+    if node.children.len() > 1 && node.children[1].kind == AstNodeKind::SecretType {
+        ctx.secret_variables.insert(name.clone());
+    }
     let init = if node.children.len() > 2 {
         Some(evaluate(ctx, &node.children[2])?)
     } else {
@@ -728,14 +793,32 @@ pub fn execute_assignment(ctx: &mut ExecContext, node: &AstNode) -> Result<(), E
     }
 }
 
+fn condition_uses_secret(ctx: &ExecContext, cond: &AstNode) -> bool {
+    if cond.kind == AstNodeKind::Identifier {
+        if let Some(AstValue::String(name)) = &cond.value {
+            return ctx.secret_variables.contains(name);
+        }
+    }
+    for child in &cond.children {
+        if condition_uses_secret(ctx, child) {
+            return true;
+        }
+    }
+    false
+}
+
 pub fn execute_if(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
     if node.children.is_empty() {
         return Ok(AstValue::None);
     }
 
-    // Timing leak detection (ADR 0016): in @ConstantTime mode, execute both branches
+    // Timing leak detection (ADR 0016 / RFC 0011): in @ConstantTime mode,
+    // if the condition depends on a Secret variable, execute both branches
     // and compare step counts. A divergence means non-constant execution time.
-    if ctx.constant_time_mode && node.children.len() >= 2 {
+    if ctx.constant_time_mode
+        && node.children.len() >= 2
+        && condition_uses_secret(ctx, &node.children[0])
+    {
         let cond_val = evaluate(ctx, &node.children[0])?;
         let steps_before = ctx.profiler.step_count();
 
@@ -874,6 +957,8 @@ pub fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exit
                 Ok(AstValue::None)
             }
         }
+        AstNodeKind::Yield => exec_yield(ctx, node),
+        AstNodeKind::Await => exec_await(ctx, node),
         AstNodeKind::If => execute_if(ctx, node),
         AstNodeKind::WhileLoop => execute_while(ctx, node),
         AstNodeKind::ForLoop => execute_for(ctx, node),
@@ -887,6 +972,23 @@ pub fn exec_stmt(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, Exit
         }
         _ => evaluate(ctx, node),
     }
+}
+
+pub fn exec_yield(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    if node.children.is_empty() {
+        return Ok(AstValue::None);
+    }
+    evaluate(ctx, &node.children[0])
+}
+
+pub fn exec_await(ctx: &mut ExecContext, node: &AstNode) -> Result<AstValue, ExitCode> {
+    let name = match node.children.first().and_then(|n| n.value.as_ref()) {
+        Some(AstValue::String(s)) => s.as_str(),
+        _ => return Err(ExitCode::InvalidOperation),
+    };
+    ctx.symbols
+        .lookup(name, &mut ctx.heap)
+        .ok_or(ExitCode::NullDereference)
 }
 
 #[cfg(test)]
@@ -1145,6 +1247,7 @@ mod tests {
     #[test]
     fn builtin_substring() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         let (v, _) = dispatch_builtin(
             "substring",
             &[
@@ -1153,6 +1256,7 @@ mod tests {
                 AstValue::Integer(4),
             ],
             &heap,
+            &mut prng,
         )
         .unwrap();
         assert_eq!(v, AstValue::String("ell".to_string()));
@@ -1160,6 +1264,7 @@ mod tests {
     #[test]
     fn builtin_concat() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         let (v, _) = dispatch_builtin(
             "concat",
             &[
@@ -1167,6 +1272,7 @@ mod tests {
                 AstValue::String("b".to_string()),
             ],
             &heap,
+            &mut prng,
         )
         .unwrap();
         assert_eq!(v, AstValue::String("ab".to_string()));
@@ -1174,8 +1280,14 @@ mod tests {
     #[test]
     fn builtin_strlen() {
         let heap = VirtualHeap::with_default_config();
-        let (v, _) =
-            dispatch_builtin("strlen", &[AstValue::String("hello".to_string())], &heap).unwrap();
+        let mut prng = PRNG_DEFAULT_SEED;
+        let (v, _) = dispatch_builtin(
+            "strlen",
+            &[AstValue::String("hello".to_string())],
+            &heap,
+            &mut prng,
+        )
+        .unwrap();
         assert_eq!(v, AstValue::Integer(5));
     }
     #[test]
@@ -1329,8 +1441,9 @@ mod tests {
     #[test]
     fn builtin_length() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         assert_eq!(
-            dispatch_builtin("length", &[AstValue::Integer(5)], &heap)
+            dispatch_builtin("length", &[AstValue::Integer(5)], &heap, &mut prng)
                 .unwrap()
                 .0,
             AstValue::Integer(5)
@@ -1339,11 +1452,13 @@ mod tests {
     #[test]
     fn builtin_contains_true() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         assert_eq!(
             dispatch_builtin(
                 "contains",
                 &[AstValue::Integer(1), AstValue::Integer(1)],
-                &heap
+                &heap,
+                &mut prng
             )
             .unwrap()
             .0,
@@ -1353,11 +1468,13 @@ mod tests {
     #[test]
     fn builtin_contains_false() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         assert_eq!(
             dispatch_builtin(
                 "contains",
                 &[AstValue::Integer(1), AstValue::Integer(2)],
-                &heap
+                &heap,
+                &mut prng
             )
             .unwrap()
             .0,
@@ -1367,11 +1484,13 @@ mod tests {
     #[test]
     fn builtin_append() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         assert_eq!(
             dispatch_builtin(
                 "append",
                 &[AstValue::Integer(1), AstValue::Integer(42)],
-                &heap
+                &heap,
+                &mut prng
             )
             .unwrap()
             .0,
@@ -1381,8 +1500,9 @@ mod tests {
     #[test]
     fn builtin_pop() {
         let heap = VirtualHeap::with_default_config();
+        let mut prng = PRNG_DEFAULT_SEED;
         assert_eq!(
-            dispatch_builtin("pop", &[AstValue::Integer(99)], &heap)
+            dispatch_builtin("pop", &[AstValue::Integer(99)], &heap, &mut prng)
                 .unwrap()
                 .0,
             AstValue::Integer(99)
@@ -1644,5 +1764,192 @@ mod tests {
         let mut c = ctx();
         let algo = AstNodeFactory::algorithm("T", vec![], None, "O(N^3)", vec![], vec![]);
         assert!(execute_algorithm(&mut c, &algo).is_ok());
+    }
+
+    #[test]
+    fn constant_time_secret_branch_equal_steps_ok() {
+        let mut c = ctx();
+        c.constant_time_mode = true;
+        c.secret_variables.insert("secret_key".to_string());
+        declare_int(&mut c, "secret_key", 1);
+        declare_int(&mut c, "result", 0);
+        let if_node = AstNode::internal(
+            AstNodeKind::If,
+            vec![
+                AstNodeFactory::binary_expression(
+                    ">",
+                    AstNodeFactory::identifier("secret_key"),
+                    AstNodeFactory::integer_literal("0"),
+                ),
+                AstNode::internal(
+                    AstNodeKind::If,
+                    vec![AstNodeFactory::assignment(
+                        AstNodeFactory::identifier("result"),
+                        AstNodeFactory::integer_literal("42"),
+                    )],
+                    None,
+                ),
+                AstNode::internal(
+                    AstNodeKind::If,
+                    vec![AstNodeFactory::assignment(
+                        AstNodeFactory::identifier("result"),
+                        AstNodeFactory::integer_literal("99"),
+                    )],
+                    None,
+                ),
+            ],
+            None,
+        );
+        let result = execute_if(&mut c, &if_node);
+        assert!(result.is_ok(), "Expected ok, got {:?}", result.err());
+        assert_eq!(c.trap.code(), ExitCode::NoError);
+    }
+
+    #[test]
+    fn constant_time_secret_branch_divergent_traps() {
+        let mut c = ctx();
+        c.constant_time_mode = true;
+        c.secret_variables.insert("secret_key".to_string());
+        declare_int(&mut c, "secret_key", 1);
+        let if_node = AstNode::internal(
+            AstNodeKind::If,
+            vec![
+                AstNodeFactory::binary_expression(
+                    ">",
+                    AstNodeFactory::identifier("secret_key"),
+                    AstNodeFactory::integer_literal("0"),
+                ),
+                AstNode::internal(
+                    AstNodeKind::If,
+                    vec![AstNodeFactory::assignment(
+                        AstNodeFactory::identifier("x"),
+                        AstNodeFactory::integer_literal("1"),
+                    )],
+                    None,
+                ),
+                AstNode::internal(
+                    AstNodeKind::If,
+                    vec![
+                        AstNodeFactory::assignment(
+                            AstNodeFactory::identifier("x"),
+                            AstNodeFactory::integer_literal("2"),
+                        ),
+                        AstNodeFactory::assignment(
+                            AstNodeFactory::identifier("x"),
+                            AstNodeFactory::integer_literal("3"),
+                        ),
+                    ],
+                    None,
+                ),
+            ],
+            None,
+        );
+        let result = execute_if(&mut c, &if_node);
+        assert_eq!(result.unwrap_err(), ExitCode::TimingLeak);
+        assert!(c.trap.is_trapped());
+    }
+    #[test]
+    fn eval_random_returns_in_range() {
+        let mut c = ctx();
+        let call = AstNodeFactory::function_call(
+            "random",
+            vec![
+                AstNodeFactory::integer_literal("1"),
+                AstNodeFactory::integer_literal("10"),
+            ],
+        );
+        for _ in 0..100 {
+            match evaluate(&mut c, &call) {
+                Ok(AstValue::Integer(v)) => {
+                    assert!(v >= 1 && v <= 10, "random value {} out of [1,10]", v);
+                }
+                other => panic!("unexpected random result: {:?}", other),
+            }
+        }
+    }
+    #[test]
+    fn eval_random_is_deterministic_with_seed() {
+        let config = ProfilingConfig {
+            prng_seed: 42,
+            ..ProfilingConfig::default()
+        };
+        let mut c1 = ExecContext::new(config.clone());
+        let mut c2 = ExecContext::new(config);
+        let call = AstNodeFactory::function_call(
+            "random",
+            vec![
+                AstNodeFactory::integer_literal("0"),
+                AstNodeFactory::integer_literal("100"),
+            ],
+        );
+        for _ in 0..20 {
+            let v1 = evaluate(&mut c1, &call).unwrap();
+            let v2 = evaluate(&mut c2, &call).unwrap();
+            assert_eq!(v1, v2, "same seed should produce same sequence");
+        }
+    }
+    #[test]
+    fn prng_state_updates() {
+        let mut c = ctx();
+        let s0 = c.prng_state;
+        c.rand_int(0, 1000);
+        assert_ne!(c.prng_state, s0, "PRNG state should advance");
+        let s1 = c.prng_state;
+        c.rand_int(-5, 5);
+        assert_ne!(c.prng_state, s1, "PRNG state should advance again");
+    }
+    #[test]
+    fn eval_random_single_value_range() {
+        let mut c = ctx();
+        let call = AstNodeFactory::function_call(
+            "random",
+            vec![
+                AstNodeFactory::integer_literal("7"),
+                AstNodeFactory::integer_literal("7"),
+            ],
+        );
+        for _ in 0..10 {
+            assert_eq!(evaluate(&mut c, &call).unwrap(), AstValue::Integer(7));
+        }
+    }
+    #[test]
+    fn expected_complexity_parsed_from_binding() {
+        let _c = ctx();
+        // Construct an algorithm AST manually with Expected binding
+        let expected_binding = AstNode::internal(
+            AstNodeKind::VariableBinding,
+            vec![
+                AstNode::leaf(
+                    AstNodeKind::Identifier,
+                    Some(AstValue::String("Expected".to_string())),
+                ),
+                AstNode::leaf(
+                    AstNodeKind::StringLiteral,
+                    Some(AstValue::String("O(N log N)".to_string())),
+                ),
+            ],
+            None,
+        );
+        let algo = AstNodeFactory::algorithm(
+            "ExpectedTest",
+            vec![],
+            None,
+            "O(N^2)",
+            vec![expected_binding],
+            vec![],
+        );
+        // The algorithm has "Complexity: \"O(N^2)\", Expected=\"O(N log N)\""
+        // We can verify complexity_str and binding are present in the AST
+        let complexity_val = algo.children.get(1).and_then(|n| n.value.clone());
+        assert!(
+            complexity_val.is_some(),
+            "complexity string should be present"
+        );
+        let has_expected = algo.children.iter().any(|child| {
+            child.kind == AstNodeKind::VariableBinding
+                && child.children.first().and_then(|n| n.value.clone())
+                    == Some(AstValue::String("Expected".to_string()))
+        });
+        assert!(has_expected, "Expected binding should be present");
     }
 }

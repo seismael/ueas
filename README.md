@@ -6,9 +6,9 @@
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](library/)
 
-> The Universal Executable Algorithm Standard (UEAS). An executable, language-agnostic pseudocode specification. UEAS allows algorithms to be written universally, mathematically verified, and natively tested, eliminating language-specific syntax constraints for technical evaluations, research, and core engineering.
-
-**Topics:** `executable-pseudocode`, `algorithm-standard`, `algorithm-verification`, `complexity-analysis`
+> The Universal Executable Algorithm Standard (UEAS). An executable, language-agnostic algorithmic ecosystem. UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
+> 
+> **Topics:** `executable-pseudocode`, `algorithm-standard`, `jupyter-kernel`, `debug-adapter-protocol`, `cryptography-verification`
 
 ---
 
@@ -68,20 +68,20 @@ Python, or C++. If you need to prove that your algorithm is correct, use UEAS.
  | .ueas    | --> |  ANTLR4   | --> |  Canonical | --> |  Rust Abstract   |
  | Source   |     |  Parser   |     |  JSON AST  |     |  Interpreter     |
  +----------+     +-----------+     +----------+     +------------------+
-                                                           |
-                                             +-------------+-------------+
-                                             |             |             |
-                                        +--------+   +--------+
-                                        | Python |   |  Rust  |
-                                        | Target |   | Target |
-                                        +--------+   +--------+
+                                                           |   |   |
+                                       +-------------------+   |   +-------------------+
+                                       |                       |                       |
+                               +---------------+       +---------------+       +---------------+
+                               |  Transpilers  |       | DAP Debugger  |       | Jupyter Kernel|
+                               | (Rust/Python) |       | (VS Code)     |       | (ZeroMQ)      |
+                               +---------------+       +---------------+       +---------------+
 ```
 
 **Three decoupled domains, connected by the canonical JSON AST:**
 
 1. **Front-End (Grammar & Parsing)** — ANTLR4 grammar (`UEAS.g4`) ingests
    human-readable pseudocode and produces a typed, validated AST. The grammar
-   is the normative definition of valid UEAS syntax.
+   supports module linking (`Import`), Stochastic Primitives, and Streams.
 
 2. **Core Kernel (Abstract Interpreter)** — A Rust-based virtual machine
    executes the AST in an isolated heap with zero system I/O. It counts
@@ -136,7 +136,9 @@ of the standard's power.
 
 | Domain | Problem UEAS Solves |
 |--------|-------------------|
-| **AI Agent Orchestration** | LLM-based coding agents struggle with syntax quirks and dependency management. UEAS provides a minimal logical grammar that reduces the agent's search space. Generated ASTs can be mathematically verified to terminate and meet complexity bounds *before* a single line of production code is emitted — directly addressing the hallucination problem in AI code generation. |
+| **Academic Data Science** | Researchers prototype in Python, struggling to profile memory and hardware caches. UEAS integrates directly as a **Jupyter Kernel**, allowing algorithmic modeling, `@HardwareProfile` simulation, and formal complexity checking directly inside `.ipynb` notebooks. |
+| **Cybersecurity (Cryptography)** | Cryptographic implementations are highly vulnerable to timing side-channel attacks. UEAS introduces `@ConstantTime` execution constraints, forcing the abstract interpreter to symbolically execute both conditional branches to formally guarantee zero timing leaks. |
+| **AI Agent Orchestration** | LLM-based coding agents struggle with syntax quirks and dependency management. UEAS provides a minimal logical grammar that reduces the agent's search space. Generated ASTs can be mathematically verified to terminate and meet complexity bounds *before* a single line of production code is emitted. |
 | **Quantitative Finance** | Quants prototype algorithms in Python; engineers manually rewrite in C++ for low-latency execution. UEAS eliminates translation lag — write once, verify mathematically, transpile to production. |
 | **Aerospace & Defense** | DO-178C certification requires proving source code matches mathematical specification. UEAS ASTs carry explicit pre/post-conditions and invariants — enabling automated validation against formal requirements. |
 | **Academic Publishing** | Research papers publish algorithms as static text. With UEAS, readers can download, execute, profile, and transpile — ending the era of untestable pseudocode. |

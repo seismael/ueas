@@ -1,6 +1,6 @@
 # RFC 0003: Formal Verification Backends (Lean 4 & TLA+)
 
-- **Status:** Draft
+- **Status:** Ratified
 - **Author:** UEAS Automated Agent
 - **Date:** 2026-07-10
 - **Supersedes:** None

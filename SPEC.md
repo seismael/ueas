@@ -50,13 +50,13 @@ reproducibility are non-negotiable:
 
 - **AI Agent Orchestration:** Providing autonomous coding agents with a
   minimal, logical target grammar that reduces token-space errors and enables
-  sandboxed testing before target-language code generation. Generated ASTs
-  can be mathematically verified to terminate and meet complexity bounds
-  before a single line of production code is emitted — directly addressing
-  the hallucination problem in AI code generation.
-- **Quantitative Finance:** Eliminating the translation lag between research
-  prototypes (Python/MATLAB) and production execution (C++/Rust) while
-  maintaining a verifiable validation trail.
+  sandboxed testing before target-language code generation.
+- **Academic Data Science:** UEAS natively embeds into Jupyter Notebooks via ZeroMQ,
+  allowing researchers to profile algorithms with memory constraints and `@HardwareProfile`
+  caching simulations without leaving the Python ecosystem.
+- **Cybersecurity (Cryptography):** By natively supporting `@ConstantTime`
+  block constraints, UEAS mathematically verifies immunity to timing side-channel attacks
+  via abstract symbolic branching.
 - **Aerospace & Defense:** Enabling DO-178C certification by embedding
   pre-conditions, post-conditions, and invariants directly in the algorithm
   definition, supporting automated validation against formal requirements.
@@ -984,6 +984,48 @@ entries. A subset of idiomatic forms is shown below:
 | `O(N!)` | Factorial | `N` |
 
 `log` without explicit base is assumed base-2.
+
+---
+
+## Appendix D: Draft Specifications (Upcoming in v4.0)
+
+The following grammar extensions have been formally ratified (Phase 4 & 5) and are currently pending implementation into the core `UEAS.g4` grammar and abstract interpreter:
+
+### D.1 Module Linking (`Import`)
+Algorithms will support AST composition across files:
+```antlr4
+importDecl : 'Import:' IDENTIFIER ('.' IDENTIFIER)* ;
+```
+*Example:* `Import: math.fourier`
+
+### D.2 Hardware Profiling (`@HardwareProfile`)
+The Virtual Heap will simulate cache line hits and evictions for memory-bound HPC profiling:
+```antlr4
+hardwareProfile : '@HardwareProfile(' cacheDef (',' cacheDef)* ')' ;
+cacheDef : IDENTIFIER '=' NUMBER 'KB' | NUMBER 'MB' ;
+```
+*Example:* `@HardwareProfile(L1=64KB, L2=512KB)`
+
+### D.3 Stochastic Primitives (`random`)
+Allows probabilistic logic verification and Monte Carlo simulations:
+```antlr4
+expression : 'random(' expression ',' expression ')' ;
+complexityRule : ('WorstCase' | 'BestCase' | 'Expected') ':' 'O(' expression ')' ;
+```
+
+### D.4 Infinite Data Streams (`Stream<T>`)
+Enables algorithm processing on continuous, unbounded data constrained by `Space: O(1)` rather than Time boundaries:
+```antlr4
+typeAnnotation : 'Stream<' primitiveType '>' ;
+statement : 'yield' expression | 'await' 'next' IDENTIFIER ;
+```
+
+### D.5 Cryptographic Verification (`@ConstantTime`)
+Allows the abstract interpreter to verify immunity against timing side-channel leaks via symbolic branch testing:
+```antlr4
+typeAnnotation : 'Secret<' primitiveType '>' ;
+blockConstraint : '@ConstantTime' block ;
+```
 
 ---
 

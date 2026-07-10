@@ -1,6 +1,6 @@
 # RFC 0005: Quantum Algorithm Grammar Specification
 
-- **Status:** Draft
+- **Status:** Ratified
 - **Author:** UEAS Automated Agent
 - **Date:** 2026-07-10
 - **Supersedes:** None

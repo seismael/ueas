@@ -21,6 +21,7 @@ FOR       : 'for'       | 'For'       | 'FOR';
 WHILE     : 'while'     | 'While'     | 'WHILE';
 BREAK     : 'break'     | 'Break'     | 'BREAK';
 CONTINUE  : 'continue'  | 'Continue'  | 'CONTINUE';
+NEXT      : 'next'      | 'Next'      | 'NEXT';
 IN        : 'in'        | 'In'        | 'IN';
 EACH      : 'each'      | 'Each'      | 'EACH';
 LET       : 'let'       | 'Let'       | 'LET';
@@ -40,6 +41,9 @@ DIRECTED  : 'directed'  | 'Directed'  | 'DIRECTED';
 UNDIRECTED: 'undirected'| 'Undirected'| 'UNDIRECTED';
 INFINITY  : 'infinity'  | 'Infinity'  | 'INFINITY';
 NAN       : 'nan'       | 'NaN'       | 'NAN';
+YIELD     : 'yield'     | 'Yield'     | 'YIELD';
+AWAIT     : 'await'     | 'Await'     | 'AWAIT';
+STREAM    : 'Stream'    | 'stream';
 TRUE      : 'true'      | 'True'      | 'TRUE';
 FALSE     : 'false'     | 'False'     | 'FALSE';
 AND       : 'and'       | 'And'       | 'AND';
@@ -54,6 +58,7 @@ L1_CACHE  : 'L1';
 L2_CACHE  : 'L2';
 L3_CACHE  : 'L3';
 CACHE_LINE: 'CacheLine';
+SECRET      : 'secret' | 'Secret' | 'SECRET';
 
 // Literals
 IDENTIFIER  : [a-zA-Z_][a-zA-Z0-9_]*;
@@ -139,17 +144,19 @@ variableBinding : IDENTIFIER BIND expression;
 block : INDENT statement+ DEDENT;
 
 statement : assignmentOrCall NEWLINE
-          | returnStmt NEWLINE
-          | letDecl NEWLINE
-          | constDecl NEWLINE
-          | ifStmt
-          | forLoop
-          | whileLoop
-          | assertStmt NEWLINE
-          | invariantStmt NEWLINE
-          | PASS NEWLINE
-          | BREAK NEWLINE
-          | CONTINUE NEWLINE ;
+           | returnStmt NEWLINE
+           | letDecl NEWLINE
+           | constDecl NEWLINE
+           | ifStmt
+           | forLoop
+           | whileLoop
+           | assertStmt NEWLINE
+           | invariantStmt NEWLINE
+           | yieldStmt NEWLINE
+           | awaitStmt NEWLINE
+           | PASS NEWLINE
+           | BREAK NEWLINE
+           | CONTINUE NEWLINE ;
 
 letDecl : LET IDENTIFIER (COLON typeAnnotation)? ASSIGN expression;
 
@@ -167,6 +174,10 @@ returnStmt : RETURN expression? ;
 assertStmt : ASSERT LPAREN expression RPAREN (COMMA STRING_LIT)? ;
 
 invariantStmt : INVARIANT LPAREN expression RPAREN (COMMA STRING_LIT)? ;
+
+yieldStmt : YIELD expression ;
+
+awaitStmt : AWAIT NEXT IDENTIFIER ;
 
 // Control Flow (academic textbook style: then/do/end closures)
 ifStmt : IF expression THEN NEWLINE block
@@ -215,6 +226,7 @@ typeAnnotation : 'Integer' | 'Real' | 'Boolean' | 'String' | 'Void'
                | 'List' | 'Set' | 'Map' | 'Graph' | 'Matrix'
                | 'List' LT typeAnnotation GT
                | 'Set' LT typeAnnotation GT
+               | STREAM LT typeAnnotation GT
                | 'Map' LT typeAnnotation COMMA typeAnnotation GT
                | 'Graph' LT typeAnnotation COMMA typeAnnotation GT
                | 'Matrix' LT matrixDim COMMA matrixDim COMMA typeAnnotation GT

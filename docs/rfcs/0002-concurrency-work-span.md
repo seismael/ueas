@@ -1,6 +1,6 @@
 # RFC 0002: Concurrency and the Work/Span Complexity Model
 
-- **Status:** Draft
+- **Status:** Ratified
 - **Author:** UEAS Automated Agent
 - **Date:** 2026-07-10
 - **Supersedes:** None

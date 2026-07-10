@@ -1,6 +1,6 @@
 # RFC 0006: Tensor Grammar and Broadcasting Semantics
 
-- **Status:** Draft
+- **Status:** Ratified
 - **Author:** UEAS Automated Agent
 - **Date:** 2026-07-10
 - **Supersedes:** None

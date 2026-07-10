@@ -8,7 +8,7 @@
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind, AstValue};
 use ueas_kernel::heap::{HeapConfig, TypeTag, VirtualHeap};
 use ueas_kernel::interp::{evaluate, execute_program, ExecContext};
-use ueas_kernel::profiling::{ComplexityContract, Profiler, ProfilingConfig};
+use ueas_kernel::profiling::{ComplexityContract, ComplexityKind, Profiler, ProfilingConfig};
 use ueas_kernel::traps::ExitCode;
 
 #[test]
@@ -90,7 +90,10 @@ fn conformance_complexity_violation() {
     for _ in 0..8000u64 {
         ctx.profiler.step().ok();
     }
-    let contract = ComplexityContract::Constant;
+    let contract = ComplexityContract {
+        kind: ComplexityKind::Constant,
+        expected_complexity: None,
+    };
     assert_eq!(
         ctx.profiler.verify_complexity(&contract).unwrap_err(),
         ExitCode::ComplexityViolation

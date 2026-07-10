@@ -9,7 +9,7 @@ use proptest::prelude::*;
 use proptest::strategy::BoxedStrategy;
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind};
 use ueas_kernel::heap::{HeapConfig, TypeTag, VirtualHeap};
-use ueas_kernel::profiling::{ComplexityContract, Profiler, ProfilingConfig};
+use ueas_kernel::profiling::{ComplexityContract, ComplexityKind, Profiler, ProfilingConfig};
 use ueas_kernel::traps::ExitCode;
 
 /// Strategy for generating random integer literal values.
@@ -168,7 +168,10 @@ proptest! {
     /// Verify complexity contract check never panics on random step counts.
     #[test]
     fn fuzz_complexity_never_panics(steps in 0u64..10000u64) {
-        let contract = ComplexityContract::Linear { n: 100 };
+        let contract = ComplexityContract {
+            kind: ComplexityKind::Linear { n: 100 },
+            expected_complexity: None,
+        };
         let _ = contract.is_violated(steps, 10);
     }
 
