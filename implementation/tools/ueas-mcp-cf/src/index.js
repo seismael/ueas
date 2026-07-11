@@ -33,7 +33,7 @@ function tools() {
     { name: 'verify_crypto', description: 'Verify @ConstantTime + Secret<T> compliance (parses + validates structure)', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'profile_hardware', description: 'Analyze algorithm structure for cache locality potential', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'profile_complexity', description: 'Empirical Work-Span DAG complexity analysis', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'profile_memory', description: 'Memory footprint analysis with Virtual Heap estimation', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } }
+    { name: 'profile_memory', description: 'Memory footprint analysis with Virtual Heap estimation', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'audit_legacy', description: 'Bidirectional reverse audit — analyze legacy Python code and map to UEAS equivalence with complexity estimation', inputSchema: { type: 'object', properties: { source: { type: 'string', description: 'Python source code to reverse-audit' } } } }
   ];
 }
