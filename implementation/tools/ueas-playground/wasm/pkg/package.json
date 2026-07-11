@@ -1,0 +1,16 @@
+{
+  "name": "ueas-wasm",
+  "type": "module",
+  "description": "WASM bindings for UEAS kernel (Epoch 9 Phase 2)",
+  "version": "0.1.0",
+  "files": [
+    "ueas_wasm_bg.wasm",
+    "ueas_wasm.js",
+    "ueas_wasm.d.ts"
+  ],
+  "main": "ueas_wasm.js",
+  "types": "ueas_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
