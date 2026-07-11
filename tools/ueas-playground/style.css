@@ -161,9 +161,9 @@ header {
 .ast-key { color: var(--accent); font-weight: 600; }
 .ast-kind { color: var(--orange); }
 .ast-val { color: var(--green); }
-.ast-collapse { cursor: pointer; user-select: none; }
-.ast-collapse::before { content: '▾ '; color: var(--text-dim); font-size: 0.65rem; }
-.ast-collapse.collapsed::before { content: '▸ '; }
+.ast-collapse { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; }
+.ast-collapse::before { content: 'expand_more'; font-family: 'Material Symbols Outlined'; color: var(--text-dim); font-size: 16px; }
+.ast-collapse.collapsed::before { content: 'chevron_right'; }
 .ast-collapse.collapsed + .ast-node { display: none; }
 
 .hybrid-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; }

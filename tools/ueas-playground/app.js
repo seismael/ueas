@@ -272,7 +272,7 @@ function toggleBottomPanel() {
   var p = document.getElementById('bottom-panel');
   p.classList.toggle('collapsed');
   var btn = document.getElementById('bottom-toggle-btn');
-  btn.innerHTML = p.classList.contains('collapsed') ? '&#9650; Metrics' : '&#9660; Metrics';
+  if (btn) btn.innerHTML = p.classList.contains('collapsed') ? '<span class="material-symbols-outlined">expand_less</span>' : '<span class="material-symbols-outlined">expand_more</span>';
   setTimeout(function() { if(ueasEditor) ueasEditor.layout(); if(targetEditor) targetEditor.layout(); }, 220);
 }
 

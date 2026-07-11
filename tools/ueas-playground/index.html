@@ -4,20 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UEAS Playground — Universal Executable Algorithm Standard</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 </head>
 <body>
 <header>
   <div style="display:flex; align-items:center; gap: 15px;">
-    <button class="icon-btn" onclick="toggleSidebar()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); cursor:pointer; font-size:24px; padding: 0;">&#9687;</button>
+    <button class="icon-btn" onclick="toggleSidebar()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); cursor:pointer; padding: 0; display:flex;"><span class="material-symbols-outlined">menu</span></button>
     <div class="brand">
       <h1><span class="accent">&Sigma;</span> UEAS Playground</h1>
       <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
     </div>
   </div>
   <div class="badges">
-    <button class="icon-btn" onclick="toggleBottomPanel()" title="Toggle Metrics Panel" style="background:none; border:none; color:var(--text); cursor:pointer; font-size:24px; margin-right:15px; padding: 0;">&#11026;</button>
     <span class="badge">v4.5.0</span>
     <span class="badge">MCP</span>
   </div>
@@ -71,6 +71,8 @@
     <div class="dash-card"><span class="dash-label">Heap</span><span class="dash-value" id="exec-heap">—</span></div>
     <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
     <div class="dash-card"><span class="dash-label">Cache L1</span><span class="dash-value" id="exec-cache">—</span></div>
+    <div style="flex-grow:1;"></div>
+    <button class="icon-btn" id="bottom-toggle-btn" onclick="toggleBottomPanel()" title="Toggle Metrics Panel" style="background:none; border:none; color:var(--text); cursor:pointer; padding: 0; margin-right: 15px; display:flex; align-items:center;"><span class="material-symbols-outlined">expand_more</span></button>
     <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
   </div>
   <div class="bottom-split">
