@@ -371,4 +371,247 @@ async function initializeApp() {
   });
 }
 
-initializeApp();
+// Track 6: Execute + Dashboard + AST Tree + Hybrid Mode + Advanced Sandbox
+
+async function runExecute() {
+  const code = editor.getValue();
+  const inputs = document.getElementById('exec-inputs').value.trim() || '{}';
+  const useRemote = document.getElementById('hybrid-mode').checked;
+  
+  document.getElementById('dashboard').style.display = 'flex';
+  document.getElementById('exec-status').textContent = 'Running...';
+  
+  try {
+    const result = useRemote 
+      ? await remoteExecute(code, inputs)
+      : localExecute(code);
+    
+    updateDashboard(result);
+    updateAstTree(result.ast || code);
+  } catch (e) {
+    document.getElementById('exec-status').textContent = 'Error';
+    document.getElementById('exec-steps').textContent = e.message;
+  }
+}
+
+function localExecute(code) {
+  try {
+    const ast = parse_ueas(code);
+    const executed = execute_ueas(code);
+    const result = JSON.parse(executed);
+    result.ast = ast;
+    return result;
+  } catch (e) {
+    return { status: 'error', exit_name: e.toString(), step_count: 0, heap_bytes: 0 };
+  }
+}
+
+async function remoteExecute(code, inputs) {
+  const resp = await fetch('https://ueas-mcp.seismael.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: 1, method: 'tools/call',
+      params: { name: 'execute_ueas', arguments: { source: code, inputs: inputs } }
+    })
+  });
+  const data = await resp.json();
+  const text = data?.result?.content?.[0]?.text || '{}';
+  return JSON.parse(text);
+}
+
+function updateDashboard(r) {
+  document.getElementById('exec-status').textContent = r.status || r.exit_name || 'OK';
+  document.getElementById('exec-status').style.color = r.exit_code > 0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('exec-steps').textContent = r.step_count ?? '—';
+  document.getElementById('exec-heap').textContent = (r.heap_bytes ?? '—') + ' B';
+  document.getElementById('exec-work').textContent = r.work ?? '—';
+  document.getElementById('exec-span').textContent = r.span ?? '—';
+  document.getElementById('exec-cache').textContent = (r.cache_l1_hits ?? '—');
+  document.getElementById('exec-parallel').textContent = r.parallel_efficiency != null ? (r.parallel_efficiency * 100).toFixed(1) + '%' : '—';
+  
+  const complexity = extractComplexity(editor.getValue());
+  document.getElementById('exec-complexity').textContent = complexity;
+  
+  // Step bar: ratio of actual steps vs complexity
+  const steps = r.step_count || 0;
+  document.getElementById('step-bar-fill').style.width = Math.min(steps * 2, 100) + '%';
+  
+  // Auto-switch to AST tab
+  switchTab('ast');
+}
+
+function extractComplexity(code) {
+  const m = code.match(/Complexity:\s*"([^"]+)"/);
+  return m ? m[1] : '?';
+}
+
+function updateAstTree(astJson) {
+  const el = document.getElementById('ast-tree');
+  try {
+    const ast = typeof astJson === 'string' ? JSON.parse(astJson) : astJson;
+    el.innerHTML = renderAstNode(ast, 0);
+  } catch {
+    el.innerHTML = '<span style="color:var(--text-dim)">Parse the algorithm first (click Run) to see AST tree.</span>';
+  }
+}
+
+function renderAstNode(node, depth) {
+  if (!node || typeof node !== 'object') return '';
+  let html = '';
+  
+  if (node.kind) {
+    html += `<div class="ast-collapse" onclick="this.classList.toggle('collapsed')"><span class="ast-kind">${node.kind}</span>`;
+    if (node.value != null) html += ` <span class="ast-val">${JSON.stringify(node.value)}</span>`;
+    html += '</div>';
+    
+    if (node.children || node.algorithms || node.body || node.parameters) {
+      html += '<div class="ast-node">';
+      const children = node.children || node.algorithms || node.body || node.parameters || [];
+      if (Array.isArray(children)) {
+        children.forEach(c => { html += renderAstNode(c, depth + 1); });
+      }
+      // Handle other keys
+      Object.keys(node).forEach(k => {
+        if (['kind', 'value', 'children', 'algorithms', 'body', 'parameters', 'type', 'initializer', 'name', 'complexity', 'bindings', 'returnType'].includes(k)) return;
+        const v = node[k];
+        if (typeof v === 'object' && v !== null) {
+          html += `<div><span class="ast-key">${k}:</span>`;
+          html += renderAstNode(v, depth + 1);
+          html += '</div>';
+        } else if (v != null) {
+          html += `<div><span class="ast-key">${k}:</span> <span class="ast-val">${JSON.stringify(v)}</span></div>`;
+        }
+      });
+      html += '</div>';
+    }
+  } else if (typeof node === 'object') {
+    Object.keys(node).forEach(k => {
+      const v = node[k];
+      if (typeof v === 'object' && v !== null) {
+        html += `<div><span class="ast-key">${k}:</span><div class="ast-node">${renderAstNode(v, depth + 1)}</div></div>`;
+      } else {
+        html += `<div><span class="ast-key">${k}:</span> <span class="ast-val">${JSON.stringify(v)}</span></div>`;
+      }
+    });
+  }
+  return html;
+}
+
+function toggleHybrid() {
+  const checked = document.getElementById('hybrid-mode').checked;
+  document.querySelector('.toggle-label').textContent = checked ? 'Remote' : 'Local';
+}
+
+// Advanced domain examples
+const advancedExamples = [
+  { name: 'Shor\'s Algorithm', complexity: 'Quantum', code: `Algorithm ShorsFactoring(N)
+    Require: N: Integer
+    Ensure: Integer
+    Complexity: "O((log N)^3)"
+
+    # Classical pre-processing
+    if N mod 2 == 0 then
+        return 2
+    end if
+
+    # Quantum period-finding (simulated)
+    a <- random(2, N - 2)
+    g <- gcd(a, N)
+    if g > 1 then
+        return g
+    end if
+
+    # Measure qubit to find period
+    measure qubit
+    return qubit` },
+  { name: 'Grover\'s Search', complexity: 'O(sqrt N)', code: `Algorithm GroversSearch(database, target)
+    Require: database: List, target: Integer
+    Ensure: Integer
+    Complexity: "O(sqrt N)"
+
+    n <- database.length
+    iterations <- sqrt(n)
+
+    # Oracle marking (simulated)
+    marked <- {}
+    i <- 0
+    while i < n do
+        if database[i] == target then
+            marked.add(i)
+        end if
+        i <- i + 1
+    end while
+
+    # Amplitude amplification
+    measure qubit
+    if qubit == 1 then
+        return marked[0]
+    end if
+    return -1` },
+  { name: 'Matrix Multiply (Tensor)', complexity: 'O(N^3)', code: `Algorithm TensorMatMul(A, B)
+    Require: A: Tensor, B: Tensor
+    Ensure: Tensor
+    Complexity: "O(N^3)"
+
+    tensor A Real 2
+    tensor B Real 2
+
+    R <- A.dim[0]
+    C <- B.dim[1]
+    result <- zeroTensor(R, C)
+
+    i <- 0
+    while i < R do
+        j <- 0
+        while j < C do
+            sum <- 0.0
+            k <- 0
+            while k < A.dim[1] do
+                sum <- sum + A[i][k] * B[k][j]
+                k <- k + 1
+            end while
+            result[i][j] <- sum
+            j <- j + 1
+        end while
+        i <- i + 1
+    end while
+
+    return result` },
+  { name: 'Parallel Sum (Work-Span)', complexity: 'O(N/P + log P)', code: `Algorithm ParallelSum(data)
+    Require: data: List
+    Ensure: Integer
+    Complexity: "O(N / P + log P)", Work = "O(N)", Span = "O(log N)"
+
+    n <- data.length
+    parallel for each chunk in data do
+        size <- chunk.length
+        partial <- 0
+        i <- 0
+        while i < size do
+            partial <- partial + chunk[i]
+            i <- i + 1
+        end while
+    end for
+
+    sync
+    return partial` }
+];
+
+// Render advanced examples in sidebar
+const advList = document.getElementById('advanced-examples');
+advancedExamples.forEach(function(ex, i) {
+  const div = document.createElement('div');
+  div.className = 'example-item';
+  div.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.complexity + '</div>';
+  div.onclick = function() {
+    editor.setValue(ex.code);
+    document.querySelectorAll('.example-item').forEach(el => el.classList.remove('active'));
+    div.classList.add('active');
+  };
+  advList.appendChild(div);
+});
+
+window.runExecute = runExecute;
+window.toggleHybrid = toggleHybrid;
+

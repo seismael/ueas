@@ -14,9 +14,13 @@
     <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
   </div>
   <div class="badges">
-    <span class="badge">v4.1.0</span>
+    <span class="badge">v4.2.0</span>
     <span class="badge">8 targets</span>
     <span class="badge">351 tests</span>
+    <label class="hybrid-toggle" title="Toggle between local WASM and remote Cloudflare MCP">
+      <input type="checkbox" id="hybrid-mode" onchange="toggleHybrid()">
+      <span class="toggle-label">Local</span>
+    </label>
   </div>
 </header>
 
@@ -24,9 +28,11 @@
   <aside class="sidebar">
     <h2>Examples</h2>
     <div id="examples-list"></div>
+    <h2 style="margin-top:16px">Advanced Domains</h2>
+    <div id="advanced-examples"></div>
     <div class="sidebar-footer">
       <a href="https://github.com/seismael/ueas" target="_blank">GitHub</a>
-      <a href="https://github.com/seismael/ueas/blob/main/SPEC.md" target="_blank">SPEC</a>
+      <a href="https://ueas-mcp.seismael.workers.dev" target="_blank">MCP Server</a>
       <a href="https://github.com/seismael/ueas/blob/main/library/INDEX.md" target="_blank">Library (45)</a>
     </div>
   </aside>
@@ -42,26 +48,39 @@
         <option value="javascript">JavaScript ES2020</option>
         <option value="lean4">Lean 4 (proof)</option>
         <option value="tlaplus">TLA+ (model check)</option>
+        <option value="latex">LaTeX algorithm2e</option>
       </select>
+      <input type="text" id="exec-inputs" placeholder='JSON inputs e.g. {"a":1,"b":2}' style="width:180px;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:0.8rem;font-family:var(--code-font)">
       <button onclick="formatCode()">Format</button>
-      <button onclick="copyToClipboard()">Copy</button>
+      <button class="primary" onclick="runExecute()">&#9654; Run</button>
       <button class="primary" onclick="simulateTranspile()">Transpile &darr;</button>
     </div>
+
+    <!-- Execution Dashboard -->
+    <div id="dashboard" class="dashboard" style="display:none">
+      <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
+      <div class="dash-card"><span class="dash-label">Step Count</span><span class="dash-value" id="exec-steps">—</span></div>
+      <div class="dash-card"><span class="dash-label">Heap Bytes</span><span class="dash-value" id="exec-heap">—</span></div>
+      <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
+      <div class="dash-card"><span class="dash-label">Work</span><span class="dash-value" id="exec-work">—</span></div>
+      <div class="dash-card"><span class="dash-label">Span</span><span class="dash-value" id="exec-span">—</span></div>
+      <div class="dash-card"><span class="dash-label">L1 Hits</span><span class="dash-value" id="exec-cache">—</span></div>
+      <div class="dash-card"><span class="dash-label">Parallel Eff.</span><span class="dash-value" id="exec-parallel">—</span></div>
+      <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
+    </div>
+
     <div class="output-panel">
       <div class="output-tabs">
         <span class="tab active" onclick="switchTab('transpiled')">Transpiled</span>
-        <span class="tab" onclick="switchTab('ast')">AST (JSON)</span>
+        <span class="tab" onclick="switchTab('ast')">AST Tree</span>
       </div>
       <pre id="output-transpiled" class="output active">Select a target and click Transpile to see generated code.</pre>
-      <pre id="output-ast" class="output">AST preview not available in static mode.</pre>
+      <div id="output-ast" class="output"><div class="ast-tree" id="ast-tree">Click Run to see the parsed AST tree.</div></div>
     </div>
   </section>
 </main>
 
-<footer>
-  <p>UEAS is released under the <a href="https://github.com/seismael/ueas/blob/main/LICENSE">Apache License 2.0</a>. The playground runs client-side only.</p>
-</footer>
-
+<footer><p>UEAS is released under the <a href="https://github.com/seismael/ueas/blob/main/LICENSE">Apache License 2.0</a>.</p></footer>
 <script type="module" src="app.js"></script>
 </body>
 </html>

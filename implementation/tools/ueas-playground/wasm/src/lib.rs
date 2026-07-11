@@ -3,12 +3,12 @@
 //! Build: cd tools/ueas-playground/wasm && wasm-pack build --target web
 //! Requires: cargo install wasm-pack
 
-use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
 use ueas_backends::cpp::CppTarget;
 use ueas_backends::java::JavaTarget;
 use ueas_backends::javascript::JavaScriptTarget;
 use ueas_backends::lean4::LeanTarget;
 use ueas_backends::tla::TlaTarget;
+use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
 use ueas_kernel::ast::AstNodeFactory;
 use ueas_kernel::interp::{execute_program, ExecContext};
 use wasm_bindgen::prelude::*;
@@ -29,19 +29,45 @@ pub fn parse_ueas(source: &str) -> Result<String, JsValue> {
 #[wasm_bindgen]
 pub fn execute_ueas(source: &str) -> Result<String, JsValue> {
     let mut ctx = ExecContext::with_default_config();
-    let (_name, algo) = parser::parse_algorithm(source)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let (_name, algo) =
+        parser::parse_algorithm(source).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let program = AstNodeFactory::program(vec![algo]);
-    match execute_program(&mut ctx, &program) {
-        Ok(result) => Ok(format!("{:?}", result)),
-        Err(e) => Err(JsValue::from_str(&e.name())),
-    }
+    let exec_result = execute_program(&mut ctx, &program);
+
+    let status = if exec_result.is_ok() { "ok" } else { "error" };
+    let exit_code = match &exec_result {
+        Ok(_) => 0i32,
+        Err(e) => *e as i32,
+    };
+    let exit_name = match &exec_result {
+        Ok(_) => "NoError",
+        Err(e) => e.name(),
+    };
+    let result_val = match &exec_result {
+        Ok(v) => format!("{:?}", v),
+        Err(_) => "trap".to_string(),
+    };
+
+    serde_json::to_string(&serde_json::json!({
+        "status": status,
+        "exit_code": exit_code,
+        "exit_name": exit_name,
+        "step_count": ctx.profiler.step_count(),
+        "heap_bytes": ctx.heap.bytes_allocated(),
+        "result": result_val,
+        "work": ctx.profiler.work(),
+        "span": ctx.profiler.span(),
+        "parallel_efficiency": ctx.profiler.parallel_efficiency(),
+        "cache_l1_hits": ctx.heap.cache_stats().l1_hits,
+        "cache_l1_misses": ctx.heap.cache_stats().l1_misses,
+    }))
+    .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
 pub fn transpile_ueas(source: &str, target: &str) -> Result<String, JsValue> {
-    let (_name, algo) = parser::parse_algorithm(source)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let (_name, algo) =
+        parser::parse_algorithm(source).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let program = AstNodeFactory::program(vec![algo]);
     let ast_json =
         serde_json::to_string(&program).map_err(|e| JsValue::from_str(&e.to_string()))?;
