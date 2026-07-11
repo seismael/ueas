@@ -6,7 +6,7 @@ Zero cold starts, 100K req/day free tier.
 ## Deploy
 
 ```bash
-cd implementation/tools/ueas-mcp-cf
+cd tools/ueas-mcp
 npm install -g wrangler
 wrangler login
 wrangler deploy

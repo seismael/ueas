@@ -696,8 +696,7 @@ ueas/
 │   ├── ueas-cli/          `ueas` CLI (run, check, transpile, fmt)
 │   ├── ueas-dap/          VS Code Debug Adapter Protocol server
 │   ├── ueas-jupyter/      Jupyter Notebook Kernel wrapper
-│   ├── ueas-mcp/          MCP stdio server (local Claude Desktop)
-│   ├── ueas-mcp-cf/       MCP Cloudflare Worker (always-on edge)
+│   ├── ueas-mcp/          MCP Cloudflare Worker (always-on edge)
 │   └── ueas-playground/   Browser-based bidirectional editor (Vercel)
 ├── examples/              45 reference implementations in 10 algorithmic + 10 feature categories
 │   ├── core/              4
