@@ -250,6 +250,22 @@ impl CppTarget {
                 let val = node["value"].as_f64().unwrap_or(0.0);
                 output.push_str(&val.to_string());
             }
+            "BooleanLiteral" => {
+                let val = node["value"].as_bool().unwrap_or(false);
+                output.push_str(if val { "true" } else { "false" });
+            }
+            "SetLiteral" | "ListLiteral" => {
+                output.push_str("{");
+                if let Some(elems) = node["children"].as_array() {
+                    for (i, elem) in elems.iter().enumerate() {
+                        if i > 0 {
+                            output.push_str(", ");
+                        }
+                        self.generate_node(elem, output)?;
+                    }
+                }
+                output.push_str("}");
+            }
             "Identifier" => {
                 let name = node["value"].as_str().unwrap_or("_");
                 output.push_str(name);

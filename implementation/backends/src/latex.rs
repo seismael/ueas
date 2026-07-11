@@ -370,6 +370,18 @@ impl LatexTarget {
                 let val = node["value"].as_str().unwrap_or("");
                 output.push_str(&format!("\\text{{{}}}", val));
             }
+            "SetLiteral" | "ListLiteral" => {
+                output.push_str("\\{");
+                if let Some(elems) = node["children"].as_array() {
+                    for (i, elem) in elems.iter().enumerate() {
+                        if i > 0 {
+                            output.push_str(", ");
+                        }
+                        self.generate_node(elem, output)?;
+                    }
+                }
+                output.push_str("\\}");
+            }
             "Identifier" => {
                 let name = node["value"].as_str().unwrap_or("_");
                 output.push_str(name);

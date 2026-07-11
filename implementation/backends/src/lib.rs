@@ -376,6 +376,23 @@ impl PythonTarget {
                 let val = node["value"].as_f64().unwrap_or(0.0);
                 output.push_str(&val.to_string());
             }
+            "BooleanLiteral" => {
+                let val = node["value"].as_bool().unwrap_or(false);
+                output.push_str(if val { "True" } else { "False" });
+            }
+            "SetLiteral" | "ListLiteral" => {
+                let children = node["children"].as_array();
+                output.push_str("[");
+                if let Some(elems) = children {
+                    for (i, elem) in elems.iter().enumerate() {
+                        if i > 0 {
+                            output.push_str(", ");
+                        }
+                        self.generate_node(elem, output, 0)?;
+                    }
+                }
+                output.push_str("]");
+            }
             "Identifier" => {
                 let name = node["value"].as_str().unwrap_or("_");
                 output.push_str(name);
@@ -784,6 +801,16 @@ impl RustTarget {
             "RealLiteral" => {
                 let val = node["value"].as_f64().unwrap_or(0.0);
                 output.push_str(&format!("{}_f64", val));
+            }
+            "BooleanLiteral" => {
+                let val = node["value"].as_bool().unwrap_or(false);
+                output.push_str(if val { "true" } else { "false" });
+            }
+            "SetLiteral" => {
+                output.push_str("HashSet::new()");
+            }
+            "ListLiteral" => {
+                output.push_str("vec![]");
             }
             "Identifier" => {
                 let name = node["value"].as_str().unwrap_or("_");
