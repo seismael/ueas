@@ -18,7 +18,7 @@
 
 ## Live Deployments
 
-- **Interactive Playground (Vercel):** [https://ueas-three.vercel.app/](https://ueas-three.vercel.app/) — Write UEAS algorithms directly in your browser. Powered by a client-side WebAssembly (WASM) kernel compilation, allowing real-time execution and parsing without any backend server.
+- **Interactive Playground (Vercel):** [https://ueas-three.vercel.app/](https://ueas-three.vercel.app/) — Write UEAS algorithms directly in your browser with a bidirectional editor (UEAS ↔ target language). All execution, transpilation, and auditing is powered exclusively by the MCP server — no local WASM required. The playground is a pure API client.
 - **MCP AI Agent Server (Cloudflare Workers):** [https://ueas-mcp.seismael.workers.dev](https://ueas-mcp.seismael.workers.dev) — Connect your AI agents (Claude, Cursor, etc.) to the UEAS interpreter via the Model Context Protocol. Always-on, globally distributed edge deployment via WASM-compiled Rust kernel.
 
 ---
@@ -57,8 +57,18 @@ UEAS is **not a new programming language.** It does not build web servers, manag
                                        |                       |                       |
                                +---------------+       +---------------+       +---------------+
                                |  Transpilers  |       | DAP Debugger  |       | Jupyter Kernel|
-                               | (Rust/Python) |       |  (VS Code)    |       |   (ZeroMQ)    |
+                               |  (8 targets)  |       |  (VS Code)    |       |   (ZeroMQ)    |
                                +---------------+       +---------------+       +---------------+
+                                       |
+                               +---------------+
+                               |  MCP Server   |  <-- Cloudflare Workers (WASM kernel at edge)
+                               |  (8 tools)    |
+                               +---------------+
+                                       ^
+                                       |  fetch()
+                               +---------------+
+                               |  Playground   |  <-- Vercel (pure API client, no local WASM)
+                               +---------------+
 ```
 
 The UEAS ecosystem is divided into three decoupled domains, connected by the canonical JSON AST:

@@ -1,38 +1,40 @@
-# UEAS Playground
+# UEAS Playground — MCP Client
 
-Browser-based interactive editor for UEAS (Universal Executable Algorithm
-Standard). Write, format, and preview transpiled output for 7 target languages.
+Browser-based bidirectional editor for UEAS (Vercel-deployed, static HTML/JS/CSS).
+
+**Architecture:**
+```
+Playground (Vercel) → fetch() → MCP Server (Cloudflare Workers / WASM kernel)
+```
+
+The WASM kernel runs ONCE at the edge, not in every user's browser.
+All algorithm execution, transpilation, and reverse-auditing is powered
+exclusively by the Cloudflare Workers MCP server.
 
 ## Features
 
-- **Monaco Editor** with UEAS syntax highlighting
-- **7 target previews** — Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+
-- **6 example algorithms** pre-loaded from the standard library
-- **One-click copy** and code formatting
-- **Dark theme** matching GitHub's code aesthetic
-- **Zero install** — works in any modern browser
+- **Bidirectional Editor** — UEAS pseudocode ↔ target language (Python, Java, Rust, C++, JavaScript)
+- **Transpile** — translate UEAS to 8 production targets via MCP
+- **Reverse Audit** — analyze legacy code, map to UEAS, detect I/O violations
+- **Execute** — run algorithms with step-count profiling and complexity verification
+- **Zero local WASM** — all computation is remote, keeping the client lightweight
 
 ## Deployment
 
-The playground is fully configured for Vercel deployment and uses a WebAssembly (WASM) build of the Rust kernel to parse and transpile UEAS algorithms natively in the browser.
+Static HTML/JS/CSS deployed to Vercel. No build step, no npm, no WASM bundle.
 
 ```bash
-# Build the WASM module locally
-npm run build
-
 # Serve locally
-npx serve
+python -m http.server 8080
+
+# Deploy to Vercel
+vercel deploy
 ```
 
 ## Roadmap
 
-- [x] WASM-compiled kernel for real-time execution
-- [ ] Step-count profiler visualization
-- [ ] Complexity contract enforcement in-browser
-- [ ] Cross-target equivalence verification
-- [ ] Shareable URL encoding (base64 algorithm snippets)
-- [ ] Full standard library browser (45 algorithms)
-
-## License
-
-Apache License 2.0 — see [LICENSE](../../LICENSE)
+- [x] MCP-only architecture (removed local WASM)
+- [x] Bidirectional editor (UEAS ↔ target)
+- [x] Reverse audit (Python → UEAS)
+- [ ] Multi-file project support
+- [ ] Shareable algorithm links
