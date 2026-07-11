@@ -1,0 +1,10 @@
+{
+  "name": "ueas-mcp-cf",
+  "version": "4.2.0",
+  "private": true,
+  "description": "UEAS MCP Server — Cloudflare Worker deployment",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  }
+}
