@@ -25,7 +25,8 @@ fn safe_exec(
     let (_name, algo) =
         parser::parse_algorithm(source).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let program = AstNodeFactory::program(vec![algo]);
-    Ok((ctx, execute_program(&mut ctx, &program)))
+    let result = execute_program(&mut ctx, &program);
+    Ok((ctx, result))
 }
 
 #[wasm_bindgen]
@@ -41,17 +42,21 @@ pub fn parse_ueas(source: &str) -> Result<String, JsValue> {
 
 #[wasm_bindgen]
 pub fn execute_ueas(source: &str) -> Result<String, JsValue> {
-    let (ctx, result) = safe_exec(source)?;
-    let status = if result.is_ok() { "ok" } else { "error" };
-    let exit_code = match &result {
+    let mut ctx = ExecContext::with_default_config();
+    let (_name, algo) =
+        parser::parse_algorithm(source).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let program = AstNodeFactory::program(vec![algo]);
+    let exec_result = execute_program(&mut ctx, &program);
+    let status = if exec_result.is_ok() { "ok" } else { "error" };
+    let exit_code = match &exec_result {
         Ok(_) => 0i32,
         Err(e) => *e as i32,
     };
-    let exit_name = match &result {
+    let exit_name = match &exec_result {
         Ok(_) => "NoError",
         Err(e) => e.name(),
     };
-    let result_val = match &result {
+    let result_val = match &exec_result {
         Ok(v) => format!("{:?}", v),
         Err(_) => "trap".into(),
     };
