@@ -7,7 +7,15 @@ export function main(): void;
 
 export function parse_ueas(source: string): string;
 
+export function profile_complexity(source: string): string;
+
+export function profile_hardware(source: string): string;
+
+export function profile_memory(source: string): string;
+
 export function transpile_ueas(source: string, target: string): string;
+
+export function verify_crypto(source: string): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -15,7 +23,11 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly execute_ueas: (a: number, b: number) => [number, number, number, number];
     readonly parse_ueas: (a: number, b: number) => [number, number, number, number];
+    readonly profile_complexity: (a: number, b: number) => [number, number, number, number];
+    readonly profile_hardware: (a: number, b: number) => [number, number, number, number];
+    readonly profile_memory: (a: number, b: number) => [number, number, number, number];
     readonly transpile_ueas: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+    readonly verify_crypto: (a: number, b: number) => [number, number, number, number];
     readonly main: () => void;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

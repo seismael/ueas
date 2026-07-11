@@ -1,6 +1,6 @@
 // UEAS MCP v4.2.0 — Cloudflare Workers
 import wasmBin from './ueas_wasm_bg.wasm';
-import { initSync, parse_ueas, transpile_ueas } from './ueas_wasm.js';
+import { initSync, parse_ueas, transpile_ueas, verify_crypto, profile_hardware, profile_complexity, profile_memory } from './ueas_wasm.js';
 
 initSync(wasmBin);
 
@@ -28,8 +28,12 @@ export default {
 function tools() {
   return [
     { name: 'parse_ueas', description: 'Validate UEAS academic pseudocode syntax', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'execute_ueas', description: 'Execute a UEAS algorithm with step-count profiling', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'transpile_ueas', description: 'Transpile to Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, LaTeX', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } }
+    { name: 'execute_ueas', description: 'Execute algorithm with step-count profiling', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'transpile_ueas', description: 'Transpile to 8 targets', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } },
+    { name: 'verify_crypto', description: 'Verify @ConstantTime + Secret<T> compliance via symbolic execution', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'profile_hardware', description: 'Simulate L1/L2/L3 cache locality with miss penalties', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'profile_complexity', description: 'Empirical N-scaling Work-Span DAG analysis', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'profile_memory', description: 'Enforce Virtual Heap limit enforcement for IoT/embedded', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } }
   ];
 }
 
@@ -58,10 +62,24 @@ function run(name, args) {
     }
     case 'transpile_ueas': {
       const t = (args.target||'python').toLowerCase();
-      try {
-        const out = transpile_ueas(src, t);
-        return { language: t, source: out };
-      } catch (e) { return { language: t, error: e.toString() }; }
+      try { const out = transpile_ueas(src, t); return { language: t, source: out }; }
+      catch (e) { return { language: t, error: e.toString() }; }
+    }
+    case 'verify_crypto': {
+      try { return JSON.parse(verify_crypto(src)); }
+      catch (e) { return { status: 'error', error: e.toString() }; }
+    }
+    case 'profile_hardware': {
+      try { return JSON.parse(profile_hardware(src)); }
+      catch (e) { return { status: 'error', error: e.toString() }; }
+    }
+    case 'profile_complexity': {
+      try { return JSON.parse(profile_complexity(src)); }
+      catch (e) { return { status: 'error', error: e.toString() }; }
+    }
+    case 'profile_memory': {
+      try { return JSON.parse(profile_memory(src)); }
+      catch (e) { return { status: 'error', error: e.toString() }; }
     }
     default: throw new Error('Unknown tool: ' + name);
   }
