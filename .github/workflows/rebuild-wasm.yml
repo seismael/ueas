@@ -1,0 +1,29 @@
+name: Rebuild WASM
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'implementation/kernel/**'
+      - 'implementation/backends/**'
+      - 'implementation/wasm/src/**'
+
+jobs:
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: 'wasm32-unknown-unknown' }
+      - run: cargo install wasm-pack
+      - name: Build WASM
+        run: |
+          cd implementation/wasm
+          wasm-pack build --target web
+          cp pkg/ueas_wasm.js ../../tools/ueas-mcp/src/
+          cp pkg/ueas_wasm_bg.wasm ../../tools/ueas-mcp/src/
+      - name: Commit fresh WASM
+        run: |
+          git config user.name "ueas-bot"
+          git config user.email "bot@ueas.dev"
+          git add tools/ueas-mcp/src/ueas_wasm.js tools/ueas-mcp/src/ueas_wasm_bg.wasm
+          git diff --cached --quiet || git commit -m "build: auto-rebuild WASM after kernel/backends change" && git push
