@@ -92,7 +92,7 @@
 <script src="app.js"></script>
 <script type="module">
 try {
-  const m = await import('./wasm/pkg/ueas_wasm.js');
+  const m = await import('./ueas_wasm.js');
   await m.default();
   window.__ueasWasm = m;
 } catch(e) { console.warn('WASM unavailable', e); }
