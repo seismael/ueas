@@ -2,7 +2,3 @@ name = "ueas-mcp"
 compatibility_date = "2024-07-10"
 main = "src/index.js"
 workers_dev = true
-
-[assets]
-directory = "./wasm"
-binding = "WASM"
