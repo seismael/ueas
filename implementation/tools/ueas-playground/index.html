@@ -80,7 +80,11 @@
 
 <script src="app.js"></script>
 <script type="module">
-try { const m = await import('./wasm/pkg/ueas_wasm.js'); window.__ueasWasm = m; } catch(e) {}
+try {
+  const m = await import('./wasm/pkg/ueas_wasm.js');
+  await m.default();
+  window.__ueasWasm = m;
+} catch(e) { console.warn('WASM unavailable', e); }
 </script>
 </body>
 </html>
