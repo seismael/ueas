@@ -303,7 +303,10 @@ async function reverseAudit() {
           if (!pseudocode && report.ueas_mappings && report.ueas_mappings.length > 0) {
               pseudocode = report.ueas_mappings[0].ueas_equivalent;
           }
-          ueasEditor.setValue(pseudocode || '// Failed to extract pseudocode');
+          if (!pseudocode && report.recommendations && report.recommendations.length > 0) {
+              pseudocode = '// The AI auditor did not extract any valid algorithm pseudocode.\n// Recommendations:\n// - ' + report.recommendations.join('\n// - ');
+          }
+          ueasEditor.setValue(pseudocode || '// Failed to extract pseudocode. Ensure your target code contains valid functions.');
           
           var complexityVal = report.complexity_validated;
           if (complexityVal === undefined && report.complexity_estimates && report.complexity_estimates.length > 0) {
