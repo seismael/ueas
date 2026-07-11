@@ -1,4 +1,4 @@
-// UEAS MCP v4.3.1 — Cloudflare Workers
+// UEAS MCP v4.3.1 — Cloudflare Workers (native Git deploy)
 import wasmBin from './ueas_wasm_bg.wasm';
 import { initSync, parse_ueas, transpile_ueas, verify_crypto, profile_hardware, profile_complexity, profile_memory } from './ueas_wasm.js';
 
