@@ -41,6 +41,7 @@ function tools() {
 function call(id, name, args) {
   try {
     const r = run(name, args || {});
+    if (r.status === 'error') return err(id, -32603, r.error || 'Unknown error');
     return json({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: JSON.stringify(r) }] } });
   } catch (e) { return err(id, -32603, e.message); }
 }
