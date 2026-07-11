@@ -81,6 +81,16 @@
 </main>
 
 <footer><p>UEAS is released under the <a href="https://github.com/seismael/ueas/blob/main/LICENSE">Apache License 2.0</a>.</p></footer>
-<script type="module" src="app.js"></script>
+<script src="app.js"></script>
+<script type="module">
+// Load WASM asynchronously — doesn't block the UI
+try {
+  const wasm = await import('./wasm/pkg/ueas_wasm.js');
+  window.__ueasWasm = wasm;
+  console.log('WASM loaded');
+} catch(e) {
+  console.warn('WASM unavailable — using simulation', e);
+}
+</script>
 </body>
 </html>
