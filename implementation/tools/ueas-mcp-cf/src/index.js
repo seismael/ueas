@@ -167,8 +167,9 @@ function auditLegacyCode(src) {
         : ['No Python functions found — source may not be algorithmic code']
   };
 }
+
+function simpleParse(src) {
   const t = src.trim();
-  if (!t) return { valid: false, error: 'empty source' };
   const lines = t.split('\n');
   const first = lines[0].trim();
   const m = first.match(/Algorithm\s+(\w+)/);
