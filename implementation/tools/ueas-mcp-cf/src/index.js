@@ -50,9 +50,9 @@ function run(name, args) {
   if (!src && name !== 'transpile_ueas') return { status: 'error', error: 'empty source: provide UEAS pseudocode' };
   if (!src) return { status: 'error', error: 'empty source' };
 
-  // Parse + analyze source (all tools start with parsing)
+  // Parse + analyze source (all tools start with parsing, except audit_legacy)
   const parsed = simpleParse(src);
-  if (!parsed.valid && name !== 'parse_ueas') return { status: 'error', error: parsed.error || 'parse failed' };
+  if (name !== 'audit_legacy' && !parsed.valid && name !== 'parse_ueas') return { status: 'error', error: parsed.error || 'parse failed' };
 
   switch (name) {
     case 'parse_ueas':
