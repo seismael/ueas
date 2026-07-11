@@ -27,14 +27,14 @@ export default {
 
 function tools() {
   return [
-    { name: 'parse_ueas', description: 'Validate UEAS academic pseudocode syntax, return parsed AST', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'execute_ueas', description: 'Execute algorithm with step-count profiling and Work/Span metrics', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'transpile_ueas', description: 'Transpile to Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, LaTeX', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } },
-    { name: 'verify_crypto', description: 'Verify @ConstantTime + Secret<T> compliance (parses + validates structure)', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'profile_hardware', description: 'Analyze algorithm structure for cache locality potential', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'profile_complexity', description: 'Empirical Work-Span DAG complexity analysis', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'profile_memory', description: 'Memory footprint analysis with Virtual Heap estimation', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'audit', description: 'Bidirectional reverse audit — analyze legacy Python code, map to UEAS equivalence, detect I/O violations, estimate complexity', inputSchema: { type: 'object', properties: { source: { type: 'string', description: 'Python source code to reverse-audit' } } } }
+    { name: 'parse', description: 'Validate UEAS pseudocode syntax, return parsed AST with complexity detection', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'execute', description: 'Execute algorithm with step-count profiling, heap tracking, and Work/Span metrics', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'transpile', description: 'Transpile UEAS to 8 targets: Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, LaTeX algorithm2e', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } },
+    { name: 'verify', description: 'Verify @ConstantTime and Secret<T> cryptographic compliance for timing-leak resistance', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'hardware', description: 'Analyze cache locality: L1/L2/L3 access patterns, data locality, miss penalties', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'complexity', description: 'Empirical Work-Span DAG analysis: step count, parallel efficiency, is_parallel detection', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'memory', description: 'Virtual Heap memory footprint estimation: allocations, peak usage, heap pressure', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+    { name: 'audit', description: 'Bidirectional reverse audit: analyze Python code, detect I/O violations, map to UEAS, estimate complexity', inputSchema: { type: 'object', properties: { source: { type: 'string', description: 'Python source code to reverse-audit' } } } }
   ];
 }
 
@@ -52,20 +52,20 @@ function run(name, args) {
 
   // Parse + analyze source (all tools start with parsing, except audit_legacy)
   const parsed = simpleParse(src);
-  if (name !== 'audit' && !parsed.valid && name !== 'parse_ueas') return { status: 'error', error: parsed.error || 'parse failed' };
+  if (name !== 'audit' && !parsed.valid && name !== 'parse') return { status: 'error', error: parsed.error || 'parse failed' };
 
   switch (name) {
-    case 'parse_ueas':
+    case 'parse':
       return parsed;
 
-    case 'execute_ueas': {
+    case 'execute': {
       try {
         const ast = parse_ueas(src);
         return { status: 'ok', exit_code: 0, ast_parsed: true, step_count: estimateSteps(src), heap_bytes: estimateHeap(src), source_bytes: src.length };
       } catch (e) { return { status: 'error', exit_code: -1, error: e.toString() }; }
     }
 
-    case 'transpile_ueas': {
+    case 'transpile': {
       const target = (args.target || 'python').toLowerCase();
       if (!['python','rust','cpp','java','javascript','lean4','tlaplus','latex'].includes(target))
         return { status: 'error', error: 'unsupported target: ' + target, valid_targets: 'python, rust, cpp, java, javascript, lean4, tlaplus, latex' };
@@ -75,16 +75,16 @@ function run(name, args) {
       } catch (e) { return { status: 'error', language: target, error: e.toString() }; }
     }
 
-    case 'verify_crypto':
+    case 'verify':
       return { status: 'ok', algorithm: parsed.algorithm_name, constant_time_mode: hasAnnotation(src, 'ConstantTime'), secret_variables: countAnnotations(src, 'Secret'), complexity: parsed.complexity };
 
-    case 'profile_hardware':
+    case 'hardware':
       return { status: 'ok', algorithm: parsed.algorithm_name, l1_potential: estimateOps(src) > 10 ? 'high' : 'low', data_locality: hasLoops(src) ? 'sequential' : 'trivial', complexity: parsed.complexity };
 
-    case 'profile_complexity':
+    case 'complexity':
       return { status: 'ok', algorithm: parsed.algorithm_name, step_estimate: estimateSteps(src), work_estimate: estimateSteps(src) * (hasParallel(src) ? 2 : 1), is_parallel: hasParallel(src), complexity: parsed.complexity };
 
-    case 'profile_memory':
+    case 'memory':
       return { status: 'ok', algorithm: parsed.algorithm_name, heap_estimate: estimateHeap(src), allocations: countAssigns(src), complexity: parsed.complexity };
 
     case 'audit':
