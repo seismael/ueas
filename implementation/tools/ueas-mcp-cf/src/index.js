@@ -1,4 +1,4 @@
-// Cloudflare Worker — UEAS MCP Server
+// Cloudflare Worker — UEAS MCP Server v4.2.0
 // Handles JSON-RPC over HTTP, delegates computation to compiled WASM.
 // Always-on, globally distributed via Cloudflare edge.
 
