@@ -1,4 +1,4 @@
-// UEAS MCP v4.2.0 — Cloudflare Workers
+// UEAS MCP v4.3.0 — Cloudflare Workers
 import wasmBin from './ueas_wasm_bg.wasm';
 import { initSync, parse_ueas, transpile_ueas, verify_crypto, profile_hardware, profile_complexity, profile_memory } from './ueas_wasm.js';
 
@@ -16,7 +16,7 @@ export default {
       const b = await req.json();
       const { method, id, params } = b;
       switch (method) {
-        case 'initialize': return json({ jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05', serverInfo: { name: 'ueas-mcp', version: '4.2.0' }, capabilities: { tools: {} } } });
+        case 'initialize': return json({ jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05',         serverInfo: { name: 'ueas-mcp', version: '4.3.0' }, capabilities: { tools: {} } } });
         case 'tools/list': return json({ jsonrpc: '2.0', id, result: { tools: tools() } });
         case 'tools/call': return call(id, (params||{}).name||'', (params||{}).arguments||{});
         default: return err(id, -32601, `Unknown method: ${method}`);
