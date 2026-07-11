@@ -1,14 +1,14 @@
 /* @ts-self-types="./ueas_wasm.d.ts" */
 
 /**
- * @param {string} source
+ * @param {string} s
  * @returns {string}
  */
-export function execute_ueas(source) {
+export function execute_ueas(s) {
     let deferred3_0;
     let deferred3_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.execute_ueas(ptr0, len0);
         var ptr2 = ret[0];
@@ -30,14 +30,14 @@ export function main() {
 }
 
 /**
- * @param {string} source
+ * @param {string} s
  * @returns {string}
  */
-export function parse_ueas(source) {
+export function parse_ueas(s) {
     let deferred3_0;
     let deferred3_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.parse_ueas(ptr0, len0);
         var ptr2 = ret[0];
@@ -55,14 +55,14 @@ export function parse_ueas(source) {
 }
 
 /**
- * @param {string} source
+ * @param {string} s
  * @returns {string}
  */
-export function profile_complexity(source) {
+export function profile_complexity(s) {
     let deferred3_0;
     let deferred3_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.profile_complexity(ptr0, len0);
         var ptr2 = ret[0];
@@ -80,14 +80,14 @@ export function profile_complexity(source) {
 }
 
 /**
- * @param {string} source
+ * @param {string} s
  * @returns {string}
  */
-export function profile_hardware(source) {
+export function profile_hardware(s) {
     let deferred3_0;
     let deferred3_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.profile_hardware(ptr0, len0);
         var ptr2 = ret[0];
@@ -105,14 +105,14 @@ export function profile_hardware(source) {
 }
 
 /**
- * @param {string} source
+ * @param {string} s
  * @returns {string}
  */
-export function profile_memory(source) {
+export function profile_memory(s) {
     let deferred3_0;
     let deferred3_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.profile_memory(ptr0, len0);
         var ptr2 = ret[0];
@@ -130,17 +130,17 @@ export function profile_memory(source) {
 }
 
 /**
- * @param {string} source
- * @param {string} target
+ * @param {string} s
+ * @param {string} t
  * @returns {string}
  */
-export function transpile_ueas(source, target) {
+export function transpile_ueas(s, t) {
     let deferred4_0;
     let deferred4_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(target, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr1 = passStringToWasm0(t, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len1 = WASM_VECTOR_LEN;
         const ret = wasm.transpile_ueas(ptr0, len0, ptr1, len1);
         var ptr3 = ret[0];
@@ -158,14 +158,14 @@ export function transpile_ueas(source, target) {
 }
 
 /**
- * @param {string} source
+ * @param {string} s
  * @returns {string}
  */
-export function verify_crypto(source) {
+export function verify_crypto(s) {
     let deferred3_0;
     let deferred3_1;
     try {
-        const ptr0 = passStringToWasm0(source, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr0 = passStringToWasm0(s, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.verify_crypto(ptr0, len0);
         var ptr2 = ret[0];

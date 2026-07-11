@@ -38,18 +38,17 @@ pub fn transpile_ueas(s: &str, t: &str) -> Result<String, JsValue> {
     let (_, a) = parser::parse_algorithm(s).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let p = AstNodeFactory::program(vec![a]);
     let js = serde_json::to_string(&p).map_err(|e| JsValue::from_str(&e.to_string()))?;
-    match t {
-        "python" => PythonTarget,
-        "rust" => RustTarget,
-        "cpp" => CppTarget,
-        "java" => JavaTarget,
-        "javascript" => JavaScriptTarget,
-        "lean4" => LeanTarget,
-        "tlaplus" => TlaTarget::new(),
+    let gen: Box<dyn TargetGenerator> = match t {
+        "python" => Box::new(PythonTarget),
+        "rust" => Box::new(RustTarget),
+        "cpp" => Box::new(CppTarget),
+        "java" => Box::new(JavaTarget),
+        "javascript" => Box::new(JavaScriptTarget),
+        "lean4" => Box::new(LeanTarget),
+        "tlaplus" => Box::new(TlaTarget::new()),
         _ => return Err(JsValue::from_str("unsupported")),
-    }
-    .generate(&js)
-    .map_err(|e| JsValue::from_str(&e.message))
+    };
+    gen.generate(&js).map_err(|e| JsValue::from_str(&e.message))
 }
 
 #[wasm_bindgen]
