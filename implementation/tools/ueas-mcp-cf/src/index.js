@@ -1,4 +1,4 @@
-// Cloudflare Worker — UEAS MCP Server v4.2.0
+// UEAS MCP — Cloudflare Workers v4.2.0
 
 import init, { parse_ueas, transpile_ueas } from './wasm/ueas_wasm.js';
 
