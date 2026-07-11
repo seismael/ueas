@@ -205,7 +205,16 @@ async function doTranspile() {
     var data = await resp.json();
     var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '';
     if (text) {
-      targetEditor.setValue(text);
+      try {
+        var parsed = JSON.parse(text);
+        if (parsed && parsed.source) {
+          targetEditor.setValue(parsed.source);
+        } else {
+          targetEditor.setValue(text);
+        }
+      } catch (e) {
+        targetEditor.setValue(text);
+      }
       document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully remotely transpiled to ' + target + '</span>';
     } else {
       var fn = transpileSimulations[target];
@@ -288,28 +297,49 @@ async function reverseAudit() {
     var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '{}';
     
     try {
-        var report = JSON.parse(text);
-        ueasEditor.setValue(report.ueas_pseudocode || '// Failed to extract pseudocode');
-        
-        var reportHtml = '<div><strong>Complexity Validated:</strong> ' + report.complexity_validated + '</div>';
-        if (report.io_violations && report.io_violations.length > 0) {
-            reportHtml += '<div style="color:var(--red)"><strong>I/O Violations:</strong> ' + report.io_violations.join(', ') + '</div>';
-        }
-        if (report.fuzzing_failed) {
-            reportHtml += '<div style="color:var(--red)"><strong>Fuzzing:</strong> Failed (' + report.fuzz_error + ')</div>';
-        } else {
-            reportHtml += '<div style="color:var(--green)"><strong>Fuzzing:</strong> Passed (10,000 iterations)</div>';
-        }
-        document.getElementById('audit-report').innerHTML = reportHtml;
-        
-        // Auto-evaluate the newly generated UEAS
-        runExecute();
-    } catch (e) {
-        // Fallback for markdown output
-        ueasEditor.setValue(text);
-        document.getElementById('audit-report').innerHTML = 'Parsed raw text fallback.';
-        runExecute();
-    }
+          var report = JSON.parse(text);
+          
+          var pseudocode = report.ueas_pseudocode;
+          if (!pseudocode && report.ueas_mappings && report.ueas_mappings.length > 0) {
+              pseudocode = report.ueas_mappings[0].ueas_equivalent;
+          }
+          ueasEditor.setValue(pseudocode || '// Failed to extract pseudocode');
+          
+          var complexityVal = report.complexity_validated;
+          if (complexityVal === undefined && report.complexity_estimates && report.complexity_estimates.length > 0) {
+              complexityVal = report.complexity_estimates.map(function(e) { return e.function + ' (' + e.estimated_complexity + ')'; }).join(', ');
+          }
+          if (complexityVal === undefined || complexityVal === '') {
+              complexityVal = 'None';
+          }
+          
+          var reportHtml = '<div><strong>Complexity Validated:</strong> ' + complexityVal + '</div>';
+          if (report.io_violations && report.io_violations.length > 0) {
+              var violationsText = report.io_violations.map(function(v) {
+                  if (typeof v === 'object' && v !== null) {
+                      return (v.pattern || '') + ' (line ' + (v.line !== undefined ? v.line : '?') + ')';
+                  }
+                  return String(v);
+              }).join(', ');
+              reportHtml += '<div style="color:var(--red)"><strong>I/O Violations:</strong> ' + violationsText + '</div>';
+          } else {
+              reportHtml += '<div style="color:var(--green)"><strong>I/O Violations:</strong> None</div>';
+          }
+          if (report.fuzzing_failed) {
+              reportHtml += '<div style="color:var(--red)"><strong>Fuzzing:</strong> Failed (' + report.fuzz_error + ')</div>';
+          } else {
+              reportHtml += '<div style="color:var(--green)"><strong>Fuzzing:</strong> Passed (10,000 iterations)</div>';
+          }
+          document.getElementById('audit-report').innerHTML = reportHtml;
+          
+          // Auto-evaluate the newly generated UEAS
+          runExecute();
+      } catch (e) {
+          // Fallback for markdown output
+          ueasEditor.setValue(text);
+          document.getElementById('audit-report').innerHTML = 'Parsed raw text fallback.';
+          runExecute();
+      }
   } catch (e) {
     document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">MCP connection failed.</span>';
   }
