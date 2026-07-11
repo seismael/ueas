@@ -1,7 +1,5 @@
-//! UEAS WASM bindings — expose kernel functions to JavaScript.
-//!
+//! UEAS WASM bindings — Track 7 domain tools enabled.
 //! Build: cd tools/ueas-playground/wasm && wasm-pack build --target web
-//! Requires: cargo install wasm-pack
 
 use ueas_backends::cpp::CppTarget;
 use ueas_backends::java::JavaTarget;
