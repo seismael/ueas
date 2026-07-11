@@ -174,23 +174,27 @@ function extractComplexity(code) {
 async function doTranspile() {
   var code = editor.getValue();
   var target = document.getElementById('target-select').value;
+  var out = document.getElementById('output-transpiled');
 
-  // Try WASM first
+  // Try WASM transpile (real execution)
   var wm = window.__ueasWasm;
   if (wm && wm.transpile_ueas) {
     try {
       var output = wm.transpile_ueas(code, target);
-      document.getElementById('output-transpiled').textContent = output;
+      out.textContent = output;
       return;
     } catch (e) {
-      console.warn('WASM transpile failed, using simulation', e);
+      // WASM transpile failed — show the real error to the user
+      out.textContent = 'Transpile Error:\n' + (e.message || e.toString()) + '\n\nCheck syntax: indentation, missing keywords, type errors.';
+      out.style.color = 'var(--red)';
+      return;
     }
   }
 
-  // Fallback: local simulation
+  // WASM not loaded at all — fall back to simulation
   var fn = transpileSimulations[target];
-  var output = fn ? fn(code) : '/* Transpile unavailable for ' + target + ' */';
-  document.getElementById('output-transpiled').textContent = output;
+  out.textContent = fn ? fn(code) : '(WASM unavailable — transpile requires browser WASM support)';
+  out.style.color = 'var(--text-dim)';
 }
 
 function simulateTranspile() {
