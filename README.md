@@ -8,11 +8,11 @@
 [![Examples](https://img.shields.io/badge/Examples-45-orange)](implementation/examples/)
 [![Playground](https://img.shields.io/badge/Playground-Live-success)](https://ueas-three.vercel.app/)
 [![MCP Server](https://img.shields.io/badge/MCP%20Server-Live-success)](https://ueas-mcp.seismael.workers.dev)
-[![Version](https://img.shields.io/badge/Version-4.1.0-blue)](VERSION)
+[![Version](https://img.shields.io/badge/Version-4.4.0-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
 
-**Topics:** `executable-pseudocode`, `algorithm-standard`, `jupyter-kernel`, `debug-adapter-protocol`, `cryptography-verification`
+**Topics:** `executable-pseudocode`, `algorithm-standard`, `jupyter-kernel`, `debug-adapter-protocol`, `cryptography-verification`, `reverse-audit`
 
 ---
 
@@ -150,7 +150,7 @@ Cloudflare Workers (globally distributed, zero cold starts):
 https://ueas-mcp.seismael.workers.dev
 ```
 
-Available tools: `parse_ueas`, `execute_ueas`, `transpile_ueas` (8 targets).
+Available tools: `parse`, `execute`, `transpile`, `verify`, `hardware`, `complexity`, `memory`, `audit`.
 Connect via Claude Desktop, Cursor, or any MCP-compatible client.
 UEAS ships with a comprehensive [standard algorithm library](implementation/library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
 

@@ -219,6 +219,7 @@ async function runExecute() {
       console.warn('WASM execute failed, using remote', e);
     }
   }
+  }
 
   // Try remote MCP
   if (!result) {
