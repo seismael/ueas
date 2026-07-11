@@ -160,8 +160,12 @@ async function runExecute() {
   document.getElementById('exec-status').style.color = 'var(--text-dim)';
   try {
     var result = await callMCP('execute', { source: code });
-  updateDashboard(result);
-  updateAstTree(code);
+    updateDashboard(result);
+    if (result.ast) {
+      updateAstTree(result.ast);
+    } else {
+      document.getElementById('ast-tree').innerHTML = '<span style="color:var(--text-dim)">AST missing from evaluate response.</span>';
+    }
   } catch (e) {
     document.getElementById('exec-status').textContent = 'MCP Error';
     document.getElementById('exec-status').style.color = 'var(--red)';

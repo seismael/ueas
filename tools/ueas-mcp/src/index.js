@@ -62,7 +62,7 @@ function run(name, args) {
     case 'execute': {
       try {
         const ast = parse_ueas(src);
-        return { status: 'ok', exit_code: 0, ast_parsed: true, step_count: estimateSteps(src), heap_bytes: estimateHeap(src), source_bytes: src.length };
+        return { status: 'ok', exit_code: 0, ast_parsed: true, ast: ast, step_count: estimateSteps(src), heap_bytes: estimateHeap(src), source_bytes: src.length };
       } catch (e) { return { status: 'error', exit_code: -1, error: e.toString() }; }
     }
 
@@ -129,7 +129,7 @@ function auditLegacyCode(src) {
         currentFn = null;
         continue;
       }
-      currentFn.body_lines.push(line);
+      currentFn.body_lines.push(lines[i]);
       if (line.match(/\b(for|while)\b/)) { currentFn.has_loop = true; findings.push({ line: i + 1, type: 'loop_detected', detail: line.trim() }); }
       if (line.match(/\b(if|elif|else)\b/)) currentFn.has_condition = true;
       if (line.match(/\breturn\b/)) currentFn.return_count++;
