@@ -1,16 +1,12 @@
 //! UEAS MCP Server — Model Context Protocol integration for AI agents.
 //!
-//! Exposes tools via JSON-RPC over stdin/stdout (local) and HTTP/SSE (Render).
-//! Mode auto-detected: if PORT env var is set, starts HTTP server.
-//! Otherwise, runs in stdio mode for Claude Desktop/Cursor integration.
+//! Exposes 3 tools via JSON-RPC over stdin/stdout for Claude Desktop,
+//! Cursor, and Zed integration. For Render deployment, the Python
+//! mcp_bridge.py wraps this binary as an HTTP service.
 
 use anyhow::Result;
 use serde_json::{json, Value};
-use socket2::{Domain, Socket, Type};
 use std::io::{self, BufRead, Write};
-use std::net::SocketAddr;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::{TcpListener, TcpStream};
 use ueas_backends::{
     CppTarget, JavaScriptTarget, JavaTarget, LatexTarget, LeanTarget, PythonTarget, RustTarget,
     TargetGenerator, TlaTarget,
@@ -18,45 +14,7 @@ use ueas_backends::{
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind};
 use ueas_kernel::interp::{execute_program, ExecContext};
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    let port = std::env::var("PORT").unwrap_or_default();
-    if port.is_empty() {
-        run_stdio_mode();
-    } else {
-        let addr: SocketAddr = format!("0.0.0.0:{}", port).parse()?;
-        eprintln!("MCP HTTP server listening on {}", addr);
-
-        // Retry bind for Render cold starts (old process may not have released port)
-        let listener =
-            tokio::time::timeout(std::time::Duration::from_secs(30), bind_with_retry(addr))
-                .await
-                .map_err(|_| anyhow::anyhow!("TIMEOUT: Could not bind to {} after 30s", addr))??;
-
-        loop {
-            let (stream, _) = listener.accept().await?;
-            tokio::spawn(handle_http(stream));
-        }
-    }
-    Ok(())
-}
-
-async fn bind_with_retry(addr: SocketAddr) -> Result<TcpListener, anyhow::Error> {
-    let domain = if addr.is_ipv4() {
-        Domain::IPV4
-    } else {
-        Domain::IPV6
-    };
-    let socket = Socket::new(domain, Type::STREAM, None)?;
-    socket.set_reuse_address(true)?;
-    socket.bind(&addr.into())?;
-    socket.listen(128)?;
-    socket.set_nonblocking(true)?;
-    let std_listener: std::net::TcpListener = socket.into();
-    Ok(TcpListener::from_std(std_listener)?)
-}
-
-fn run_stdio_mode() {
+fn main() {
     let stdin = io::stdin();
     let stdout = io::stdout();
     let reader = stdin.lock();
@@ -84,78 +42,6 @@ fn run_stdio_mode() {
         let json = serde_json::to_string(&response).unwrap();
         writeln!(writer, "{}", json).ok();
         writer.flush().ok();
-    }
-}
-
-async fn handle_http(mut stream: TcpStream) {
-    let mut reader = BufReader::new(&mut stream);
-    let mut request_line = String::new();
-    if reader.read_line(&mut request_line).await.is_err() {
-        return;
-    }
-
-    let parts: Vec<&str> = request_line.split_whitespace().collect();
-    if parts.len() < 2 {
-        return;
-    }
-    let method = parts[0];
-    let path = parts[1];
-
-    // Read headers
-    let mut content_length = 0usize;
-    loop {
-        let mut header = String::new();
-        if reader.read_line(&mut header).await.is_err() {
-            return;
-        }
-        if header.trim().is_empty() {
-            break;
-        }
-        if let Some(val) = header.to_lowercase().strip_prefix("content-length:") {
-            content_length = val.trim().parse().unwrap_or(0);
-        }
-    }
-
-    match (method, path) {
-        ("GET", "/health") => {
-            let resp = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK";
-            stream.write_all(resp.as_bytes()).await.ok();
-        }
-        ("GET", "/sse") => {
-            // SSE endpoint for MCP
-            let headers = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\n\r\n";
-            stream.write_all(headers.as_bytes()).await.ok();
-
-            // Send endpoint event
-            let endpoint = format!("data: {}\n\n", serde_json::json!({"endpoint": "/message"}));
-            stream.write_all(endpoint.as_bytes()).await.ok();
-            stream.flush().await.ok();
-        }
-        ("POST", "/message") => {
-            let mut body = vec![0u8; content_length];
-            if content_length > 0 {
-                use tokio::io::AsyncReadExt;
-                if reader.read_exact(&mut body).await.is_err() {
-                    return;
-                }
-            }
-            let body_str = String::from_utf8_lossy(&body);
-
-            if let Ok(msg) = serde_json::from_str::<Value>(&body_str) {
-                let response = handle_mcp_message(&msg);
-                let resp_json = serde_json::to_string(&response).unwrap();
-                let resp = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
-                    resp_json.len(),
-                    resp_json
-                );
-                stream.write_all(resp.as_bytes()).await.ok();
-            }
-        }
-        _ => {
-            let resp = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-            stream.write_all(resp.as_bytes()).await.ok();
-        }
     }
 }
 
