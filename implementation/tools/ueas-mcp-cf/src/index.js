@@ -34,7 +34,7 @@ function tools() {
     { name: 'profile_hardware', description: 'Analyze algorithm structure for cache locality potential', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'profile_complexity', description: 'Empirical Work-Span DAG complexity analysis', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'profile_memory', description: 'Memory footprint analysis with Virtual Heap estimation', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'audit_legacy', description: 'Bidirectional reverse audit — analyze legacy Python code and map to UEAS equivalence with complexity estimation', inputSchema: { type: 'object', properties: { source: { type: 'string', description: 'Python source code to reverse-audit' } } } }
+    { name: 'audit', description: 'Bidirectional reverse audit — analyze legacy Python code, map to UEAS equivalence, detect I/O violations, estimate complexity', inputSchema: { type: 'object', properties: { source: { type: 'string', description: 'Python source code to reverse-audit' } } } }
   ];
 }
 
@@ -52,7 +52,7 @@ function run(name, args) {
 
   // Parse + analyze source (all tools start with parsing, except audit_legacy)
   const parsed = simpleParse(src);
-  if (name !== 'audit_legacy' && !parsed.valid && name !== 'parse_ueas') return { status: 'error', error: parsed.error || 'parse failed' };
+  if (name !== 'audit' && !parsed.valid && name !== 'parse_ueas') return { status: 'error', error: parsed.error || 'parse failed' };
 
   switch (name) {
     case 'parse_ueas':
@@ -87,7 +87,7 @@ function run(name, args) {
     case 'profile_memory':
       return { status: 'ok', algorithm: parsed.algorithm_name, heap_estimate: estimateHeap(src), allocations: countAssigns(src), complexity: parsed.complexity };
 
-    case 'audit_legacy':
+    case 'audit':
       return auditLegacyCode(src);
 
     default:

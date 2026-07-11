@@ -201,12 +201,15 @@ function simulateTranspile() {
 async function runExecute() {
   var code = ueasEditor.getValue();
   document.getElementById('exec-status').textContent = 'Running...';
+  document.getElementById('exec-status').style.color = 'var(--text-dim)';
 
   var result = null;
+  var useLocal = document.getElementById('hybrid-mode') && document.getElementById('hybrid-mode').checked;
 
   // Try local WASM
-  var wm = window.__ueasWasm;
-  if (wm && wm.execute_ueas && wm.parse_ueas) {
+  if (useLocal) {
+    var wm = window.__ueasWasm;
+    if (wm && wm.execute_ueas && wm.parse_ueas) {
     try {
       var ast = wm.parse_ueas(code);
       var execStr = wm.execute_ueas(code);
@@ -245,6 +248,8 @@ async function reverseAudit() {
   var lang = document.getElementById('target-select').value;
   
   document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Calling Cloudflare MCP audit_legacy...</span>';
+  document.getElementById('exec-status').textContent = 'Reverse-Auditing via LLM...';
+  document.getElementById('exec-status').style.color = 'var(--orange)';
   ueasEditor.setValue('// Reverse-auditing in progress...');
   
   try {
@@ -253,7 +258,7 @@ async function reverseAudit() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         jsonrpc: '2.0', id: 2, method: 'tools/call',
-        params: { name: 'audit_legacy', arguments: { source_code: legacyCode, language: lang } }
+        params: { name: 'audit_legacy', arguments: { source: legacyCode, language: lang } }
       })
     });
     var data = await resp.json();
@@ -299,7 +304,8 @@ function updateTargetLanguage() {
 function updateDashboard(r) {
   r = r || {};
   document.getElementById('exec-status').textContent = r.status || r.exit_name || 'OK';
-  document.getElementById('exec-status').style.color = r.exit_code > 0 ? 'var(--red)' : 'var(--green)';
+  var isError = r.status === 'error' || r.exit_code > 0 || (r.exit_name && r.exit_name !== 'OK');
+  document.getElementById('exec-status').style.color = isError ? 'var(--red)' : 'var(--green)';
   document.getElementById('exec-steps').textContent = r.step_count != null ? r.step_count : '—';
   document.getElementById('exec-heap').textContent = (r.heap_bytes || '—') + ' B';
   document.getElementById('exec-cache').textContent = r.cache_l1_hits != null ? r.cache_l1_hits : '—';
@@ -484,7 +490,10 @@ require(['vs/editor/editor.main'], function() {
   renderCategories();
 
   // Select first example
-  document.querySelectorAll('#examples-list .example-item')[0].classList.add('active');
+  var firstExample = document.querySelectorAll('#sidebar-scroll .example-item')[0];
+  if (firstExample) {
+    firstExample.classList.add('active');
+  }
 });
 
 // Expose to global scope for onclick handlers

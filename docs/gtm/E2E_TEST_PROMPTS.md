@@ -5,7 +5,7 @@ Verification prompts for the bidirectional both-ways workflow (M36.3).
 ## Prompt 1: Basic Reverse Audit
 
 ```
-Use the `audit_legacy` tool to analyze this Python code:
+Use the `audit` tool to analyze this Python code:
 
 def binary_search(arr, target):
     left = 0
@@ -30,7 +30,7 @@ Expected:
 ## Prompt 2: I/O Violation Detection
 
 ```
-Use `audit_legacy` to check this code for UEAS Axiom compliance:
+Use `audit` to check this code for UEAS Axiom compliance:
 
 def process_data(filename):
     import json
@@ -51,7 +51,7 @@ Expected:
 ## Prompt 3: Bidirectional Both-Ways Workflow
 
 ```
-1. Use `audit_legacy` to reverse-audit this Java algorithm for a linear search:
+1. Use `audit` to reverse-audit this Java algorithm for a linear search:
    int search(int[] data, int target) {
        for (int i = 0; i < data.length; i++) {
            if (data[i] == target) return i;
