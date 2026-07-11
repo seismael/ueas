@@ -1,18 +1,21 @@
 # UEAS Transpilation Backends
 
-Five production-grade transpilation targets implementing the `TargetGenerator`
-interface (GoF Strategy). All targets produce idiomatic source code from the
+Eight transpilation targets implementing the `TargetGenerator`
+interface (GoF Strategy). All targets produce idiomatic code from the
 canonical UEAS JSON AST with guaranteed semantic equivalence.
 
 ## Target Overview
 
-| Target | Language | Version | Module | Variable Tracking |
-|--------|----------|---------|--------|-------------------|
-| Python | python | 3.11 | `backends/src/lib.rs` | None (Python is dynamically typed) |
-| Rust | rust | 2021 | `backends/src/lib.rs` | `HashSet<String>` → `let mut` |
-| C++ | cpp | 17 | `backends/src/cpp.rs` | `HashSet<String>` → `auto` |
-| Java | java | 17 | `backends/src/java.rs` | `HashSet<String>` → `var` |
-| JavaScript | javascript | ES2020 | `backends/src/javascript.rs` | `HashSet<String>` → `let` |
+| Target | Language | Version | Module | Type |
+|--------|----------|---------|--------|------|
+| Python | python | 3.11 | `backends/src/lib.rs` | Imperative |
+| Rust | rust | 2021 | `backends/src/lib.rs` | Imperative |
+| C++ | cpp | 17 | `backends/src/cpp.rs` | Imperative |
+| Java | java | 17 | `backends/src/java.rs` | Imperative |
+| JavaScript | javascript | ES2020 | `backends/src/javascript.rs` | Imperative |
+| Lean 4 | lean4 | 4.0 | `backends/src/lean4.rs` | Formal Verification (theorem proving) |
+| TLA+ | tlaplus | 2.18 | `backends/src/tla.rs` | Formal Verification (model checking) |
+| LaTeX | latex | algorithm2e/v5.2 | `backends/src/latex.rs` | Academic Publishing |
 
 ## Type Mappings
 
@@ -23,21 +26,15 @@ canonical UEAS JSON AST with guaranteed semantic equivalence.
 | Boolean | `bool` | `bool` | `bool` | `boolean` | `boolean` |
 | String | `str` | `String` | `std::string` | `String` | `string` |
 
-## Function Name Mappings
-
-| UEAS Built-in | Python | Rust | C++ | Java | JavaScript |
-|--------------|--------|------|-----|------|------------|
-| `sqrt` | `math.sqrt` | `f64::sqrt` | `std::sqrt` | `Math.sqrt` | `Math.sqrt` |
-| `length` | `len` | `len` | `size()` | `size()` | `length` |
-| `cardinality` | `len` | `len` | `size()` | `size()` | `length` |
+Formal/academic targets map to their native type systems: ℕ/ℝ/Bool (Lean 4), Int/Real/Bool/String (TLA+), and academic names (LaTeX).
 
 ## Control Flow Patterns
 
-| UEAS Construct | Python | Rust | C++ | Java | JavaScript |
-|----------------|--------|------|-----|------|------------|
-| `if/then/end if` | `if cond:` | `if cond { }` | `if (cond) { }` | `if (cond) { }` | `if (cond) { }` |
-| `for/in/do/end for` | `for x in range(N):` | `for x in 0..N { }` | `for (auto x : col) { }` | `for (var x : col) { }` | `for (let x of col) { }` |
-| `while/do/end while` | `while cond:` | `while cond { }` | `while (cond) { }` | `while (cond) { }` | `while (cond) { }` |
+| UEAS Construct | Python | Other Imperative | Lean 4 | TLA+ | LaTeX |
+|----------------|--------|-----------------|--------|------|-------|
+| `if/then/end if` | `if cond:` | `if (cond) { }` | `if cond then ... else ...` | `cond => ... /\\ ...` | `\\eIf{...}` |
+| `for/in/do/end for` | `for x in range(N):` | `for (auto x : col) { }` | `List.map` | `\\A i \\in S:` | `\\ForEach{...}` |
+| `while/do/end while` | `while cond:` | `while (cond) { }` | `partial def` | fairness condition | `\\While{...}` |
 
 ## Adding a New Target
 
@@ -45,5 +42,6 @@ canonical UEAS JSON AST with guaranteed semantic equivalence.
 2. Implement `TargetGenerator` trait (5 required methods)
 3. Implement `generate_algo`, `generate_statement`, `generate_node` helper methods
 4. Add `pub mod <lang>;` to `backends/src/lib.rs`
-5. Add tests verifying: language name, version, integer literal, addition, function definition
-6. Update this file with the new target's type and function mappings
+5. Add `pub use` re-export for CLI access
+6. Add tests verifying: language name, version, integer literal, addition, function definition
+7. Update this file with the new target's type and function mappings

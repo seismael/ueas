@@ -197,6 +197,7 @@ All examples validated with `ueas check examples/<category>/<name>.ueas`.
 | **Phase 1-6** | Grammar, Kernel, Backends, CLI, Library, Frontends | ✅ Complete |
 | **Phase 4-6 (Ecosystem)** | DAP, Jupyter, Hardware, Modules, Cryptography, Streams | ✅ Complete |
 | **Phase 7 (Concurrency, Quantum, ML)** | Work-Span, distributed, qubit, tensor primitives | ✅ Complete |
+| **Phase 8 (Bidirectional Auditing)** | audit tool, Python→UEAS reverse audit, I/O violation detection | ✅ Complete |
 
 ---
 
