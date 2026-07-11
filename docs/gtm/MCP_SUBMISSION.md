@@ -44,8 +44,5 @@ cd implementation && cargo install --path tools/ueas-mcp
     }
   }
 }
-
-# Docker
-docker build -t ueas-mcp -f implementation/tools/Dockerfile .
-docker run -e PORT=3000 -p 3000:3000 ueas-mcp
 ```
+
