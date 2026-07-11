@@ -12,4 +12,4 @@ path = "src/main.rs"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
-ueas-kernel = { path = "../../kernel" }
+ueas-kernel = { path = "../implementation/kernel" }

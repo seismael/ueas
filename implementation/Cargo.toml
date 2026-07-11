@@ -2,9 +2,9 @@
 members = [
     "kernel",
     "backends",
-    "tools/ueas-cli",
-    "tools/ueas-dap",
-    "tools/ueas-mcp",
+    "../tools/ueas-cli",
+    "../tools/ueas-dap",
+    "../tools/ueas-mcp",
     "frontends",
 ]
 resolver = "2"
