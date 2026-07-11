@@ -8,11 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: implementation/tools/ueas-mcp-cf } }
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Cloudflare
+      - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy
+          workingDirectory: 'implementation/tools/ueas-mcp-cf'
+          command: deploy src/index.js
