@@ -615,7 +615,8 @@ impl RustTarget {
         let name = children[0]["value"].as_str().unwrap_or("unnamed");
         let mut params = Vec::new();
         for child in children.iter().skip(1) {
-            if child["kind"] == "Parameter" {
+            let kind = child["kind"].as_str().unwrap_or("");
+            if kind == "Parameter" || kind == "VariableDeclaration" {
                 if let Some(pc) = child["children"].as_array() {
                     if !pc.is_empty() {
                         let pname = pc[0]["value"].as_str().unwrap_or("_").to_string();

@@ -86,7 +86,7 @@ impl CppTarget {
         let name = children[0]["value"].as_str().unwrap_or("unnamed");
         let mut params = Vec::new();
         for child in children.iter().skip(1) {
-            if child["kind"] == "Parameter" {
+            if child["kind"] == "Parameter" || child["kind"] == "VariableDeclaration" {
                 if let Some(pc) = child["children"].as_array() {
                     if !pc.is_empty() {
                         let pname = pc[0]["value"].as_str().unwrap_or("_").to_string();
