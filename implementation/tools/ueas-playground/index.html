@@ -14,7 +14,7 @@
     <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
   </div>
   <div class="badges">
-    <span class="badge">v4.2.0</span>
+    <span class="badge">v4.2.1</span>
     <span class="badge">8 targets</span>
     <span class="badge">351 tests</span>
     <label class="hybrid-toggle" title="Toggle between local WASM and remote Cloudflare MCP">
@@ -26,10 +26,7 @@
 
 <main>
   <aside class="sidebar">
-    <h2>Examples</h2>
-    <div id="examples-list"></div>
-    <h2 style="margin-top:16px">Advanced Domains</h2>
-    <div id="advanced-examples"></div>
+    <div class="sidebar-scroll" id="sidebar-scroll"></div>
     <div class="sidebar-footer">
       <a href="https://github.com/seismael/ueas" target="_blank">GitHub</a>
       <a href="https://ueas-mcp.seismael.workers.dev" target="_blank">MCP Server</a>
@@ -50,22 +47,21 @@
         <option value="tlaplus">TLA+ (model check)</option>
         <option value="latex">LaTeX algorithm2e</option>
       </select>
-      <input type="text" id="exec-inputs" placeholder='JSON inputs e.g. {"a":1,"b":2}' style="width:180px;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:0.8rem;font-family:var(--code-font)">
-      <button onclick="formatCode()">Format</button>
+      <input type="text" id="exec-inputs" placeholder='JSON inputs e.g. {"a":1,"b":2}'>
+      <button onclick="copyToClipboard()">Copy</button>
       <button class="primary" onclick="runExecute()">&#9654; Run</button>
       <button class="primary" onclick="simulateTranspile()">Transpile &darr;</button>
     </div>
 
-    <!-- Execution Dashboard -->
     <div id="dashboard" class="dashboard" style="display:none">
       <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
-      <div class="dash-card"><span class="dash-label">Step Count</span><span class="dash-value" id="exec-steps">—</span></div>
-      <div class="dash-card"><span class="dash-label">Heap Bytes</span><span class="dash-value" id="exec-heap">—</span></div>
+      <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
+      <div class="dash-card"><span class="dash-label">Heap</span><span class="dash-value" id="exec-heap">—</span></div>
       <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
       <div class="dash-card"><span class="dash-label">Work</span><span class="dash-value" id="exec-work">—</span></div>
       <div class="dash-card"><span class="dash-label">Span</span><span class="dash-value" id="exec-span">—</span></div>
-      <div class="dash-card"><span class="dash-label">L1 Hits</span><span class="dash-value" id="exec-cache">—</span></div>
-      <div class="dash-card"><span class="dash-label">Parallel Eff.</span><span class="dash-value" id="exec-parallel">—</span></div>
+      <div class="dash-card"><span class="dash-label">Cache</span><span class="dash-value" id="exec-cache">—</span></div>
+      <div class="dash-card"><span class="dash-label">Par Eff</span><span class="dash-value" id="exec-parallel">—</span></div>
       <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
     </div>
 
@@ -81,16 +77,10 @@
 </main>
 
 <footer><p>UEAS is released under the <a href="https://github.com/seismael/ueas/blob/main/LICENSE">Apache License 2.0</a>.</p></footer>
+
 <script src="app.js"></script>
 <script type="module">
-// Load WASM asynchronously — doesn't block the UI
-try {
-  const wasm = await import('./wasm/pkg/ueas_wasm.js');
-  window.__ueasWasm = wasm;
-  console.log('WASM loaded');
-} catch(e) {
-  console.warn('WASM unavailable — using simulation', e);
-}
+try { const m = await import('./wasm/pkg/ueas_wasm.js'); window.__ueasWasm = m; } catch(e) {}
 </script>
 </body>
 </html>

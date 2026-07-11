@@ -48,48 +48,69 @@ const advancedExamples = [
   { name: 'Parallel Sum (Work-Span)', complexity: 'O(N/P + log P)', code: `Algorithm ParallelSum(data)\n    Require: data: List\n    Ensure: Integer\n    Complexity: "O(N / P + log P)", Work = "O(N)", Span = "O(log N)"\n\n    n <- data.length\n    parallel for each chunk in data do\n        size <- chunk.length\n        partial <- 0\n        i <- 0\n        while i < size do\n            partial <- partial + chunk[i]\n            i <- i + 1\n        end while\n    end for\n    sync\n    return partial` }
 ];
 
-function loadExample(index) {
-  const ex = examples[index];
-  if (!ex) return;
-  editor.setValue(ex.code);
-  document.querySelectorAll('#examples-list .example-item').forEach(function(el, i) {
-    el.classList.toggle('active', i === index);
-  });
-  document.querySelectorAll('#advanced-examples .example-item').forEach(function(el) {
-    el.classList.remove('active');
+// Render categorized accordion examples sidebar
+function renderCategories() {
+  var el = document.getElementById('sidebar-scroll');
+  var cats = groupByCategory();
+
+  cats.forEach(function(cat) {
+    // Category header
+    var hdr = document.createElement('div');
+    hdr.className = 'cat-header';
+    hdr.innerHTML = '<span>' + cat.label + '</span><span class="arrow">&#9654;</span>';
+    hdr.onclick = function() {
+      var body = this.nextElementSibling;
+      var arrow = this.querySelector('.arrow');
+      var isOpen = body.classList.contains('open');
+      // Close all
+      document.querySelectorAll('.cat-body').forEach(function(b) { b.classList.remove('open'); });
+      document.querySelectorAll('.arrow').forEach(function(a) { a.classList.remove('open'); });
+      if (!isOpen) {
+        body.classList.add('open');
+        arrow.classList.add('open');
+      }
+    };
+    el.appendChild(hdr);
+
+    // Category body
+    var body = document.createElement('div');
+    body.className = 'cat-body';
+    cat.items.forEach(function(ex, i) {
+      var item = document.createElement('div');
+      item.className = 'example-item';
+      item.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.complexity + '</div>';
+      item.onclick = (function(e) {
+        return function() {
+          editor.setValue(e.code);
+          document.querySelectorAll('.example-item').forEach(function(el) { el.classList.remove('active'); });
+          item.classList.add('active');
+        };
+      })(ex);
+      body.appendChild(item);
+    });
+    el.appendChild(body);
   });
 }
 
-function loadAdvanced(index) {
-  const ex = advancedExamples[index];
-  if (!ex) return;
-  editor.setValue(ex.code);
-  document.querySelectorAll('#advanced-examples .example-item').forEach(function(el, i) {
-    el.classList.toggle('active', i === index);
+function groupByCategory() {
+  var cats = {};
+  examples.forEach(function(ex) {
+    var cat = ex.category || 'other';
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push(ex);
   });
-  document.querySelectorAll('#examples-list .example-item').forEach(function(el) {
-    el.classList.remove('active');
-  });
-}
-
-// Render examples sidebar
-function renderExamples() {
-  const list = document.getElementById('examples-list');
-  examples.forEach(function(ex, i) {
-    const div = document.createElement('div');
-    div.className = 'example-item';
-    div.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.category + ' — ' + ex.complexity + '</div>';
-    div.onclick = function() { loadExample(i); };
-    list.appendChild(div);
-  });
-
-  const advList = document.getElementById('advanced-examples');
-  advancedExamples.forEach(function(ex, i) {
-    const div = document.createElement('div');
-    div.className = 'example-item';
-    div.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.complexity + '</div>';
-    div.onclick = function() { loadAdvanced(i); };
-    advList.appendChild(div);
+  var labels = {
+    'core': 'Core Algorithms', 'sorting': 'Sorting', 'graph': 'Graph Algorithms',
+    'dp': 'Dynamic Programming', 'arrays': 'Arrays & Two Pointers',
+    'backtracking': 'Backtracking', 'stack': 'Stack',
+    'features': 'Feature Demos', 'stochastic': 'Stochastic',
+    'streams': 'Streams', 'concurrency': 'Concurrency',
+    'cryptographic': 'Cryptographic', 'hardware': 'Hardware Profiling'
+  };
+  var order = ['core','sorting','graph','dp','arrays','backtracking','stack',
+               'concurrency','cryptographic','hardware','stochastic','streams','features'];
+  return order.filter(function(k) { return cats[k]; }).map(function(k) {
+    return { label: labels[k] || k, items: cats[k] };
   });
 }
 
@@ -400,17 +421,14 @@ require(['vs/editor/editor.main'], function() {
     renderWhitespace: 'selection'
   });
 
-  // Render examples
-  renderExamples();
+  // Render categorized examples sidebar
+  renderCategories();
 
   // Select first example
   document.querySelectorAll('#examples-list .example-item')[0].classList.add('active');
 });
 
 // Expose to global scope for onclick handlers
-window.loadExample = loadExample;
-window.loadAdvanced = loadAdvanced;
-window.formatCode = formatCode;
 window.copyToClipboard = copyToClipboard;
 window.simulateTranspile = simulateTranspile;
 window.runExecute = runExecute;
