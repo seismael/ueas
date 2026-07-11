@@ -73,20 +73,30 @@ pub fn profile_hardware(s: &str) -> Result<String, JsValue> {
 
 #[wasm_bindgen]
 pub fn profile_complexity(s: &str) -> Result<String, JsValue> {
-    let mut ctx = ExecContext::with_default_config();
-    let (_, a) = parser::parse_algorithm(s).map_err(|e| JsValue::from_str(&e.to_string()))?;
-    let p = AstNodeFactory::program(vec![a]);
-    let _ = execute_program(&mut ctx, &p);
-    serde_json::to_string(&serde_json::json!({"status":"ok","step_count":ctx.profiler.step_count(),"work":ctx.profiler.work(),"span":ctx.profiler.span(),"is_parallel":ctx.profiler.work()>ctx.profiler.span()})).map_err(|e| JsValue::from_str(&e.to_string()))
+    let exec_json = execute_ueas(s)?;
+    let exec: serde_json::Value =
+        serde_json::from_str(&exec_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let steps = exec["step_count"].as_u64().unwrap_or(0);
+    let work = exec["work"].as_u64().unwrap_or(0);
+    let span = exec["span"].as_u64().unwrap_or(0);
+    serde_json::to_string(&serde_json::json!({
+        "status":"ok","step_count":steps,"work":work,"span":span,
+        "is_parallel":work > span
+    }))
+    .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
 pub fn profile_memory(s: &str) -> Result<String, JsValue> {
-    let mut ctx = ExecContext::with_default_config();
-    let (_, a) = parser::parse_algorithm(s).map_err(|e| JsValue::from_str(&e.to_string()))?;
-    let p = AstNodeFactory::program(vec![a]);
-    let _ = execute_program(&mut ctx, &p);
-    serde_json::to_string(&serde_json::json!({"status":"ok","heap_allocated":ctx.heap.bytes_allocated(),"step_count":ctx.profiler.step_count()})).map_err(|e| JsValue::from_str(&e.to_string()))
+    let exec_json = execute_ueas(s)?;
+    let exec: serde_json::Value =
+        serde_json::from_str(&exec_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let heap = exec["heap_bytes"].as_u64().unwrap_or(0);
+    let steps = exec["step_count"].as_u64().unwrap_or(0);
+    serde_json::to_string(&serde_json::json!({
+        "status":"ok","heap_allocated":heap,"step_count":steps
+    }))
+    .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen(start)]
