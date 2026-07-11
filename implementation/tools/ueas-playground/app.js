@@ -277,42 +277,6 @@ async function runExecute() {
   updateAstTree(result.ast || code);
 }
 
-function formatUeas(code) {
-    var lines = code.split('\n');
-    var formatted = [];
-    var indent = 0;
-    
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        if (!line) {
-            formatted.push('');
-            continue;
-        }
-
-        var lowerLine = line.toLowerCase();
-        if (lowerLine.startsWith('end ') || lowerLine === 'else' || lowerLine === 'else:') {
-            indent = Math.max(0, indent - 1);
-        }
-
-        var prefix = '';
-        for (var j = 0; j < indent; j++) prefix += '    ';
-
-        if (line.startsWith('Require:') || line.startsWith('Ensure:') || line.startsWith('Complexity:') || line.startsWith('State:')) {
-            formatted.push('    ' + line);
-        } else if (line.startsWith('Algorithm ')) {
-            indent = 0;
-            formatted.push(line);
-        } else {
-            formatted.push(prefix + line);
-        }
-
-        if (line.endsWith(':') || line.endsWith(' do') || line.endsWith(' then') || lowerLine === 'else' || lowerLine === 'else:') {
-            indent++;
-        }
-    }
-    return formatted.join('\n');
-}
-
 async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
   var lang = document.getElementById('target-select').value;
@@ -340,9 +304,6 @@ async function reverseAudit() {
           var pseudocode = report.ueas_pseudocode;
           if (!pseudocode && report.ueas_mappings && report.ueas_mappings.length > 0) {
               pseudocode = report.ueas_mappings[0].ueas_equivalent;
-          }
-          if (pseudocode) {
-              pseudocode = formatUeas(pseudocode);
           }
           if (!pseudocode && report.recommendations && report.recommendations.length > 0) {
               pseudocode = '// The AI auditor did not extract any valid algorithm pseudocode.\n// Recommendations:\n// - ' + report.recommendations.join('\n// - ');

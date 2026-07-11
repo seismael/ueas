@@ -148,7 +148,14 @@ function auditLegacyCode(src) {
 
   // Generate UEAS equivalent mapping
   const ueasMappings = functions.map(fn => {
-    const algo = 'Algorithm ' + fn.name + '(' + fn.params.join(', ') + ')\n    Require: ' + fn.params.map(p => p + ': Integer').join(', ') + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + fn.body_lines.map(l => l.trim().replace(/\bdef\b/g, '#').replace(/print\(/g, '# print(').replace(/import\s+/g, '# import ')).join('\n    ');
+    const bodyStr = fn.body_lines.map(l => {
+      let currentSpace = (l.match(/^\s*/) || [''])[0].length;
+      let keepSpaces = Math.max(0, currentSpace - indentLevel);
+      let prefix = ' '.repeat(keepSpaces);
+      return prefix + l.trim().replace(/\bdef\b/g, '#').replace(/print\(/g, '# print(').replace(/import\s+/g, '# import ');
+    }).join('\n    ');
+
+    const algo = 'Algorithm ' + fn.name + '(' + fn.params.join(', ') + ')\n    Require: ' + fn.params.map(p => p + ': Integer').join(', ') + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + bodyStr;
     return { function: fn.name, ueas_equivalent: algo };
   });
 
