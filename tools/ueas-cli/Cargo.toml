@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-ueas-kernel = { path = "../implementation/kernel" }
-ueas-backends = { path = "../implementation/backends" }
+ueas-kernel = { path = "../../implementation/kernel" }
+ueas-backends = { path = "../../implementation/backends" }
 anyhow = "1"
 serde_json = "1"

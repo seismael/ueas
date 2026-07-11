@@ -5,7 +5,7 @@
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](implementation/kernel/)  
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
-[![Examples](https://img.shields.io/badge/Examples-45-orange)](implementation/examples/)
+[![Examples](https://img.shields.io/badge/Examples-45-orange)](examples/)
 [![Playground](https://img.shields.io/badge/Playground-Live-success)](https://ueas-three.vercel.app/)
 [![MCP Server](https://img.shields.io/badge/MCP%20Server-Live-success)](https://ueas-mcp.seismael.workers.dev)
 [![Version](https://img.shields.io/badge/Version-4.4.0-blue)](VERSION)
@@ -135,7 +135,7 @@ The AST produced by this algorithm can be:
 ### Installation
 ```bash
 cd implementation
-cargo install --path tools/ueas-cli
+cargo install --path ../tools/ueas-cli
 ```
 
 ### CLI Usage
@@ -144,7 +144,7 @@ cargo install --path tools/ueas-cli
 ueas run examples/core/euclidean.ueas
 
 # Validate syntax
-ueas check library/sorting/quicksort.ueas
+ueas check implementation/library/sorting/quicksort.ueas
 
 # Transpile to a target language
 ueas transpile examples/core/linear_search.ueas --target python
@@ -223,7 +223,7 @@ All examples validated with `ueas check examples/<category>/<name>.ueas`.
 | [RFC Process](specification/docs/rfcs/README.md) | How to propose changes to the standard |
 | [ADR Log](specification/docs/adr/README.md) | Architecture Decision Records |
 | [Library](implementation/library/INDEX.md) | 45 standard algorithms across 7 categories |
-| [Examples](implementation/examples/) | 45 reference implementations in 20 categories |
+| [Examples](examples/) | 45 reference implementations in 20 categories |
 
 ---
 

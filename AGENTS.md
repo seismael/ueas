@@ -676,7 +676,7 @@ ueas/
 │       └── adr/           Architecture Decision Records
 │
 └── implementation/        The Reference Engine (Linux Foundation Domain)
-    ├── Cargo.toml         Workspace root (kernel + backends + frontends + tools)
+    ├── Cargo.toml         Workspace root (kernel + backends + frontends)
     ├── kernel/            Rust abstract interpreter
     │   ├── src/           AST, heap, traps, invariants, profiling, linker, infer
     │   └── tests/         Conformance, fuzz, integration
@@ -687,25 +687,30 @@ ueas/
     ├── frontends/         Reverse transpilation (target language → UEAS AST)
     │   └── src/           Python extractor with axiom enforcement
     ├── wasm/              WASM bindings — kernel compiled for Cloudflare Workers MCP
-    ├── tools/             CLI, DAP Debugger, Jupyter Kernel, MCP Server, Playground
-    │   ├── ueas-cli/      `ueas` CLI (run, check, transpile, fmt)
-    │   ├── ueas-dap/      VS Code Debug Adapter Protocol server
-    │   ├── ueas-jupyter/  Jupyter Notebook Kernel wrapper
-    │   ├── ueas-mcp/      MCP server for AI agent integration
-    │   └── ueas-playground/  Browser-based UEAS editor
-    ├── library/           Standard algorithm library (45 algorithms, 7 categories)
-    │   └── INDEX.md       Catalog with name, category, complexity
-    └── examples/          30 reference implementations in 10 categories
-        ├── core/          4  (euclidean, linear/binary search, matrix multiply)
-        ├── sorting/       3
-        ├── graph/         3
-        ├── dynamic_programming/ 4
-        ├── backtracking/  4
-        ├── arrays/        7
-        ├── stack/         2
-        ├── heap/          1
-        ├── design/        1
-        └── intervals/     1
+    │   ├── build.ps1      Build + distribute script
+    │   ├── src/lib.rs     WASM bindgen exports
+    │   └── src/parser.rs   .ueas file parser
+    └── library/           Standard algorithm library (45 algorithms, 7 categories)
+        └── INDEX.md       Catalog with name, category, complexity
+├── tools/                 User-facing applications
+│   ├── ueas-cli/          `ueas` CLI (run, check, transpile, fmt)
+│   ├── ueas-dap/          VS Code Debug Adapter Protocol server
+│   ├── ueas-jupyter/      Jupyter Notebook Kernel wrapper
+│   ├── ueas-mcp/          MCP stdio server (local Claude Desktop)
+│   ├── ueas-mcp-cf/       MCP Cloudflare Worker (always-on edge)
+│   └── ueas-playground/   Browser-based bidirectional editor (Vercel)
+├── examples/              45 reference implementations in 10 algorithmic + 10 feature categories
+│   ├── core/              4
+│   ├── sorting/           3
+│   ├── graph/             3
+│   ├── dynamic_programming/ 4
+│   ├── backtracking/      4
+│   ├── arrays/            7
+│   ├── stack/             2
+│   ├── heap/              1
+│   ├── design/            1
+│   └── intervals/         1
+│   └── features/          15
 ```
 
 ### UI & Middleware Integrity Constraints
