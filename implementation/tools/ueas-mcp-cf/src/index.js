@@ -1,5 +1,4 @@
 // Cloudflare Worker — UEAS MCP Server v4.2.0
-// Always-on, globally distributed via Cloudflare edge.
 
 import init, { parse_ueas, transpile_ueas } from './wasm/ueas_wasm.js';
 
