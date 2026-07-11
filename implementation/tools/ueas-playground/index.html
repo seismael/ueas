@@ -42,8 +42,8 @@
       <div class="controls">
         <span class="pane-title">UEAS Pseudocode</span>
         <div class="spacer"></div>
-        <button class="primary" onclick="runExecute()">&#9654; Evaluate</button>
-        <button class="primary" onclick="simulateTranspile()">Transpile &rarr;</button>
+        <button class="primary" onclick="runExecute()" title="Execute the UEAS pseudocode to profile complexity, step count, and memory bound in the dashboard below">&#9654; Evaluate</button>
+        <button class="primary" onclick="simulateTranspile()" title="Translate the UEAS pseudocode into the target legacy language selected on the right">Transpile &rarr;</button>
       </div>
       <div id="editor-ueas" class="monaco-container"></div>
     </div>
@@ -61,7 +61,7 @@
           <option value="javascript">JavaScript ES2020</option>
         </select>
         <div class="spacer"></div>
-        <button class="audit-btn" onclick="reverseAudit()">&larr; Audit</button>
+        <button class="audit-btn" onclick="reverseAudit()" title="Reverse-engineer the target legacy code back into complexity-invariant UEAS pseudocode">&larr; Audit</button>
       </div>
       <div id="editor-target" class="monaco-container"></div>
     </div>
