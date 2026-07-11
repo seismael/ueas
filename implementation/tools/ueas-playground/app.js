@@ -1,7 +1,7 @@
-// UEAS Playground v4.5.0 — Bidirectional execution
-// WASM loaded via module script in index.html; editor always functional
+// UEAS Playground v4.5.0 — MCP-only client (Cloudflare Workers backend)
 
 let ueasEditor, targetEditor;
+const MCP_URL = 'https://ueas-mcp.seismael.workers.dev';
 
 require.config({
   paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }
@@ -114,239 +114,76 @@ function groupByCategory() {
   });
 }
 
-// Transpile simulations (used when WASM is unavailable)
-const transpileSimulations = {
-  python: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    return 'import math\n\ndef ' + name + '(' + params.join(', ') + '):\n    # UEAS Algorithm\n    pass\n';
-  },
-  rust: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    return 'fn ' + name + '(' + params.map(function(p) { return p + ': i64'; }).join(', ') + ') -> i64 {\n    // UEAS Algorithm\n    unimplemented!()\n}\n';
-  },
-  cpp: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    return '#include <cstdint>\n\nint64_t ' + name + '(' + params.map(function(p) { return 'int64_t ' + p; }).join(', ') + ') {\n    return 0;\n}\n';
-  },
-  java: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    return 'public static long ' + name + '(' + params.map(function(p) { return 'long ' + p; }).join(', ') + ') {\n    return 0L;\n}\n';
-  },
-  javascript: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    return 'function ' + name + '(' + params.join(', ') + ') {\n    return 0;\n}\n';
-  },
-  lean4: function(code) {
-    const name = extractName(code);
-    const params = extractParams(code);
-    return '/- Algorithm: ' + name + ' -/\ndef ' + name + ' (' + params.join(') (') + ') : \u2115 := 0\n';
-  },
-  tlaplus: function(code) {
-    const name = extractName(code);
-    return '---- MODULE ' + name + ' ----\nEXTENDS Naturals\n\n====\n';
-  },
-  latex: function(code) {
-    const name = extractName(code);
-    return '\\begin{algorithm}[H]\n\\SetAlgoLined\n\\caption{' + name + '}\n\\end{algorithm}';
-  }
-};
-
-function extractName(code) {
-  var m = code.match(/Algorithm\s+(\w+)/);
-  return m ? m[1] : 'unnamed';
-}
-
-function extractParams(code) {
-  var m = code.match(/Algorithm\s+\w+\(([^)]*)\)/);
-  return m ? m[1].split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }) : [];
-}
-
-function extractComplexity(code) {
-  var m = code.match(/Complexity:\s*"([^"]+)"/);
-  return m ? m[1] : '?';
+// MCP call helper
+async function callMCP(tool, args) {
+  const resp = await fetch(MCP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: Date.now() % 1000, method: 'tools/call',
+      params: { name: tool, arguments: args }
+    })
+  });
+  const data = await resp.json();
+  const text = data?.result?.content?.[0]?.text || '';
+  try { return JSON.parse(text); } catch(e) { return { status: 'error', error: text || e.message }; }
 }
 
 async function doTranspile() {
   var code = ueasEditor.getValue();
   var target = document.getElementById('target-select').value;
-  var useLocal = document.getElementById('hybrid-mode') && document.getElementById('hybrid-mode').checked;
-
-  if (useLocal) {
-    var wm = window.__ueasWasm;
-    if (wm && wm.transpile_ueas) {
-      try {
-        var output = wm.transpile_ueas(code, target);
-        targetEditor.setValue(output);
-        document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully transpiled to ' + target + '</span>';
-        return;
-      } catch (e) {
-        targetEditor.setValue('Transpile Error:\n' + (e.message || e.toString()) + '\n\nCheck syntax: indentation, missing keywords, type errors.');
-        return;
-      }
-    }
-  }
-
-  // Fallback to remote MCP transpile
+  targetEditor.setValue('// Transpiling via MCP...');
   try {
-    targetEditor.setValue('// Transpiling remotely...');
-    var resp = await fetch('https://ueas-mcp.seismael.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', id: 3, method: 'tools/call',
-        params: { name: 'transpile', arguments: { source: code, target: target } }
-      })
-    });
-    var data = await resp.json();
-    var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '';
-    if (text) {
-      try {
-        var parsed = JSON.parse(text);
-        if (parsed && parsed.source) {
-          targetEditor.setValue(parsed.source);
-        } else if (parsed && parsed.error) {
-          targetEditor.setValue('Transpile Error:\n' + parsed.error);
-        } else {
-          targetEditor.setValue(text);
-        }
-      } catch (e) {
-        targetEditor.setValue(text);
-      }
-      document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully remotely transpiled to ' + target + '</span>';
+    var result = await callMCP('transpile', { source: code, target: target });
+    if (result.source) {
+      targetEditor.setValue(result.source);
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Transpiled to ' + target + '</span>';
     } else {
-      var fn = transpileSimulations[target];
-      targetEditor.setValue(fn ? fn(code) : '// Remote transpile failed and no simulation available.');
+      targetEditor.setValue('Transpile Error:\n' + (result.error || 'Unknown error'));
     }
   } catch (e) {
-    targetEditor.setValue('Remote MCP unavailable:\n' + (e.message || e.toString()));
+    targetEditor.setValue('MCP connection error:\n' + (e.message || e.toString()));
   }
 }
 
-function simulateTranspile() {
-  doTranspile();
-}
+function simulateTranspile() { doTranspile(); }
 
 async function runExecute() {
   var code = ueasEditor.getValue();
   document.getElementById('exec-status').textContent = 'Running...';
   document.getElementById('exec-status').style.color = 'var(--text-dim)';
-
-  var result = null;
-  var useLocal = document.getElementById('hybrid-mode') && document.getElementById('hybrid-mode').checked;
-
-  // Try local WASM
-  if (useLocal) {
-    var wm = window.__ueasWasm;
-    if (wm && wm.execute_ueas && wm.parse_ueas) {
-    try {
-      var ast = wm.parse_ueas(code);
-      var execStr = wm.execute_ueas(code);
-      result = JSON.parse(execStr);
-      result.ast = ast;
-    } catch (e) {
-      console.warn('WASM execute failed, using remote', e);
-    }
+  try {
+    var result = await callMCP('execute', { source: code });
+    updateDashboard(result);
+    updateAstTree(result.ast || code);
+  } catch (e) {
+    document.getElementById('exec-status').textContent = 'MCP Error';
+    document.getElementById('exec-status').style.color = 'var(--red)';
   }
-  }
-
-  // Try remote MCP
-  if (!result) {
-    try {
-      var resp = await fetch('https://ueas-mcp.seismael.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 1, method: 'tools/call',
-          params: { name: 'execute', arguments: { source: code } }
-        })
-      });
-      var data = await resp.json();
-      var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '{}';
-      result = JSON.parse(text);
-    } catch (e) {
-      result = { status: 'error', exit_name: 'Remote MCP unavailable', step_count: 0 };
-    }
-  }
-
-  updateDashboard(result);
-  updateAstTree(result.ast || code);
 }
 
 async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
   var lang = document.getElementById('target-select').value;
-  
-  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Calling Cloudflare MCP audit...</span>';
-  document.getElementById('exec-status').textContent = 'Reverse-Auditing via LLM...';
-  document.getElementById('exec-status').style.color = 'var(--orange)';
+  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Auditing via MCP...</span>';
   ueasEditor.setValue('// Reverse-auditing in progress...');
-  
   try {
-    var resp = await fetch('https://ueas-mcp.seismael.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', id: 2, method: 'tools/call',
-        params: { name: 'audit', arguments: { source: legacyCode, language: lang } }
-      })
-    });
-    var data = await resp.json();
-    var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '{}';
-    
-    try {
-          var report = JSON.parse(text);
-          
-          var pseudocode = report.ueas_pseudocode;
-          if (!pseudocode && report.ueas_mappings && report.ueas_mappings.length > 0) {
-              pseudocode = report.ueas_mappings[0].ueas_equivalent;
-          }
-          if (!pseudocode && report.recommendations && report.recommendations.length > 0) {
-              pseudocode = '// The AI auditor did not extract any valid algorithm pseudocode.\n// Recommendations:\n// - ' + report.recommendations.join('\n// - ');
-          }
-          ueasEditor.setValue(pseudocode || '// Failed to extract pseudocode. Ensure your target code contains valid functions.');
-          
-          var complexityVal = report.complexity_validated;
-          if (complexityVal === undefined && report.complexity_estimates && report.complexity_estimates.length > 0) {
-              complexityVal = report.complexity_estimates.map(function(e) { return e.function + ' (' + e.estimated_complexity + ')'; }).join(', ');
-          }
-          if (complexityVal === undefined || complexityVal === '') {
-              complexityVal = 'None';
-          }
-          
-          var reportHtml = '<div><strong>Complexity Validated:</strong> ' + complexityVal + '</div>';
-          if (report.io_violations && report.io_violations.length > 0) {
-              var violationsText = report.io_violations.map(function(v) {
-                  if (typeof v === 'object' && v !== null) {
-                      return (v.pattern || '') + ' (line ' + (v.line !== undefined ? v.line : '?') + ')';
-                  }
-                  return String(v);
-              }).join(', ');
-              reportHtml += '<div style="color:var(--red)"><strong>I/O Violations:</strong> ' + violationsText + '</div>';
-          } else {
-              reportHtml += '<div style="color:var(--green)"><strong>I/O Violations:</strong> None</div>';
-          }
-          if (report.fuzzing_failed) {
-              reportHtml += '<div style="color:var(--red)"><strong>Fuzzing:</strong> Failed (' + report.fuzz_error + ')</div>';
-          } else {
-              reportHtml += '<div style="color:var(--green)"><strong>Fuzzing:</strong> Passed (10,000 iterations)</div>';
-          }
-          document.getElementById('audit-report').innerHTML = reportHtml;
-          
-          // Auto-evaluate the newly generated UEAS
-          runExecute();
-      } catch (e) {
-          // Fallback for markdown output
-          ueasEditor.setValue(text);
-          document.getElementById('audit-report').innerHTML = 'Parsed raw text fallback.';
-          runExecute();
-      }
+    var result = await callMCP('audit', { source: legacyCode, language: lang });
+    // Extract UEAS pseudocode from audit result
+    var pseudocode = result.ueas_pseudocode;
+    if (!pseudocode && result.ueas_mappings && result.ueas_mappings.length)
+      pseudocode = result.ueas_mappings[0].ueas_equivalent;
+    if (!pseudocode && result.recommendations && result.recommendations.length)
+      pseudocode = '// ' + result.recommendations.join('\n// ');
+    ueasEditor.setValue(pseudocode || '// No algorithm pseudocode extracted.');
+    var cpx = result.complexity_estimates?.map(e => e.function + ' (' + e.estimated_complexity + ')').join(', ') || 'None';
+    var html = '<div><strong>Complexity:</strong> ' + cpx + '</div>';
+    html += '<div style="color:' + (result.io_violations?.length ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + (result.io_violations?.length || 0) + '</div>';
+    html += '<div style="color:var(--green)"><strong>Status:</strong> ' + (result.status || 'ok') + '</div>';
+    document.getElementById('audit-report').innerHTML = html;
+    runExecute();
   } catch (e) {
-    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">MCP connection failed.</span>';
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit failed: ' + (e.message || e) + '</span>';
   }
 }
 
@@ -420,8 +257,10 @@ function renderAstNode(node, depth) {
   return html;
 }
 
-function toggleHybrid() {
-  // handled in runExecute
+// Expose to global scope for onclick handlers
+window.copyToClipboard = copyToClipboard;
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  setTimeout(function() { if(ueasEditor) ueasEditor.layout(); if(targetEditor) targetEditor.layout(); }, 220);
 }
 
 function toggleSidebar() {
@@ -606,6 +445,5 @@ window.simulateTranspile = simulateTranspile;
 window.runExecute = runExecute;
 window.reverseAudit = reverseAudit;
 window.updateTargetLanguage = updateTargetLanguage;
-window.toggleHybrid = toggleHybrid;
 window.toggleSidebar = toggleSidebar;
 window.toggleBottomPanel = toggleBottomPanel;
