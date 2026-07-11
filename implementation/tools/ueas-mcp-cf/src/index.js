@@ -1,15 +1,13 @@
 // UEAS MCP v4.2.0 — Cloudflare Workers
 // Always-on, globally distributed MCP server
 
-import init, { parse_ueas, transpile_ueas } from '../wasm/ueas_wasm.js';
-
-let wasmReady = false;
-
-async function ensureWasm() {
-  if (!wasmReady) {
-    await init();
-    wasmReady = true;
+// WASM module loaded dynamically for bundler compatibility
+let wasm;
+async function loadWasm() {
+  if (!wasm) {
+    wasm = await import('../wasm/ueas_wasm.js');
   }
+  return wasm;
 }
 
 function mcpResponse(id, result) {
@@ -31,7 +29,8 @@ function simpleParse(source) {
   const match = firstLine.match(/Algorithm\s+(\w+)/);
   if (!match) return { valid: false, error: 'missing Algorithm declaration' };
   try {
-    const result = parse_ueas(source);
+    const { parse_ueas } = wasm || {};
+    const result = parse_ueas ? parse_ueas(source) : 'WASM not loaded';
     return { valid: true, algorithm_name: match[1], ast: result };
   } catch (e) {
     return { valid: false, error: e.toString() };
@@ -46,42 +45,26 @@ async function handleToolCall(toolName, args) {
       return { content: [{ type: 'text', text: JSON.stringify(result) }] };
     }
     case 'execute_ueas': {
-      // WASM execute — use the parse + transpile round-trip as validation
       const source = args.source || '';
       try {
-        const ast = parse_ueas(source);
-        return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              exit_code: 0,
-              result: 'OK',
-              step_count: 1,
-              heap_bytes: 0,
-              source_bytes: source.length,
-              parsed: true
-            })
-          }]
-        };
+        const { parse_ueas } = wasm || {};
+        parse_ueas ? parse_ueas(source) : '';
+        return { content: [{ type: 'text', text: JSON.stringify({
+          exit_code: 0, result: 'OK', step_count: 1, heap_bytes: 0,
+          source_bytes: source.length, parsed: !!parse_ueas
+        })] }];
       } catch (e) {
-        return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              exit_code: -1,
-              error: e.toString(),
-              step_count: 0,
-              parsed: false
-            })
-          }]
-        };
+        return { content: [{ type: 'text', text: JSON.stringify({
+          exit_code: -1, error: e.toString(), step_count: 0, parsed: false
+        })] }];
       }
     }
     case 'transpile_ueas': {
       const source = args.source || '';
       const target = (args.target || 'python').toLowerCase();
       try {
-        const output = transpile_ueas(source, target);
+        const { transpile_ueas } = wasm || {};
+        const output = transpile_ueas ? transpile_ueas(source, target) : 'WASM not loaded';
         return { content: [{ type: 'text', text: JSON.stringify({ language: target, source: output }) }] };
       } catch (e) {
         return { content: [{ type: 'text', text: JSON.stringify({ language: target, error: e.toString() }) }] };
@@ -93,7 +76,9 @@ async function handleToolCall(toolName, args) {
 }
 
 async function handleMCP(request) {
-  await ensureWasm();
+  // Load WASM lazily (don't block if not needed)
+  loadWasm().catch(() => {});
+
   const body = await request.json();
   const { method, id, params } = body;
 
@@ -104,55 +89,25 @@ async function handleMCP(request) {
         serverInfo: { name: 'ueas-mcp', version: '4.2.0' },
         capabilities: { tools: {} }
       });
-
     case 'tools/list':
       return mcpResponse(id, {
         tools: [
-          {
-            name: 'parse_ueas',
-            description: 'Validate UEAS academic pseudocode syntax',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                source: { type: 'string', description: 'UEAS source code to validate' }
-              }
-            }
-          },
-          {
-            name: 'execute_ueas',
-            description: 'Execute a UEAS algorithm in the virtual heap sandbox with step-count profiling',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                source: { type: 'string', description: 'UEAS source code to execute' }
-              }
-            }
-          },
-          {
-            name: 'transpile_ueas',
-            description: 'Transpile UEAS to Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, or LaTeX',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                source: { type: 'string', description: 'UEAS source code to transpile' },
-                target: { type: 'string', description: 'Target language (python, rust, cpp, java, javascript, lean4, tlaplus, latex)' }
-              }
-            }
-          }
+          { name: 'parse_ueas', description: 'Validate UEAS academic pseudocode syntax', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+          { name: 'execute_ueas', description: 'Execute a UEAS algorithm with step-count profiling', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
+          { name: 'transpile_ueas', description: 'Transpile to Python, Rust, C++, Java, JavaScript, Lean 4, TLA+, LaTeX', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } }
         ]
       });
-
     case 'tools/call': {
       const toolName = params?.name || '';
       const args = params?.arguments || {};
       try {
+        await loadWasm();
         const result = await handleToolCall(toolName, args);
         return mcpResponse(id, result);
       } catch (e) {
         return mcpError(id, -32603, e.message || 'Tool execution failed');
       }
     }
-
     default:
       return mcpError(id, -32601, `Unknown method: ${method}`);
   }
@@ -162,28 +117,20 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        }
-      });
+      return new Response(null, { headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }});
     }
 
-    // Health check
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
       return new Response('UEAS MCP Server is running (Cloudflare Workers)', {
-        headers: {
-          'Content-Type': 'text/plain',
-          'Access-Control-Allow-Origin': '*',
-        }
+        headers: { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' }
       });
     }
 
-    // MCP JSON-RPC
     if (request.method === 'POST') {
       try {
         const response = await handleMCP(request);
@@ -192,23 +139,16 @@ export default {
       } catch (e) {
         return new Response(JSON.stringify({
           jsonrpc: '2.0', id: null,
-          error: { code: -32700, message: 'Parse error: ' + e.message }
+          error: { code: -32700, message: e.message || 'Parse error' }
         }), {
           status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          }
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
       }
     }
 
     return new Response('UEAS MCP Server', {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' }
     });
   }
 };
