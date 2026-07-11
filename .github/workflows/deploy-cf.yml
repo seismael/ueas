@@ -4,6 +4,7 @@ on:
     branches: [master]
     paths:
       - 'implementation/tools/ueas-mcp-cf/**'
+      - '.github/workflows/deploy-cf.yml'
 
 jobs:
   deploy:
