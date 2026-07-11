@@ -372,6 +372,10 @@ impl PythonTarget {
                 let val = node["value"].as_str().unwrap_or("0");
                 output.push_str(val);
             }
+            "StringLiteral" => {
+                let val = node["value"].as_str().unwrap_or("");
+                output.push_str(&format!("\"{}\"", val));
+            }
             "RealLiteral" => {
                 let val = node["value"].as_f64().unwrap_or(0.0);
                 output.push_str(&val.to_string());
@@ -801,6 +805,10 @@ impl RustTarget {
             "RealLiteral" => {
                 let val = node["value"].as_f64().unwrap_or(0.0);
                 output.push_str(&format!("{}_f64", val));
+            }
+            "StringLiteral" => {
+                let val = node["value"].as_str().unwrap_or("");
+                output.push_str(&format!("\"{}\"", val));
             }
             "BooleanLiteral" => {
                 let val = node["value"].as_bool().unwrap_or(false);
