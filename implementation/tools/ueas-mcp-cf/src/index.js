@@ -2,7 +2,7 @@
 import wasmBin from './ueas_wasm_bg.wasm';
 import { initSync, parse_ueas, transpile_ueas, verify_crypto, profile_hardware, profile_complexity, profile_memory } from './ueas_wasm.js';
 
-initSync(wasmBin);
+try { initSync(wasmBin); } catch(e) { console.error('WASM init failed:', e); }
 
 function json(r) { return new Response(JSON.stringify(r), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }); }
 function err(id, code, msg) { return json({ jsonrpc: '2.0', id, error: { code, message: msg } }); }
