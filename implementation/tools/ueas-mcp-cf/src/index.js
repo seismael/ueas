@@ -2,7 +2,7 @@
 
 let wasm;
 async function loadWasm() {
-  if (!wasm) wasm = await import('../wasm/ueas_wasm.js');
+  if (!wasm) wasm = await import('./ueas_wasm.js');
   return wasm;
 }
 
