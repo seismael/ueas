@@ -4,6 +4,8 @@
   "private": true,
   "description": "UEAS MCP Server — Cloudflare Worker deployment",
   "scripts": {
+    "build:wasm": "powershell.exe ../build_wasm.ps1",
+    "predeploy": "npm run build:wasm",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   }
