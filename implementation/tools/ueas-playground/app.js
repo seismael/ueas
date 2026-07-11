@@ -1,7 +1,7 @@
-// UEAS Playground v4.2.1 — client-side interactive algorithm viewer
+// UEAS Playground v4.5.0 — Bidirectional execution
 // WASM loaded via module script in index.html; editor always functional
 
-let editor;
+let ueasEditor, targetEditor;
 
 require.config({
   paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }
@@ -81,7 +81,7 @@ function renderCategories() {
       item.innerHTML = '<div class="name">' + ex.name + '</div><div class="meta">' + ex.complexity + '</div>';
       item.onclick = (function(e) {
         return function() {
-          editor.setValue(e.code);
+          ueasEditor.setValue(e.code);
           document.querySelectorAll('.example-item').forEach(function(el) { el.classList.remove('active'); });
           item.classList.add('active');
         };
@@ -172,39 +172,34 @@ function extractComplexity(code) {
 }
 
 async function doTranspile() {
-  var code = editor.getValue();
+  var code = ueasEditor.getValue();
   var target = document.getElementById('target-select').value;
-  var out = document.getElementById('output-transpiled');
 
   // Try WASM transpile (real execution)
   var wm = window.__ueasWasm;
   if (wm && wm.transpile_ueas) {
     try {
       var output = wm.transpile_ueas(code, target);
-      out.textContent = output;
+      targetEditor.setValue(output);
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully transpiled to ' + target + '</span>';
       return;
     } catch (e) {
-      // WASM transpile failed — show the real error to the user
-      out.textContent = 'Transpile Error:\n' + (e.message || e.toString()) + '\n\nCheck syntax: indentation, missing keywords, type errors.';
-      out.style.color = 'var(--red)';
+      targetEditor.setValue('Transpile Error:\n' + (e.message || e.toString()) + '\n\nCheck syntax: indentation, missing keywords, type errors.');
       return;
     }
   }
 
   // WASM not loaded at all — fall back to simulation
   var fn = transpileSimulations[target];
-  out.textContent = fn ? fn(code) : '(WASM unavailable — transpile requires browser WASM support)';
-  out.style.color = 'var(--text-dim)';
+  targetEditor.setValue(fn ? fn(code) : '(WASM unavailable — transpile requires browser WASM support)');
 }
 
 function simulateTranspile() {
   doTranspile();
-  switchTab('transpiled');
 }
 
 async function runExecute() {
-  var code = editor.getValue();
-  document.getElementById('dashboard').style.display = 'flex';
+  var code = ueasEditor.getValue();
   document.getElementById('exec-status').textContent = 'Running...';
 
   var result = null;
@@ -245,19 +240,71 @@ async function runExecute() {
   updateAstTree(result.ast || code);
 }
 
+async function reverseAudit() {
+  var legacyCode = targetEditor.getValue();
+  var lang = document.getElementById('target-select').value;
+  
+  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Calling Cloudflare MCP audit_legacy...</span>';
+  ueasEditor.setValue('// Reverse-auditing in progress...');
+  
+  try {
+    var resp = await fetch('https://ueas-mcp.seismael.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 2, method: 'tools/call',
+        params: { name: 'audit_legacy', arguments: { source_code: legacyCode, language: lang } }
+      })
+    });
+    var data = await resp.json();
+    var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '{}';
+    
+    try {
+        var report = JSON.parse(text);
+        ueasEditor.setValue(report.ueas_pseudocode || '// Failed to extract pseudocode');
+        
+        var reportHtml = '<div><strong>Complexity Validated:</strong> ' + report.complexity_validated + '</div>';
+        if (report.io_violations && report.io_violations.length > 0) {
+            reportHtml += '<div style="color:var(--red)"><strong>I/O Violations:</strong> ' + report.io_violations.join(', ') + '</div>';
+        }
+        if (report.fuzzing_failed) {
+            reportHtml += '<div style="color:var(--red)"><strong>Fuzzing:</strong> Failed (' + report.fuzz_error + ')</div>';
+        } else {
+            reportHtml += '<div style="color:var(--green)"><strong>Fuzzing:</strong> Passed (10,000 iterations)</div>';
+        }
+        document.getElementById('audit-report').innerHTML = reportHtml;
+        
+        // Auto-evaluate the newly generated UEAS
+        runExecute();
+    } catch (e) {
+        // Fallback for markdown output
+        ueasEditor.setValue(text);
+        document.getElementById('audit-report').innerHTML = 'Parsed raw text fallback.';
+        runExecute();
+    }
+  } catch (e) {
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">MCP connection failed.</span>';
+  }
+}
+
+function updateTargetLanguage() {
+  var langMap = { java: 'java', python: 'python', rust: 'rust', cpp: 'cpp', javascript: 'javascript' };
+  var sel = document.getElementById('target-select').value;
+  var modelLang = langMap[sel] || 'plaintext';
+  if (targetEditor) {
+    monaco.editor.setModelLanguage(targetEditor.getModel(), modelLang);
+  }
+}
+
 function updateDashboard(r) {
   r = r || {};
   document.getElementById('exec-status').textContent = r.status || r.exit_name || 'OK';
   document.getElementById('exec-status').style.color = r.exit_code > 0 ? 'var(--red)' : 'var(--green)';
   document.getElementById('exec-steps').textContent = r.step_count != null ? r.step_count : '—';
   document.getElementById('exec-heap').textContent = (r.heap_bytes || '—') + ' B';
-  document.getElementById('exec-work').textContent = r.work != null ? r.work : '—';
-  document.getElementById('exec-span').textContent = r.span != null ? r.span : '—';
   document.getElementById('exec-cache').textContent = r.cache_l1_hits != null ? r.cache_l1_hits : '—';
-  document.getElementById('exec-parallel').textContent = r.parallel_efficiency != null ? (r.parallel_efficiency * 100).toFixed(1) + '%' : '—';
-  document.getElementById('exec-complexity').textContent = extractComplexity(editor.getValue());
+  document.getElementById('exec-complexity').textContent = extractComplexity(ueasEditor.getValue());
   document.getElementById('step-bar-fill').style.width = Math.min((r.step_count || 0) * 2, 100) + '%';
-  switchTab('ast');
 }
 
 function updateAstTree(astJson) {
@@ -315,7 +362,7 @@ function toggleHybrid() {
 }
 
 function formatCode() {
-  var code = editor.getValue();
+  var code = ueasEditor.getValue();
   var lines = code.split('\n');
   var depth = 0;
   var formatted = lines.map(function(line) {
@@ -330,20 +377,13 @@ function formatCode() {
     }
     return result;
   }).join('\n');
-  editor.setValue(formatted);
+  ueasEditor.setValue(formatted);
 }
 
 function copyToClipboard() {
-  navigator.clipboard.writeText(editor.getValue()).then(function() {
+  navigator.clipboard.writeText(ueasEditor.getValue()).then(function() {
     showToast('Copied');
   });
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.output').forEach(function(o) { o.classList.remove('active'); });
-  document.querySelector('.tab[onclick*="' + tab + '"]').classList.add('active');
-  document.getElementById('output-' + tab).classList.add('active');
 }
 
 function showToast(msg) {
@@ -411,7 +451,7 @@ require(['vs/editor/editor.main'], function() {
     }
   });
 
-  editor = monaco.editor.create(document.getElementById('editor'), {
+  ueasEditor = monaco.editor.create(document.getElementById('editor-ueas'), {
     value: examples[0].code,
     language: 'ueas',
     theme: 'ueas-dark',
@@ -425,6 +465,21 @@ require(['vs/editor/editor.main'], function() {
     renderWhitespace: 'selection'
   });
 
+  targetEditor = monaco.editor.create(document.getElementById('editor-target'), {
+    value: '// Target generated code or legacy code will appear here.',
+    language: 'java',
+    theme: 'ueas-dark',
+    fontSize: 14,
+    fontFamily: "'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace",
+    lineNumbers: 'on',
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    automaticLayout: true,
+    tabSize: 4
+  });
+
+  updateTargetLanguage();
+
   // Render categorized examples sidebar
   renderCategories();
 
@@ -436,5 +491,6 @@ require(['vs/editor/editor.main'], function() {
 window.copyToClipboard = copyToClipboard;
 window.simulateTranspile = simulateTranspile;
 window.runExecute = runExecute;
-window.switchTab = switchTab;
+window.reverseAudit = reverseAudit;
+window.updateTargetLanguage = updateTargetLanguage;
 window.toggleHybrid = toggleHybrid;

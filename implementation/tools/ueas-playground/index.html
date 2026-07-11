@@ -14,9 +14,8 @@
     <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
   </div>
   <div class="badges">
-    <span class="badge">v4.2.1</span>
-    <span class="badge">8 targets</span>
-    <span class="badge">351 tests</span>
+    <span class="badge">v4.5.0</span>
+    <span class="badge">Bidirectional</span>
     <label class="hybrid-toggle" title="Toggle between local WASM and remote Cloudflare MCP">
       <input type="checkbox" id="hybrid-mode" onchange="toggleHybrid()">
       <span class="toggle-label">Local</span>
@@ -24,7 +23,7 @@
   </div>
 </header>
 
-<main>
+<main class="layout-grid">
   <aside class="sidebar">
     <div class="sidebar-scroll" id="sidebar-scroll"></div>
     <div class="sidebar-footer">
@@ -34,49 +33,55 @@
     </div>
   </aside>
 
-  <section class="editor-panel">
-    <div id="editor"></div>
-    <div class="controls">
-      <select id="target-select">
-        <option value="python">Python 3.11</option>
-        <option value="rust">Rust 2021</option>
-        <option value="cpp">C++17</option>
-        <option value="java">Java 17</option>
-        <option value="javascript">JavaScript ES2020</option>
-        <option value="lean4">Lean 4 (proof)</option>
-        <option value="tlaplus">TLA+ (model check)</option>
-        <option value="latex">LaTeX algorithm2e</option>
-      </select>
-      <input type="text" id="exec-inputs" placeholder='JSON inputs e.g. {"a":1,"b":2}'>
-      <button onclick="copyToClipboard()">Copy</button>
-      <button class="primary" onclick="runExecute()">&#9654; Run</button>
-      <button class="primary" onclick="simulateTranspile()">Transpile &darr;</button>
-    </div>
-
-    <div id="dashboard" class="dashboard" style="display:none">
-      <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
-      <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
-      <div class="dash-card"><span class="dash-label">Heap</span><span class="dash-value" id="exec-heap">—</span></div>
-      <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
-      <div class="dash-card"><span class="dash-label">Work</span><span class="dash-value" id="exec-work">—</span></div>
-      <div class="dash-card"><span class="dash-label">Span</span><span class="dash-value" id="exec-span">—</span></div>
-      <div class="dash-card"><span class="dash-label">Cache</span><span class="dash-value" id="exec-cache">—</span></div>
-      <div class="dash-card"><span class="dash-label">Par Eff</span><span class="dash-value" id="exec-parallel">—</span></div>
-      <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
-    </div>
-
-    <div class="output-panel">
-      <div class="output-tabs">
-        <span class="tab active" onclick="switchTab('transpiled')">Transpiled</span>
-        <span class="tab" onclick="switchTab('ast')">AST Tree</span>
+  <div class="editor-container">
+    <div class="editor-pane ueas-pane">
+      <div class="controls">
+        <span class="pane-title">UEAS Pseudocode</span>
+        <div class="spacer"></div>
+        <button class="primary" onclick="runExecute()">&#9654; Evaluate</button>
+        <button class="primary" onclick="simulateTranspile()">Transpile &rarr;</button>
       </div>
-      <pre id="output-transpiled" class="output active">Select a target and click Transpile to see generated code.</pre>
-      <div id="output-ast" class="output"><div class="ast-tree" id="ast-tree">Click Run to see the parsed AST tree.</div></div>
+      <div id="editor-ueas" class="monaco-container"></div>
     </div>
-  </section>
+
+    <div class="editor-pane target-pane">
+      <div class="controls">
+        <span class="pane-title">Target / Legacy Code</span>
+        <select id="target-select" onchange="updateTargetLanguage()">
+          <option value="java">Java 17</option>
+          <option value="python">Python 3.11</option>
+          <option value="rust">Rust 2021</option>
+          <option value="cpp">C++17</option>
+          <option value="javascript">JavaScript ES2020</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="audit-btn" onclick="reverseAudit()">&larr; Reverse-Audit to UEAS</button>
+      </div>
+      <div id="editor-target" class="monaco-container"></div>
+    </div>
+  </div>
 </main>
 
-<footer><p>UEAS is released under the <a href="https://github.com/seismael/ueas/blob/main/LICENSE">Apache License 2.0</a>.</p></footer>
+<footer class="fixed-bottom">
+  <div id="dashboard" class="dashboard">
+    <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
+    <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
+    <div class="dash-card"><span class="dash-label">Heap</span><span class="dash-value" id="exec-heap">—</span></div>
+    <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
+    <div class="dash-card"><span class="dash-label">Cache L1</span><span class="dash-value" id="exec-cache">—</span></div>
+    <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
+  </div>
+  <div class="bottom-split">
+    <div class="metrics-panel">
+      <div class="panel-header">Mathematical Audit Report</div>
+      <div id="audit-report" class="audit-report">Run Evaluate or Reverse-Audit to generate report.</div>
+    </div>
+    <div class="ast-panel">
+      <div class="panel-header">Interactive AST</div>
+      <div id="ast-tree" class="ast-tree">AST will appear here.</div>
+    </div>
+  </div>
+</footer>
 
 <script src="app.js"></script>
 <script type="module">

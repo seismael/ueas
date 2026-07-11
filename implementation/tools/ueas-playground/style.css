@@ -4,6 +4,7 @@
   --bg: #0d1117; --surface: #161b22; --border: #30363d;
   --text: #c9d1d9; --text-dim: #8b949e; --accent: #58a6ff;
   --accent-dim: #1f6feb; --green: #3fb950; --orange: #d2991d; --red: #f85149;
+  --purple: #bc8cff;
   --code-font: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
 }
 
@@ -25,10 +26,12 @@ header {
 .badges { display: flex; gap: 8px; align-items: center; }
 .badge { background: var(--border); color: var(--text-dim); font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; font-family: var(--code-font); }
 
-main {
+/* Main Grid Layout */
+.layout-grid {
   flex: 1; display: flex; overflow: hidden; min-height: 0;
 }
 
+/* Sidebar */
 .sidebar {
   width: 260px; flex-shrink: 0;
   background: var(--surface); border-right: 1px solid var(--border);
@@ -69,34 +72,52 @@ main {
 .sidebar-footer a { color: var(--text-dim); text-decoration: none; font-size: 0.7rem; }
 .sidebar-footer a:hover { color: var(--accent); }
 
-.editor-panel {
+/* Editor Container (Top-Middle and Top-Right) */
+.editor-container {
+  flex: 1; display: flex; min-width: 0;
+}
+.editor-pane {
   flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
 }
-#editor { flex: 1; min-height: 0; }
+.ueas-pane {
+  border-right: 1px solid var(--border);
+}
 
 .controls {
   flex-shrink: 0; display: flex; gap: 8px; padding: 8px 16px;
-  background: var(--surface); border-top: 1px solid var(--border); align-items: center;
+  background: var(--surface); border-bottom: 1px solid var(--border); align-items: center;
 }
-.controls select, .controls button, #exec-inputs {
+.pane-title {
+  font-size: 0.8rem; font-weight: 600; color: var(--text-dim);
+}
+.spacer { flex: 1; }
+.controls select, .controls button {
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
   padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-family: var(--code-font);
   outline: none;
 }
 .controls select { cursor: pointer; }
-#exec-inputs { width: 180px; }
-#exec-inputs::placeholder { color: var(--text-dim); }
 .controls button { cursor: pointer; transition: background 0.15s; background: var(--border); }
-.controls button:hover { background: var(--accent-dim); }
+.controls button:hover { background: var(--accent-dim); border-color: var(--accent); }
 .controls button.primary { background: var(--green); color: var(--bg); border-color: var(--green); font-weight: 500; }
 .controls button.primary:hover { opacity: 0.9; }
+.controls button.audit-btn { background: var(--purple); color: var(--bg); border-color: var(--purple); font-weight: 500; }
+.controls button.audit-btn:hover { opacity: 0.9; }
+
+.monaco-container { flex: 1; min-height: 0; }
+
+/* Fixed Bottom Footer */
+.fixed-bottom {
+  flex-shrink: 0; display: flex; flex-direction: column;
+  height: 250px; border-top: 1px solid var(--border); background: var(--surface);
+}
 
 .dashboard {
   flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--border);
 }
 .dash-card {
-  background: var(--bg); border: 1px solid var(--border);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 6px; padding: 4px 10px; min-width: 80px; text-align: center;
 }
 .dash-label { display: block; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
@@ -105,25 +126,23 @@ main {
 .step-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 3px; }
 .step-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; width: 0%; }
 
-.output-panel {
-  flex-shrink: 0; border-top: 1px solid var(--border); background: var(--surface);
+.bottom-split {
+  flex: 1; display: flex; min-height: 0;
 }
-.output-tabs { display: flex; border-bottom: 1px solid var(--border); }
-.output-tabs .tab {
-  padding: 6px 14px; font-size: 0.7rem; cursor: pointer; color: var(--text-dim);
-  border-bottom: 2px solid transparent; transition: color 0.15s;
+.metrics-panel, .ast-panel {
+  flex: 1; display: flex; flex-direction: column; min-width: 0;
 }
-.output-tabs .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.output { display: none; padding: 10px 16px; margin: 0; font-family: var(--code-font); font-size: 0.78rem; line-height: 1.5; color: var(--text); overflow: auto; max-height: 180px; }
-.output.active { display: block; }
+.metrics-panel { border-right: 1px solid var(--border); }
+.panel-header {
+  padding: 6px 16px; font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
+  border-bottom: 1px solid var(--border); background: var(--bg); text-transform: uppercase; letter-spacing: 0.05em;
+}
 
-footer {
-  flex-shrink: 0; padding: 8px 20px; background: var(--surface);
-  border-top: 1px solid var(--border); font-size: 0.65rem; color: var(--text-dim); text-align: center;
+.audit-report, .ast-tree {
+  flex: 1; overflow: auto; padding: 10px 16px; font-family: var(--code-font); font-size: 0.78rem; line-height: 1.5; color: var(--text);
 }
-footer a { color: var(--accent); text-decoration: none; }
 
-.ast-tree { font-family: var(--code-font); font-size: 0.78rem; line-height: 1.6; padding: 10px 16px; }
+/* AST Nodes */
 .ast-node { padding-left: 18px; border-left: 1px solid var(--border); margin-left: 3px; }
 .ast-key { color: var(--accent); font-weight: 600; }
 .ast-kind { color: var(--orange); }
@@ -138,7 +157,13 @@ footer a { color: var(--accent); text-decoration: none; }
 .toggle-label { font-size: 0.65rem; color: var(--text-dim); padding: 2px 8px; border-radius: 10px; background: var(--border); transition: all 0.2s; }
 .hybrid-toggle input:checked + .toggle-label { color: var(--accent); background: var(--accent-dim); }
 
+@media (max-width: 1024px) {
+  .editor-container { flex-direction: column; }
+  .ueas-pane { border-right: none; border-bottom: 1px solid var(--border); }
+}
 @media (max-width: 768px) {
-  main { flex-direction: column; }
+  main.layout-grid { flex-direction: column; }
   .sidebar { width: 100%; max-height: 180px; flex-shrink: 0; }
+  .bottom-split { flex-direction: column; }
+  .metrics-panel { border-right: none; border-bottom: 1px solid var(--border); }
 }
