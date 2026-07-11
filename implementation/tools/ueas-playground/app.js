@@ -178,9 +178,9 @@ async function doTranspile() {
 
   if (useLocal) {
     var wm = window.__ueasWasm;
-    if (wm && wm.transpile) {
+    if (wm && wm.transpile_ueas) {
       try {
-        var output = wm.transpile(code, target);
+        var output = wm.transpile_ueas(code, target);
         targetEditor.setValue(output);
         document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully transpiled to ' + target + '</span>';
         return;
@@ -209,6 +209,8 @@ async function doTranspile() {
         var parsed = JSON.parse(text);
         if (parsed && parsed.source) {
           targetEditor.setValue(parsed.source);
+        } else if (parsed && parsed.error) {
+          targetEditor.setValue('Transpile Error:\n' + parsed.error);
         } else {
           targetEditor.setValue(text);
         }
