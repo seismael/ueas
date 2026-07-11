@@ -257,11 +257,6 @@ function renderAstNode(node, depth) {
   return html;
 }
 
-// Expose to global scope for onclick handlers
-window.copyToClipboard = copyToClipboard;
-  document.getElementById('sidebar').classList.toggle('collapsed');
-  setTimeout(function() { if(ueasEditor) ueasEditor.layout(); if(targetEditor) targetEditor.layout(); }, 220);
-}
 
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');

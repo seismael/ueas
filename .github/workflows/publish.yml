@@ -28,11 +28,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    defaults: { run: { working-directory: implementation } }
+    defaults: { run: { working-directory: tools/ueas-cli } }
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release -p ueas-cli
+      - run: cargo build --release
       - uses: softprops/action-gh-release@v2
         with:
-          files: implementation/target/release/ueas*
+          files: tools/ueas-cli/target/release/ueas*
