@@ -125,7 +125,13 @@ async function callMCP(tool, args) {
     })
   });
   const data = await resp.json();
-  const text = data?.result?.content?.[0]?.text || '';
+  // MCP error response uses 'error' field at top level
+  if (data.error) {
+    return { status: 'error', error: data.error.message || 'MCP error', code: data.error.code };
+  }
+  // MCP success response uses 'result' with 'content' array
+  const text = data?.result?.content?.[0]?.text;
+  if (!text) return { status: 'error', error: 'Empty response from MCP server' };
   try { return JSON.parse(text); } catch(e) { return { status: 'error', error: text || e.message }; }
 }
 
@@ -154,8 +160,8 @@ async function runExecute() {
   document.getElementById('exec-status').style.color = 'var(--text-dim)';
   try {
     var result = await callMCP('execute', { source: code });
-    updateDashboard(result);
-    updateAstTree(result.ast || code);
+  updateDashboard(result);
+  updateAstTree(code);
   } catch (e) {
     document.getElementById('exec-status').textContent = 'MCP Error';
     document.getElementById('exec-status').style.color = 'var(--red)';
@@ -164,24 +170,25 @@ async function runExecute() {
 
 async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
-  var lang = document.getElementById('target-select').value;
-  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Auditing via MCP...</span>';
+  document.getElementById('audit-report').innerHTML = 'Auditing via MCP...';
   ueasEditor.setValue('// Reverse-auditing in progress...');
   try {
-    var result = await callMCP('audit', { source: legacyCode, language: lang });
-    // Extract UEAS pseudocode from audit result
-    var pseudocode = result.ueas_pseudocode;
-    if (!pseudocode && result.ueas_mappings && result.ueas_mappings.length)
+    var result = await callMCP('audit', { source: legacyCode });
+    if (result.status === 'error') {
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit failed: ' + (result.error || 'Unknown error') + '</span>';
+      return;
+    }
+    var pseudocode = '';
+    if (result.ueas_mappings && result.ueas_mappings.length)
       pseudocode = result.ueas_mappings[0].ueas_equivalent;
-    if (!pseudocode && result.recommendations && result.recommendations.length)
+    else if (result.recommendations && result.recommendations.length)
       pseudocode = '// ' + result.recommendations.join('\n// ');
     ueasEditor.setValue(pseudocode || '// No algorithm pseudocode extracted.');
-    var cpx = result.complexity_estimates?.map(e => e.function + ' (' + e.estimated_complexity + ')').join(', ') || 'None';
+    var cpx = result.complexity_estimates ? result.complexity_estimates.map(function(e) { return e.function + ' (' + e.estimated_complexity + ')'; }).join(', ') : 'None';
     var html = '<div><strong>Complexity:</strong> ' + cpx + '</div>';
-    html += '<div style="color:' + (result.io_violations?.length ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + (result.io_violations?.length || 0) + '</div>';
-    html += '<div style="color:var(--green)"><strong>Status:</strong> ' + (result.status || 'ok') + '</div>';
+    html += '<div style="color:' + (result.io_violations && result.io_violations.length ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + ((result.io_violations && result.io_violations.length) || 0) + '</div>';
     document.getElementById('audit-report').innerHTML = html;
-    runExecute();
+    if (ueasEditor.getValue().indexOf('Algorithm') === 0) runExecute();
   } catch (e) {
     document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit failed: ' + (e.message || e) + '</span>';
   }
@@ -214,7 +221,7 @@ function updateAstTree(astJson) {
     var ast = typeof astJson === 'string' ? JSON.parse(astJson) : astJson;
     el.innerHTML = renderAstNode(ast, 0);
   } catch (e) {
-    el.innerHTML = '<span style="color:var(--text-dim)">Click Evaluate to see the parsed AST tree.</span>';
+    el.innerHTML = '<span style="color:var(--text-dim)">AST visualization requires kernel-level parse (available via CLI).</span>';
   }
 }
 
