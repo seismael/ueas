@@ -686,6 +686,7 @@ ueas/
     │   └── tests/         Cross-target equivalence test suite
     ├── frontends/         Reverse transpilation (target language → UEAS AST)
     │   └── src/           Python extractor with axiom enforcement
+    ├── wasm/              WASM bindings — kernel compiled for Cloudflare Workers MCP
     ├── tools/             CLI, DAP Debugger, Jupyter Kernel, MCP Server, Playground
     │   ├── ueas-cli/      `ueas` CLI (run, check, transpile, fmt)
     │   ├── ueas-dap/      VS Code Debug Adapter Protocol server
