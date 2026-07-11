@@ -180,7 +180,7 @@ function simpleParse(src) {
 }
 
 function hasAnnotation(src, name) { return src.includes('@' + name) || src.includes(name + '<'); }
-function countAnnotations(src, name) { return (src.match(new RegExp(name + '<', 'g')) || []).length; }
+function countAnnotations(src, name) { const r = new RegExp(name + '(?:<|\\s|:)', 'g'); return (src.match(r) || []).length; }
 function hasLoops(src) { return /while\s|for\s/.test(src); }
 function hasParallel(src) { return /parallel|spawn|sync/.test(src); }
 function countAssigns(src) { return (src.match(/<-\s/g) || []).length; }

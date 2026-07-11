@@ -3,6 +3,7 @@
 use ueas_backends::cpp::CppTarget;
 use ueas_backends::java::JavaTarget;
 use ueas_backends::javascript::JavaScriptTarget;
+use ueas_backends::latex::LatexTarget;
 use ueas_backends::lean4::LeanTarget;
 use ueas_backends::tla::TlaTarget;
 use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
@@ -59,6 +60,7 @@ pub fn transpile_ueas(s: &str, t: &str) -> Result<String, JsValue> {
         "javascript" => Box::new(JavaScriptTarget),
         "lean4" => Box::new(LeanTarget),
         "tlaplus" => Box::new(TlaTarget::new()),
+        "latex" => Box::new(LatexTarget),
         _ => return Err(JsValue::from_str("unsupported")),
     };
     gen.generate(&js).map_err(|e| JsValue::from_str(&e.message))

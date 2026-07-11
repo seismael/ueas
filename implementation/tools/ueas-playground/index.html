@@ -24,7 +24,10 @@
 </header>
 
 <main class="layout-grid">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header" style="display:flex; justify-content:flex-end; padding: 5px;">
+      <button class="icon-btn" onclick="toggleSidebar()" title="Collapse Sidebar" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">&#9776;</button>
+    </div>
     <div class="sidebar-scroll" id="sidebar-scroll"></div>
     <div class="sidebar-footer">
       <a href="https://github.com/seismael/ueas" target="_blank">GitHub</a>
@@ -44,6 +47,8 @@
       <div id="editor-ueas" class="monaco-container"></div>
     </div>
 
+    <div class="resizer" id="editor-resizer"></div>
+
     <div class="editor-pane target-pane">
       <div class="controls">
         <span class="pane-title">Target / Legacy Code</span>
@@ -55,14 +60,17 @@
           <option value="javascript">JavaScript ES2020</option>
         </select>
         <div class="spacer"></div>
-        <button class="audit-btn" onclick="reverseAudit()">&larr; Reverse-Audit to UEAS</button>
+        <button class="audit-btn" onclick="reverseAudit()">&larr; Audit</button>
       </div>
       <div id="editor-target" class="monaco-container"></div>
     </div>
   </div>
 </main>
 
-<footer class="fixed-bottom">
+<footer class="fixed-bottom" id="bottom-panel">
+  <div style="position:absolute; top:-25px; right:20px; z-index:100;">
+    <button onclick="toggleBottomPanel()" style="background:var(--bg-card); color:var(--text); border:1px solid var(--border); border-bottom:none; border-radius:4px 4px 0 0; padding:4px 12px; cursor:pointer;" id="bottom-toggle-btn">&#9660; Metrics</button>
+  </div>
   <div id="dashboard" class="dashboard">
     <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
     <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
