@@ -174,24 +174,46 @@ function extractComplexity(code) {
 async function doTranspile() {
   var code = ueasEditor.getValue();
   var target = document.getElementById('target-select').value;
+  var useLocal = document.getElementById('hybrid-mode') && document.getElementById('hybrid-mode').checked;
 
-  // Try WASM transpile (real execution)
-  var wm = window.__ueasWasm;
-  if (wm && wm.transpile_ueas) {
-    try {
-      var output = wm.transpile_ueas(code, target);
-      targetEditor.setValue(output);
-      document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully transpiled to ' + target + '</span>';
-      return;
-    } catch (e) {
-      targetEditor.setValue('Transpile Error:\n' + (e.message || e.toString()) + '\n\nCheck syntax: indentation, missing keywords, type errors.');
-      return;
+  if (useLocal) {
+    var wm = window.__ueasWasm;
+    if (wm && wm.transpile) {
+      try {
+        var output = wm.transpile(code, target);
+        targetEditor.setValue(output);
+        document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully transpiled to ' + target + '</span>';
+        return;
+      } catch (e) {
+        targetEditor.setValue('Transpile Error:\n' + (e.message || e.toString()) + '\n\nCheck syntax: indentation, missing keywords, type errors.');
+        return;
+      }
     }
   }
 
-  // WASM not loaded at all — fall back to simulation
-  var fn = transpileSimulations[target];
-  targetEditor.setValue(fn ? fn(code) : '(WASM unavailable — transpile requires browser WASM support)');
+  // Fallback to remote MCP transpile
+  try {
+    targetEditor.setValue('// Transpiling remotely...');
+    var resp = await fetch('https://ueas-mcp.seismael.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 3, method: 'tools/call',
+        params: { name: 'transpile', arguments: { source: code, target: target } }
+      })
+    });
+    var data = await resp.json();
+    var text = data && data.result && data.result.content && data.result.content[0] && data.result.content[0].text || '';
+    if (text) {
+      targetEditor.setValue(text);
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Successfully remotely transpiled to ' + target + '</span>';
+    } else {
+      var fn = transpileSimulations[target];
+      targetEditor.setValue(fn ? fn(code) : '// Remote transpile failed and no simulation available.');
+    }
+  } catch (e) {
+    targetEditor.setValue('Remote MCP unavailable:\n' + (e.message || e.toString()));
+  }
 }
 
 function simulateTranspile() {
@@ -229,7 +251,7 @@ async function runExecute() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0', id: 1, method: 'tools/call',
-          params: { name: 'execute_ueas', arguments: { source: code } }
+          params: { name: 'execute', arguments: { source: code } }
         })
       });
       var data = await resp.json();
@@ -248,7 +270,7 @@ async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
   var lang = document.getElementById('target-select').value;
   
-  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Calling Cloudflare MCP audit_legacy...</span>';
+  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Calling Cloudflare MCP audit...</span>';
   document.getElementById('exec-status').textContent = 'Reverse-Auditing via LLM...';
   document.getElementById('exec-status').style.color = 'var(--orange)';
   ueasEditor.setValue('// Reverse-auditing in progress...');
@@ -259,7 +281,7 @@ async function reverseAudit() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         jsonrpc: '2.0', id: 2, method: 'tools/call',
-        params: { name: 'audit_legacy', arguments: { source: legacyCode, language: lang } }
+        params: { name: 'audit', arguments: { source: legacyCode, language: lang } }
       })
     });
     var data = await resp.json();

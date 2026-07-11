@@ -9,11 +9,15 @@
 </head>
 <body>
 <header>
-  <div class="brand">
-    <h1><span class="accent">&Sigma;</span> UEAS Playground</h1>
-    <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
+  <div style="display:flex; align-items:center; gap: 15px;">
+    <button class="icon-btn" onclick="toggleSidebar()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); cursor:pointer; font-size:24px; padding: 0;">&#9687;</button>
+    <div class="brand">
+      <h1><span class="accent">&Sigma;</span> UEAS Playground</h1>
+      <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
+    </div>
   </div>
   <div class="badges">
+    <button class="icon-btn" onclick="toggleBottomPanel()" title="Toggle Metrics Panel" style="background:none; border:none; color:var(--text); cursor:pointer; font-size:24px; margin-right:15px; padding: 0;">&#11026;</button>
     <span class="badge">v4.5.0</span>
     <span class="badge">Bidirectional</span>
     <label class="hybrid-toggle" title="Toggle between local WASM and remote Cloudflare MCP">
@@ -25,9 +29,6 @@
 
 <main class="layout-grid">
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header" style="display:flex; justify-content:flex-end; padding: 5px;">
-      <button class="icon-btn" onclick="toggleSidebar()" title="Collapse Sidebar" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">&#9776;</button>
-    </div>
     <div class="sidebar-scroll" id="sidebar-scroll"></div>
     <div class="sidebar-footer">
       <a href="https://github.com/seismael/ueas" target="_blank">GitHub</a>
@@ -68,9 +69,6 @@
 </main>
 
 <footer class="fixed-bottom" id="bottom-panel">
-  <div style="position:absolute; top:-25px; right:20px; z-index:100;">
-    <button onclick="toggleBottomPanel()" style="background:var(--bg-card); color:var(--text); border:1px solid var(--border); border-bottom:none; border-radius:4px 4px 0 0; padding:4px 12px; cursor:pointer;" id="bottom-toggle-btn">&#9660; Metrics</button>
-  </div>
   <div id="dashboard" class="dashboard">
     <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
     <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
