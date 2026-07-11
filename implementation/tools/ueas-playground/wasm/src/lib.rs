@@ -91,27 +91,13 @@ pub fn profile_hardware(s: &str) -> Result<String, JsValue> {
 #[wasm_bindgen]
 pub fn profile_complexity(s: &str) -> Result<String, JsValue> {
     let v = exec_and_profile(s)?;
-    let work = v["work"].as_u64().unwrap_or(0);
-    let span = v["span"].as_u64().unwrap_or(0);
-    serde_json::to_string(&serde_json::json!({
-        "status": "ok",
-        "step_count": v["step_count"],
-        "work": work,
-        "span": span,
-        "is_parallel": work > span,
-    }))
-    .map_err(|e| JsValue::from_str(&e.to_string()))
+    serde_json::to_string(&v).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen]
 pub fn profile_memory(s: &str) -> Result<String, JsValue> {
     let v = exec_and_profile(s)?;
-    serde_json::to_string(&serde_json::json!({
-        "status": "ok",
-        "heap_allocated": v["heap_bytes"],
-        "step_count": v["step_count"],
-    }))
-    .map_err(|e| JsValue::from_str(&e.to_string()))
+    serde_json::to_string(&v).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[wasm_bindgen(start)]
