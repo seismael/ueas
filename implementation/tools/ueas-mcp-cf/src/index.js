@@ -16,7 +16,7 @@ export default {
       const b = await req.json();
       const { method, id, params } = b;
       switch (method) {
-        case 'initialize': return json({ jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05', serverInfo: { name: 'ueas-mcp', version: '4.3.1' }, capabilities: { tools: {} } } });
+        case 'initialize': return json({ jsonrpc: '2.0', id, result: { protocolVersion: '2024-11-05',         serverInfo: { name: 'ueas-mcp', version: '4.4.0' }, capabilities: { tools: {} } } });
         case 'tools/list': return json({ jsonrpc: '2.0', id, result: { tools: tools() } });
         case 'tools/call': return call(id, (params||{}).name||'', (params||{}).arguments||{});
         default: return err(id, -32601, `Unknown method: ${method}`);
@@ -34,6 +34,7 @@ function tools() {
     { name: 'profile_hardware', description: 'Analyze algorithm structure for cache locality potential', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'profile_complexity', description: 'Empirical Work-Span DAG complexity analysis', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'profile_memory', description: 'Memory footprint analysis with Virtual Heap estimation', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } }
+    { name: 'audit_legacy', description: 'Bidirectional reverse audit — analyze legacy Python code and map to UEAS equivalence with complexity estimation', inputSchema: { type: 'object', properties: { source: { type: 'string', description: 'Python source code to reverse-audit' } } } }
   ];
 }
 
@@ -86,12 +87,86 @@ function run(name, args) {
     case 'profile_memory':
       return { status: 'ok', algorithm: parsed.algorithm_name, heap_estimate: estimateHeap(src), allocations: countAssigns(src), complexity: parsed.complexity };
 
+    case 'audit_legacy':
+      return auditLegacyCode(src);
+
     default:
       return { status: 'error', error: 'Unknown tool: ' + name };
   }
 }
 
-function simpleParse(src) {
+function auditLegacyCode(src) {
+  const lines = src.split('\n');
+  const findings = [];
+  const functions = [];
+  let currentFn = null;
+  let indentLevel = 0;
+
+  // I/O violation detection (Axiom 1)
+  const ioViolations = [];
+  const ioPatterns = ['print(', 'open(', 'input(', 'import ', 'from ', 'read(', 'write(', 'socket', 'http', 'request', 'urlopen'];
+  ioPatterns.forEach(p => {
+    if (src.includes(p)) ioViolations.push({ line: src.indexOf(p), pattern: p, severity: 'axiom_violation' });
+  });
+
+  // Parse Python function definitions
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const defMatch = line.match(/^def\s+(\w+)\s*\((.*?)\)\s*:?\s*$/);
+    if (defMatch) {
+      if (currentFn) functions.push(currentFn);
+      currentFn = { name: defMatch[1], params: defMatch[2].split(',').map(p => p.trim().split(':')[0].trim()).filter(p => p), start_line: i + 1, body_lines: [], has_loop: false, has_condition: false, return_count: 0, assignments: 0 };
+      indentLevel = (lines[i].match(/^\s*/) || [''])[0].length + 4;
+      continue;
+    }
+
+    if (currentFn) {
+      if (line && (lines[i].match(/^\s*/) || [''])[0].length < indentLevel && !line.startsWith('    ') && line !== '') {
+        functions.push(currentFn);
+        currentFn = null;
+        continue;
+      }
+      currentFn.body_lines.push(line);
+      if (line.match(/\b(for|while)\b/)) { currentFn.has_loop = true; findings.push({ line: i + 1, type: 'loop_detected', detail: line.trim() }); }
+      if (line.match(/\b(if|elif|else)\b/)) currentFn.has_condition = true;
+      if (line.match(/\breturn\b/)) currentFn.return_count++;
+      if (line.includes('=') && !line.includes('==') && !line.includes('!=') && !line.includes('<=') && !line.includes('>=')) currentFn.assignments++;
+    }
+  }
+  if (currentFn) functions.push(currentFn);
+
+  // Complexity estimation
+  const complexityEstimates = functions.map(fn => {
+    let cpx = 'O(1)';
+    if (fn.has_loop && fn.has_condition) cpx = 'O(N)';
+    else if (fn.has_loop && fn.body_lines.some(l => l.match(/\b(for|while)\b/))) cpx = 'O(N^2)';
+    else if (fn.has_loop) cpx = 'O(N)';
+    return { function: fn.name, estimated_complexity: cpx, loops: fn.has_loop, conditions: fn.has_condition, returns: fn.return_count, assignments: fn.assignments, line_count: fn.body_lines.length };
+  });
+
+  // Generate UEAS equivalent mapping
+  const ueasMappings = functions.map(fn => {
+    const algo = 'Algorithm ' + fn.name + '(' + fn.params.join(', ') + ')\n    Require: ' + fn.params.map(p => p + ': Integer').join(', ') + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + fn.body_lines.map(l => l.trim().replace(/\bdef\b/g, '#').replace(/print\(/g, '# print(').replace(/import\s+/g, '# import ')).join('\n    ');
+    return { function: fn.name, ueas_equivalent: algo };
+  });
+
+  return {
+    status: ioViolations.length ? 'axiom_violations_found' : 'ok',
+    language: 'python',
+    functions_found: functions.length,
+    io_violations: ioViolations,
+    complexity_estimates: complexityEstimates,
+    ueas_mappings: ueasMappings,
+    findings: findings,
+    recommendations: ioViolations.length
+      ? ['Remove I/O calls — UEAS Axiom 1 prohibits system I/O', 'Replace print() with return statements', 'Remove import statements — UEAS algorithms are self-contained']
+      : functions.length
+        ? ['All functions map to valid UEAS Algorithm declarations', 'Run `ueas transpile` on the generated UEAS to verify']
+        : ['No Python functions found — source may not be algorithmic code']
+  };
+}
   const t = src.trim();
   if (!t) return { valid: false, error: 'empty source' };
   const lines = t.split('\n');
