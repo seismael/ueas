@@ -7,7 +7,7 @@
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
 [![Examples](https://img.shields.io/badge/Examples-45-orange)](implementation/examples/)
 [![Playground](https://img.shields.io/badge/Playground-Live-success)](https://ueas-three.vercel.app/)
-[![MCP Server](https://img.shields.io/badge/MCP%20Server-Live-success)](https://ueas.onrender.com)
+[![MCP Server](https://img.shields.io/badge/MCP%20Server-Live-success)](https://ueas-mcp.seismael.workers.dev)
 [![Version](https://img.shields.io/badge/Version-4.1.0-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
@@ -19,7 +19,7 @@
 ## Live Deployments
 
 - **Interactive Playground (Vercel):** [https://ueas-three.vercel.app/](https://ueas-three.vercel.app/) — Write UEAS algorithms directly in your browser. Powered by a client-side WebAssembly (WASM) kernel compilation, allowing real-time execution and parsing without any backend server.
-- **MCP AI Agent Server (Render):** [https://ueas.onrender.com](https://ueas.onrender.com) — Connect your AI agents (Claude, cursor, etc.) to the UEAS interpreter via the Model Context Protocol. Hosted via Docker with a Python HTTP-to-STDIO JSON-RPC bridge.
+- **MCP AI Agent Server (Cloudflare Workers):** [https://ueas-mcp.seismael.workers.dev](https://ueas-mcp.seismael.workers.dev) — Connect your AI agents (Claude, Cursor, etc.) to the UEAS interpreter via the Model Context Protocol. Always-on, globally distributed edge deployment via WASM-compiled Rust kernel.
 
 ---
 
@@ -141,7 +141,17 @@ ueas transpile examples/core/linear_search.ueas --target python
 ueas transpile examples/core/linear_search.ueas --target rust
 ```
 
-### Standard Library
+### MCP Server (AI Agents)
+
+UEAS provides an always-on MCP server for AI agent integration, deployed on
+Cloudflare Workers (globally distributed, zero cold starts):
+
+```
+https://ueas-mcp.seismael.workers.dev
+```
+
+Available tools: `parse_ueas`, `execute_ueas`, `transpile_ueas` (8 targets).
+Connect via Claude Desktop, Cursor, or any MCP-compatible client.
 UEAS ships with a comprehensive [standard algorithm library](implementation/library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
 
 ### Examples
