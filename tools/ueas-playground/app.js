@@ -116,23 +116,25 @@ function groupByCategory() {
 
 // MCP call helper
 async function callMCP(tool, args) {
-  const resp = await fetch(MCP_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0', id: Date.now() % 1000, method: 'tools/call',
-      params: { name: tool, arguments: args }
-    })
-  });
-  const data = await resp.json();
-  // MCP error response uses 'error' field at top level
-  if (data.error) {
-    return { status: 'error', error: data.error.message || 'MCP error', code: data.error.code };
+  try {
+    const resp = await fetch(MCP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: Date.now() % 1000, method: 'tools/call',
+        params: { name: tool, arguments: args }
+      })
+    });
+    const data = await resp.json();
+    if (data.error) {
+      return { status: 'error', error: data.error.message || 'MCP error', code: data.error.code };
+    }
+    const text = data?.result?.content?.[0]?.text;
+    if (!text) return { status: 'error', error: 'Empty response from MCP server' };
+    try { return JSON.parse(text); } catch(e) { return { status: 'error', error: text.substring(0, 200) || e.message }; }
+  } catch (e) {
+    return { status: 'error', error: 'MCP unreachable: ' + (e.message || 'network error') };
   }
-  // MCP success response uses 'result' with 'content' array
-  const text = data?.result?.content?.[0]?.text;
-  if (!text) return { status: 'error', error: 'Empty response from MCP server' };
-  try { return JSON.parse(text); } catch(e) { return { status: 'error', error: text || e.message }; }
 }
 
 async function doTranspile() {
@@ -158,14 +160,15 @@ async function runExecute() {
   var code = ueasEditor.getValue();
   document.getElementById('exec-status').textContent = 'Running...';
   document.getElementById('exec-status').style.color = 'var(--text-dim)';
-  try {
-    var result = await callMCP('execute', { source: code });
+  var result = await callMCP('execute', { source: code });
+  if (result.status === 'error') {
+    document.getElementById('exec-status').textContent = result.error || 'Error';
+    document.getElementById('exec-status').style.color = 'var(--red)';
+  } else {
     updateDashboard(result);
-    if (result.ast) {
-      updateAstTree(result.ast);
-    } else {
-      document.getElementById('ast-tree').innerHTML = '<span style="color:var(--text-dim)">AST missing from evaluate response.</span>';
-    }
+    updateAstTree(code);
+  }
+}
   } catch (e) {
     document.getElementById('exec-status').textContent = 'MCP Error';
     document.getElementById('exec-status').style.color = 'var(--red)';
