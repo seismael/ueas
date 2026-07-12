@@ -439,7 +439,9 @@ fn parse_expr(s: &str) -> Result<AstNode> {
                             cur.push(ch);
                         }
                         ')' => {
-                            depth -= 1;
+                            if depth > 0 {
+                                depth -= 1;
+                            }
                             cur.push(ch);
                         }
                         ',' if depth == 0 => {

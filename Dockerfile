@@ -17,6 +17,7 @@ RUN wget https://github.com/dafny-lang/dafny/releases/download/v${DAFNY_VERSION}
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
+ENV DOTNET_ROOT=/usr/share/dotnet
 
 # Build and run
 WORKDIR /app

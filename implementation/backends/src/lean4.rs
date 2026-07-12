@@ -359,7 +359,7 @@ impl LeanTarget {
                 output.push_str(&format!("\"{}\"", val));
             }
             "SetLiteral" | "ListLiteral" => {
-                output.push_str("[");
+                output.push('[');
                 if let Some(elems) = node["children"].as_array() {
                     for (i, elem) in elems.iter().enumerate() {
                         if i > 0 {
@@ -368,7 +368,7 @@ impl LeanTarget {
                         self.generate_node(elem, output)?;
                     }
                 }
-                output.push_str("]");
+                output.push(']');
             }
             "Identifier" => {
                 let name = node["value"].as_str().unwrap_or("_");

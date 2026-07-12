@@ -7,7 +7,8 @@
 use ueas_backends::{DafnyTarget, TargetGenerator};
 
 /// Euclidean Distance: sqrt(dx*dx + dy*dy) = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1))
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_euclidean_distance() {
     let ast = r#"{
         "kind": "BinaryExpression",
@@ -60,7 +61,11 @@ fn benchmark_euclidean_distance() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
@@ -69,7 +74,8 @@ fn benchmark_euclidean_distance() {
 }
 
 /// Binary Search: recursive expression (low + high) / 2, comparison
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_binary_search_expression() {
     let ast = r#"{
         "kind": "BinaryExpression",
@@ -87,7 +93,11 @@ fn benchmark_binary_search_expression() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
@@ -96,7 +106,8 @@ fn benchmark_binary_search_expression() {
 }
 
 /// Merge Sort: merge comparison a[i] <= b[j]
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_merge_sort_compare() {
     let ast = r#"{
         "kind": "BinaryExpression",
@@ -107,7 +118,11 @@ fn benchmark_merge_sort_compare() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
@@ -116,7 +131,8 @@ fn benchmark_merge_sort_compare() {
 }
 
 /// Matrix Multiplication: dot product expression
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_matrix_multiply_dot() {
     let ast = r#"{
         "kind": "BinaryExpression",
@@ -141,7 +157,11 @@ fn benchmark_matrix_multiply_dot() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
@@ -150,7 +170,8 @@ fn benchmark_matrix_multiply_dot() {
 }
 
 /// Linear Search: equality check
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_linear_search_eq() {
     let ast = r#"{
         "kind": "BinaryExpression",
@@ -161,7 +182,11 @@ fn benchmark_linear_search_eq() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
@@ -170,7 +195,8 @@ fn benchmark_linear_search_eq() {
 }
 
 /// Dijkstra: relaxation check alt < dist[v]
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_dijkstra_relaxation() {
     let ast = r#"{
         "kind": "BinaryExpression",
@@ -188,7 +214,11 @@ fn benchmark_dijkstra_relaxation() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
@@ -197,7 +227,8 @@ fn benchmark_dijkstra_relaxation() {
 }
 
 /// Unary negation
-#[test] #[ignore]
+#[test]
+#[ignore]
 fn benchmark_unary_negation() {
     let ast = r#"{
         "kind": "UnaryExpression",
@@ -207,7 +238,11 @@ fn benchmark_unary_negation() {
         ]
     }"#;
 
-    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let py = DafnyTarget;
+    let ast = format!(
+        r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#,
+        ast = ast
+    );
     let rs = DafnyTarget;
     let py_out = py.generate(&ast).unwrap();
     let rs_out = rs.generate(&ast).unwrap();
