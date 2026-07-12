@@ -161,7 +161,7 @@ function auditLegacyCode(src) {
       return trimmed;
     }).filter(l => l).join('\n    ');
 
-    const algo = 'Algorithm ' + fn.name + '(' + paramsStr + ')\n    ' + requireStr + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + bodyStr + '\n    return 0';
+    const algo = 'Algorithm ' + fn.name + '(' + paramsStr + ')\n    ' + requireStr + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + bodyStr + (fn.return_count > 0 ? '' : '\n    return 0');
     return { function: fn.name, ueas_equivalent: algo };
   });
 
