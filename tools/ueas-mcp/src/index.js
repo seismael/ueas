@@ -118,15 +118,20 @@ function auditLegacyCode(src) {
     if (src.includes(p)) ioViolations.push({ line: src.indexOf(p), pattern: p, severity: 'axiom_violation' });
   });
 
-  // Parse Python function definitions
+  // Parse Python function definitions AND Dafny method declarations
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (!line || line.startsWith('#')) continue;
+    if (!line || line.startsWith('#') || line.startsWith('//')) continue;
 
     const defMatch = line.match(/^def\s+(\w+)\s*\((.*?)\)\s*:?\s*$/);
-    if (defMatch) {
+    const methodMatch = line.match(/^method\s+(\w+)\s*\((.*?)\)/);
+    const funcMatch = line.match(/^function\s+(\w+)\s*\((.*?)\)/);
+    const allMatch = defMatch || methodMatch || funcMatch;
+    if (allMatch) {
       if (currentFn) functions.push(currentFn);
-      currentFn = { name: defMatch[1], params: defMatch[2].split(',').map(p => p.trim().split(':')[0].trim()).filter(p => p), start_line: i + 1, body_lines: [], has_loop: false, has_condition: false, return_count: 0, assignments: 0 };
+      const funcName = allMatch[1];
+      const paramsStr = allMatch[2] || '';
+      currentFn = { name: funcName, params: paramsStr.split(',').map(p => p.trim().split(':')[0].split(' ').pop().trim()).filter(p => p), start_line: i + 1, body_lines: [], has_loop: false, has_condition: false, return_count: 0, assignments: 0 };
       indentLevel = (lines[i].match(/^\s*/) || [''])[0].length + 4;
       continue;
     }
@@ -139,9 +144,8 @@ function auditLegacyCode(src) {
       }
       currentFn.body_lines.push(lines[i]);
       if (line.match(/\b(for|while)\b/)) { currentFn.has_loop = true; findings.push({ line: i + 1, type: 'loop_detected', detail: line.trim() }); }
-      if (line.match(/\b(if|elif|else)\b/)) currentFn.has_condition = true;
+      if (line.match(/\b(if|elif|else|match)\b/)) currentFn.has_condition = true;
       if (line.match(/\breturn\b/)) currentFn.return_count++;
-      if (line.includes('=') && !line.includes('==') && !line.includes('!=') && !line.includes('<=') && !line.includes('>=')) currentFn.assignments++;
     }
   }
   if (currentFn) functions.push(currentFn);
@@ -161,10 +165,10 @@ function auditLegacyCode(src) {
     const requireStr = fn.params.length ? 'Require: ' + fn.params.map(p => p + ': Integer').join(', ') : 'Require:';
     const bodyStr = fn.body_lines.map(l => {
       let trimmed = l.trim();
-      if (!trimmed || trimmed.startsWith('#')) return '';
-      // Convert Python assignment = to UEAS arrow <-
-      if (trimmed.includes(' = ') && !trimmed.includes('==') && !trimmed.includes('!=') && !trimmed.includes('<=') && !trimmed.includes('>=')) {
-        trimmed = trimmed.replace(/ = /g, ' <- ');
+      if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) return '';
+      // Convert Dafny/Python assignment to UEAS arrow
+      if (trimmed.includes(' := ') || trimmed.includes(' = ')) {
+        trimmed = trimmed.replace(/\s:=\s/g, ' <- ').replace(/\s=\s(?![=<>])/g, ' <- ');
       }
       return trimmed;
     }).filter(l => l).join('\n    ');
