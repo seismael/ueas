@@ -162,25 +162,22 @@ async function doTranspile() {
 }
 
 function simulateTranspile() { doTranspile(); }
-
 async function runExecute() {
   var code = ueasEditor.getValue();
   document.getElementById('exec-status').textContent = 'Running...';
   document.getElementById('exec-status').style.color = 'var(--text-dim)';
   
-  // Run execute + complexity + parse in parallel
-  var [execResult, cmplxResult, parseResult] = await Promise.all([
-    callMCP('execute', { source: code }),
-    callMCP('complexity', { source: code }),
-    callMCP('parse', { source: code })
-  ]);
+  // Call tools individually — handle each failure gracefully
+  var execResult = await callMCP('execute', { source: code });
+  var cmplxResult = execResult.status === 'error' ? {} : await callMCP('complexity', { source: code });
+  var parseResult = await callMCP('parse', { source: code });
   
   updateDashboard(execResult, cmplxResult);
   
   // Show AST tree from parse
   if (parseResult.ast) {
     updateAstTree(parseResult.ast);
-  } else {
+  } else if (!parseResult.status || parseResult.status !== 'error') {
     updateAstTree(parseResult);
   }
 }
@@ -190,13 +187,17 @@ async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
   // Skip placeholder/default text
   if (!legacyCode || legacyCode.startsWith('// Target') || legacyCode.startsWith('// Transpiling') || legacyCode.startsWith('// Connection')) {
-    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Type or paste code in the right editor, then click Audit.</span>';
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Type or paste Python/Java code in the right editor, then click Audit.</span>';
     return;
   }
   document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Auditing via MCP...</span>';
   try {
     var result = await callMCP('audit', { source: legacyCode });
     if (result.status === 'ok') {
+      if (result.functions_found === 0) {
+        document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">No functions found. Audit detects <code>def</code> declarations. Try pasting Python code like:</span><br><code style="font-size:0.75rem">def search(arr, target):\\n    for i in range(len(arr)):\\n        if arr[i]==target: return i\\n    return -1</code>';
+        return;
+      }
       var pseudocode = '';
       if (result.ueas_mappings && result.ueas_mappings.length) {
         pseudocode = result.ueas_mappings[0].ueas_equivalent;
@@ -205,18 +206,16 @@ async function reverseAudit() {
       }
       ueasEditor.setValue(pseudocode || '// No algorithm pseudocode extracted.');
       var cpx = result.complexity_estimates ? result.complexity_estimates.map(function(e) { return e.function + ' (' + e.estimated_complexity + ')'; }).join(', ') : 'None';
-      var html = '<div><strong>Status:</strong> OK</div>';
-      html += '<div><strong>Functions found:</strong> ' + (result.functions_found || 0) + '</div>';
+      var html = '<div><strong>Functions:</strong> ' + (result.functions_found || 0) + '</div>';
       html += '<div><strong>Complexity:</strong> ' + cpx + '</div>';
       var violations = (result.io_violations && result.io_violations.length) || 0;
       html += '<div style="color:' + (violations ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + violations + '</div>';
       document.getElementById('audit-report').innerHTML = html;
     } else {
-      document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit: ' + (result.error || result.status || 'failed') + '</span>';
-      ueasEditor.setValue('// Audit failed: ' + (result.error || result.status || 'unknown'));
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">' + (result.error || result.status || 'Audit failed') + '</span>';
     }
   } catch (e) {
-    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit: network error.</span>';
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Network error</span>';
   }
 }
 
