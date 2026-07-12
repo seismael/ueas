@@ -57,6 +57,10 @@ function run(name, args) {
 
   switch (name) {
     case 'parse':
+      try {
+        parsed.ast = parse_ueas(src);
+        parsed.raw_ast = true;
+      } catch(e) { parsed.raw_ast = false; }
       return parsed;
 
     case 'execute': {
