@@ -169,14 +169,15 @@ async function runExecute() {
     updateAstTree(code);
   }
 }
-  } catch (e) {
-    document.getElementById('exec-status').textContent = 'MCP Error';
-    document.getElementById('exec-status').style.color = 'var(--red)';
-  }
-}
+
 
 async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
+  var lang = document.getElementById('target-select').value;
+  if (lang !== 'python' && legacyCode.indexOf('def ') === -1) {
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Audit works best with Python code. Try pasting Python code first, then audit.</span>';
+    return;
+  }
   document.getElementById('audit-report').innerHTML = 'Auditing via MCP...';
   ueasEditor.setValue('// Reverse-auditing in progress...');
   try {
@@ -195,7 +196,6 @@ async function reverseAudit() {
     var html = '<div><strong>Complexity:</strong> ' + cpx + '</div>';
     html += '<div style="color:' + (result.io_violations && result.io_violations.length ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + ((result.io_violations && result.io_violations.length) || 0) + '</div>';
     document.getElementById('audit-report').innerHTML = html;
-    if (ueasEditor.getValue().indexOf('Algorithm') === 0) runExecute();
   } catch (e) {
     document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit failed: ' + (e.message || e) + '</span>';
   }
