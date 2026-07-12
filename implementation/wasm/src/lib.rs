@@ -1,10 +1,9 @@
 //! UEAS WASM bindings — Track 7 domain tools.
 
-use ueas_backends::dafny::DafnyTarget;
 use ueas_backends::latex::LatexTarget;
 use ueas_backends::lean4::LeanTarget;
 use ueas_backends::tla::TlaTarget;
-use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
+use ueas_backends::{DafnyTarget, TargetGenerator};
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind};
 use ueas_kernel::interp::{execute_program, ExecContext};
 use wasm_bindgen::prelude::*;
