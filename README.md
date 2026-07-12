@@ -1,7 +1,7 @@
 # Universal Executable Algorithm Standard (UEAS)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-351-brightgreen)](implementation/kernel/)
+[![Tests](https://img.shields.io/badge/Tests-292-brightgreen)](implementation/kernel/)
 [![Kernel](https://img.shields.io/badge/Kernel-Rust-red)](implementation/kernel/)  
 [![Grammar](https://img.shields.io/badge/Grammar-ANTLR4-lightgrey)](specification/grammar/)
 [![Library](https://img.shields.io/badge/Algorithms-45-blue)](implementation/library/)
@@ -37,7 +37,7 @@ Existing formal verification tools (TLA+, Coq) demand PhD-level expertise and ca
 
 ### Why UEAS? (Strategic Focus)
 UEAS is currently being optimized for two high-leverage domains critical for enterprise adoption:
-1. **AI Interoperability:** LLMs and autonomous coding agents struggle with language quirks. UEAS serves as the mathematically rigorous intermediary—an agent generates a UEAS algorithm, the MCP Server formally verifies its Big-O complexity, and then transpiles it into production-ready Python or Rust.
+1. **AI Interoperability:** LLMs and autonomous coding agents struggle with language quirks. UEAS serves as the mathematically rigorous intermediary—an agent generates a UEAS algorithm, the MCP Server validates its Big-O complexity, then transpiles it to Dafny for verification or directly to Lean 4, TLA+, or LaTeX.
 2. **Cryptographic Rigor:** Cryptographic implementations require strict mathematical bounds. UEAS introduces `@ConstantTime` execution and `Secret` variables, using symbolic execution to catch timing leaks and prove hardware-level security guarantees before deployment.
 
 ### What UEAS Is NOT
@@ -151,18 +151,26 @@ ueas transpile examples/core/linear_search.ueas --target dafny
 ueas transpile examples/core/linear_search.ueas --target lean4
 ```
 
+### Standard Library
+UEAS ships with a comprehensive [standard algorithm library](implementation/library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
+
 ### MCP Server (AI Agents)
 
 UEAS provides an always-on MCP server for AI agent integration, deployed on
-Cloudflare Workers (globally distributed, zero cold starts):
+Cloudflare Workers (8 tools, globally distributed, zero cold starts). Z3 mathematical
+proofs and Dafny code generation run on Google Cloud Run (scale-to-zero, $0 idle):
 
 ```
 https://ueas-mcp.seismael.workers.dev
 ```
 
+**Dafny Verification Backend (GCP):**
+```
+https://ueas-verify-504087134780.us-central1.run.app/health
+```
+
 Available tools: `parse`, `execute`, `transpile`, `verify`, `hardware`, `complexity`, `memory`, `audit`.
 Connect via Claude Desktop, Cursor, or any MCP-compatible client.
-UEAS ships with a comprehensive [standard algorithm library](implementation/library/INDEX.md) containing **45 verified algorithms** across 7 categories (Sorting, Searching, Graphs, Dynamic Programming, Mathematics, Strings, Data Structures).
 
 ### Examples
 **45 reference implementations** (30 algorithmic + 15 feature demos) organized across 20 categories:
