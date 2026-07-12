@@ -173,13 +173,14 @@ async function runExecute() {
   var parseResult = await callMCP('parse', { source: code });
   
   updateDashboard(execResult, cmplxResult);
-  
-  // Show AST tree from parse
+  // Show AST tree from parse — use the raw AST field
+  var astData = null;
   if (parseResult.ast) {
-    updateAstTree(parseResult.ast);
+    astData = parseResult.ast;
   } else if (!parseResult.status || parseResult.status !== 'error') {
-    updateAstTree(parseResult);
+    astData = parseResult;
   }
+  if (astData) updateAstTree(astData);
 }
 
 
@@ -244,7 +245,9 @@ function updateDashboard(exec, cmplx) {
   document.getElementById('exec-status').style.color = 'var(--green)';
   document.getElementById('exec-steps').textContent = exec.step_count != null ? exec.step_count : (cmplx.step_estimate || '—');
   document.getElementById('exec-heap').textContent = (exec.heap_bytes || '—') + ' B';
-  document.getElementById('exec-complexity').textContent = extractComplexity(ueasEditor.getValue()) || cmplx.complexity || '—';
+  // Use complexity from MCP response (cmplx.complexity) directly, fallback to source extraction
+  var cpx = (cmplx && cmplx.complexity) ? cmplx.complexity : extractComplexity(ueasEditor.getValue());
+  document.getElementById('exec-complexity').textContent = cpx || '—';
   document.getElementById('step-bar-fill').style.width = Math.min(((exec.step_count || cmplx.step_estimate || 0) * 2), 100) + '%';
 }
 
