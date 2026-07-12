@@ -51,10 +51,10 @@
         <span class="pane-title">Target / Legacy Code</span>
         <select id="target-select" onchange="updateTargetLanguage()">
           <option value="dafny">Dafny (Z3 Proof)</option>
-          <option value="cpp">C++17</option>
-          <option value="python">Python 3.11</option>
-          <option value="java">Java 17</option>
-          <option value="javascript">JavaScript ES2020</option>
+          <option value="cpp">C++ (via Dafny)</option>
+          <option value="python">Python (via Dafny)</option>
+          <option value="java">Java (via Dafny)</option>
+          <option value="javascript">JS (via Dafny)</option>
           <option value="lean4">Lean 4 (proofs)</option>
           <option value="tlaplus">TLA+ (model check)</option>
           <option value="latex">LaTeX algorithm2e</option>
@@ -73,14 +73,13 @@
     <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
     <div class="dash-card"><span class="dash-label">Heap</span><span class="dash-value" id="exec-heap">—</span></div>
     <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
-    <div class="dash-card"><span class="dash-label">Cache L1</span><span class="dash-value" id="exec-cache">—</span></div>
     <div style="flex-grow:1;"></div>
     <button class="icon-btn" id="bottom-toggle-btn" onclick="toggleBottomPanel()" title="Toggle Metrics Panel" style="background:none; border:none; color:var(--text); cursor:pointer; padding: 0; margin-right: 15px; display:flex; align-items:center;"><span class="material-symbols-outlined">expand_more</span></button>
     <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
   </div>
   <div class="bottom-split">
     <div class="metrics-panel">
-      <div class="panel-header">Mathematical Audit Report</div>
+      <div class="panel-header">Output &amp; Audit Report</div>
       <div id="audit-report" class="audit-report">Run Evaluate or Reverse-Audit to generate report.</div>
     </div>
     <div class="ast-panel">

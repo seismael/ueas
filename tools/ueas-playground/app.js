@@ -141,16 +141,23 @@ async function doTranspile() {
   var code = ueasEditor.getValue();
   var target = document.getElementById('target-select').value;
   targetEditor.setValue('// Transpiling via MCP...');
+  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Transpiling...</span>';
   try {
     var result = await callMCP('transpile', { source: code, target: target });
     if (result.source) {
       targetEditor.setValue(result.source);
-      document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Transpiled to ' + target + '</span>';
+      if (result.note) {
+        document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Transpiled to Dafny. Build with: <code>dafny build --target:' + target + '</code></span>';
+      } else {
+        document.getElementById('audit-report').innerHTML = '<span style="color:var(--green)">Transpiled to ' + target + '</span>';
+      }
     } else {
       targetEditor.setValue('Transpile Error:\n' + (result.error || 'Unknown error'));
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Transpile failed: ' + (result.error || 'unknown') + '</span>';
     }
   } catch (e) {
-    targetEditor.setValue('MCP connection error:\n' + (e.message || e.toString()));
+    targetEditor.setValue('// Connection error: ' + (e.message || e));
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">MCP connection error.</span>';
   }
 }
 
@@ -160,45 +167,56 @@ async function runExecute() {
   var code = ueasEditor.getValue();
   document.getElementById('exec-status').textContent = 'Running...';
   document.getElementById('exec-status').style.color = 'var(--text-dim)';
-  var result = await callMCP('execute', { source: code });
-  if (result.status === 'error') {
-    document.getElementById('exec-status').textContent = result.error || 'Error';
-    document.getElementById('exec-status').style.color = 'var(--red)';
+  
+  // Run execute + complexity + parse in parallel
+  var [execResult, cmplxResult, parseResult] = await Promise.all([
+    callMCP('execute', { source: code }),
+    callMCP('complexity', { source: code }),
+    callMCP('parse', { source: code })
+  ]);
+  
+  updateDashboard(execResult, cmplxResult);
+  
+  // Show AST tree from parse
+  if (parseResult.ast) {
+    updateAstTree(parseResult.ast);
   } else {
-    updateDashboard(result);
-    // Get AST from MCP parse for tree view
-    var parsed = await callMCP('parse', { source: code });
-    updateAstTree(parsed.ast || parsed);
+    updateAstTree(parseResult);
   }
 }
 
 
 async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
-  if (!legacyCode || legacyCode.startsWith('//')) {
-    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Type or paste code in the target editor, then click Audit to reverse-analyze it.</span>';
+  // Skip placeholder/default text
+  if (!legacyCode || legacyCode.startsWith('// Target') || legacyCode.startsWith('// Transpiling') || legacyCode.startsWith('// Connection')) {
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Type or paste code in the right editor, then click Audit.</span>';
     return;
   }
-  document.getElementById('audit-report').innerHTML = 'Auditing via MCP...';
-  ueasEditor.setValue('// Reverse-auditing in progress...');
+  document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Auditing via MCP...</span>';
   try {
     var result = await callMCP('audit', { source: legacyCode });
-    if (result.status === 'error') {
-      document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit failed: ' + (result.error || 'Unknown error') + '</span>';
-      return;
+    if (result.status === 'ok') {
+      var pseudocode = '';
+      if (result.ueas_mappings && result.ueas_mappings.length) {
+        pseudocode = result.ueas_mappings[0].ueas_equivalent;
+      } else if (result.recommendations && result.recommendations.length) {
+        pseudocode = '// ' + result.recommendations.join('\n// ');
+      }
+      ueasEditor.setValue(pseudocode || '// No algorithm pseudocode extracted.');
+      var cpx = result.complexity_estimates ? result.complexity_estimates.map(function(e) { return e.function + ' (' + e.estimated_complexity + ')'; }).join(', ') : 'None';
+      var html = '<div><strong>Status:</strong> OK</div>';
+      html += '<div><strong>Functions found:</strong> ' + (result.functions_found || 0) + '</div>';
+      html += '<div><strong>Complexity:</strong> ' + cpx + '</div>';
+      var violations = (result.io_violations && result.io_violations.length) || 0;
+      html += '<div style="color:' + (violations ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + violations + '</div>';
+      document.getElementById('audit-report').innerHTML = html;
+    } else {
+      document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit: ' + (result.error || result.status || 'failed') + '</span>';
+      ueasEditor.setValue('// Audit failed: ' + (result.error || result.status || 'unknown'));
     }
-    var pseudocode = '';
-    if (result.ueas_mappings && result.ueas_mappings.length)
-      pseudocode = result.ueas_mappings[0].ueas_equivalent;
-    else if (result.recommendations && result.recommendations.length)
-      pseudocode = '// ' + result.recommendations.join('\n// ');
-    ueasEditor.setValue(pseudocode || '// No algorithm pseudocode extracted.');
-    var cpx = result.complexity_estimates ? result.complexity_estimates.map(function(e) { return e.function + ' (' + e.estimated_complexity + ')'; }).join(', ') : 'None';
-    var html = '<div><strong>Complexity:</strong> ' + cpx + '</div>';
-    html += '<div style="color:' + (result.io_violations && result.io_violations.length ? 'var(--red)' : 'var(--green)') + '"><strong>I/O Violations:</strong> ' + ((result.io_violations && result.io_violations.length) || 0) + '</div>';
-    document.getElementById('audit-report').innerHTML = html;
   } catch (e) {
-    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit failed: ' + (e.message || e) + '</span>';
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--red)">Audit: network error.</span>';
   }
 }
 
@@ -211,19 +229,24 @@ function updateTargetLanguage() {
   }
 }
 
-function updateDashboard(r) {
-  r = r || {};
-  document.getElementById('exec-status').textContent = r.status || r.exit_name || 'OK';
-  var isError = r.status === 'error' || r.exit_code > 0;
-  document.getElementById('exec-status').style.color = isError ? 'var(--red)' : 'var(--green)';
-  document.getElementById('exec-steps').textContent = r.step_count != null ? r.step_count : '—';
-  document.getElementById('exec-heap').textContent = (r.heap_bytes || '—') + ' B';
-  document.getElementById('exec-cache').textContent = r.cache_l1_hits != null ? ('L1: ' + r.cache_l1_hits) : '—';
-  document.getElementById('exec-complexity').textContent = extractComplexity(ueasEditor.getValue());
-  document.getElementById('step-bar-fill').style.width = Math.min((r.step_count || 0) * 2, 100) + '%';
-  document.getElementById('exec-work').textContent = r.work != null ? r.work : '—';
-  document.getElementById('exec-span').textContent = r.span != null ? r.span : '—';
-  document.getElementById('exec-parallel').textContent = r.parallel_efficiency != null ? r.parallel_efficiency : '—';
+function updateDashboard(exec, cmplx) {
+  exec = exec || {}; cmplx = cmplx || {};
+  
+  if (exec.status === 'error') {
+    document.getElementById('exec-status').textContent = exec.error || 'Error';
+    document.getElementById('exec-status').style.color = 'var(--red)';
+    document.getElementById('exec-steps').textContent = '—';
+    document.getElementById('exec-heap').textContent = '—';
+    document.getElementById('exec-complexity').textContent = '—';
+    return;
+  }
+  
+  document.getElementById('exec-status').textContent = 'OK';
+  document.getElementById('exec-status').style.color = 'var(--green)';
+  document.getElementById('exec-steps').textContent = exec.step_count != null ? exec.step_count : (cmplx.step_estimate || '—');
+  document.getElementById('exec-heap').textContent = (exec.heap_bytes || '—') + ' B';
+  document.getElementById('exec-complexity').textContent = extractComplexity(ueasEditor.getValue()) || cmplx.complexity || '—';
+  document.getElementById('step-bar-fill').style.width = Math.min(((exec.step_count || cmplx.step_estimate || 0) * 2), 100) + '%';
 }
 
 function updateAstTree(astJson) {
