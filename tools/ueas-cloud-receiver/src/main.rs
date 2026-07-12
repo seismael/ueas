@@ -3,10 +3,12 @@
 //! Accepts POST /verify with UEAS JSON AST, writes .dfy file,
 //! runs `dafny verify` for Z3 proof, then `dafny build` for code generation.
 
+use http_body_util::BodyExt;
 use hyper::body::Incoming;
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
+use hyper_util::rt::TokioIo;
 use serde_json::json;
 use std::net::SocketAddr;
 use std::process::Command;
@@ -16,7 +18,7 @@ async fn handle(req: Request<Incoming>) -> Result<Response<String>, hyper::Error
     let response = match (req.method(), req.uri().path()) {
         (&Method::GET, "/health") => Response::new("OK".into()),
         (&Method::POST, "/verify") => {
-            let body_bytes = hyper::body::to_bytes(req.into_body()).await.unwrap_or_default();
+            let body_bytes = req.collect().await.unwrap_or_default().to_bytes();
             let body_str = String::from_utf8_lossy(&body_bytes);
             match verify_request(&body_str) {
                 Ok(result) => Response::new(result),
@@ -46,10 +48,6 @@ fn verify_request(body: &str) -> Result<String, String> {
     Ok(json!({"status": if verified { "verified" } else { "failed" }, "z3_output": z3_output, "source": generated, "dafny_source": dafny_source}).to_string())
 }
 
-async fn handle_connection(stream: tokio::net::TcpStream) -> Result<(), hyper::Error> {
-    http1::Builder::new().serve_connection(stream, service_fn(handle)).await
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".into());
@@ -58,6 +56,13 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     loop {
         let (stream, _) = listener.accept().await?;
-        tokio::spawn(handle_connection(stream));
+        tokio::spawn(async move {
+            if let Err(e) = http1::Builder::new()
+                .serve_connection(TokioIo::new(stream), service_fn(handle))
+                .await
+            {
+                eprintln!("Connection: {}", e);
+            }
+        });
     }
 }
