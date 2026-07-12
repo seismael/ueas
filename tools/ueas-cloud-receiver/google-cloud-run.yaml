@@ -1,0 +1,31 @@
+# Google Cloud Run deployment configuration
+# Deploy with: gcloud run deploy ueas-verify --source . --region us-central1
+# Free tier: 2M requests, 180K vCPU-seconds, 360K GiB-seconds per month
+
+spec:
+  template:
+    spec:
+      containers:
+      - image: ueas-verify
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+        env:
+        - name: PORT
+          value: "8080"
+  traffic:
+  - percent: 100
+    latestRevision: true
+
+---
+# Deployment command (run once):
+# gcloud run deploy ueas-verify \
+#   --source . \
+#   --region us-central1 \
+#   --memory 1Gi \
+#   --cpu 1 \
+#   --min-instances 0 \
+#   --max-instances 5 \
+#   --concurrency 80 \
+#   --allow-unauthenticated

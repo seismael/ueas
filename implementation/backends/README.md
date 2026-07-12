@@ -1,21 +1,33 @@
 # UEAS Transpilation Backends
 
-Eight transpilation targets implementing the `TargetGenerator`
-interface (GoF Strategy). All targets produce idiomatic code from the
-canonical UEAS JSON AST with guaranteed semantic equivalence.
+Four transpilation targets implementing the `TargetGenerator`
+interface (GoF Strategy).
 
 ## Target Overview
 
-| Target | Language | Version | Module | Type |
-|--------|----------|---------|--------|------|
-| Python | python | 3.11 | `backends/src/lib.rs` | Imperative |
-| Rust | rust | 2021 | `backends/src/lib.rs` | Imperative |
-| C++ | cpp | 17 | `backends/src/cpp.rs` | Imperative |
-| Java | java | 17 | `backends/src/java.rs` | Imperative |
-| JavaScript | javascript | ES2020 | `backends/src/javascript.rs` | Imperative |
-| Lean 4 | lean4 | 4.0 | `backends/src/lean4.rs` | Formal Verification (theorem proving) |
-| TLA+ | tlaplus | 2.18 | `backends/src/tla.rs` | Formal Verification (model checking) |
-| LaTeX | latex | algorithm2e/v5.2 | `backends/src/latex.rs` | Academic Publishing |
+| Type | Target | Language | Version | Module | Purpose |
+|------|--------|----------|---------|--------|---------|
+| Imperative | Dafny | dafny | 4.6.0 | `backends/src/dafny.rs` | Z3 proofs + code gen (C++, Python, Java, Go, C#, JS) |
+| Formal | Lean 4 | lean4 | 4.0 | `backends/src/lean4.rs` | Theorem proving |
+| Formal | TLA+ | tlaplus | 2.18 | `backends/src/tla.rs` | Model checking |
+| Academic | LaTeX | latex | algorithm2e/v5.2 | `backends/src/latex.rs` | Academic publishing |
+
+## Architecture
+
+```
+UEAS AST → DafnyTarget → .dfy source → Z3 SMT Solver → Proof verified
+                                                ↓
+                                         dafny build --target:cpp → C++
+                                         dafny build --target:py  → Python
+                                         dafny build --target:java → Java
+                                         dafny build --target:go   → Go
+                                         dafny build --target:cs   → C#
+                                         dafny build --target:js   → JavaScript
+```
+
+The DafnyTarget replaces 5 deprecated direct transpilers (Python, Rust, C++, Java, JS)
+with a single verifiable pipeline. The Z3 theorem prover guarantees mathematical
+correctness before any code is generated.
 
 ## Type Mappings
 
