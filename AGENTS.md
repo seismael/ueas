@@ -601,7 +601,7 @@ The following decisions are intentional and non-negotiable.
 | **`const` expressions** | Variables declared with `const` are immutable. This allows the kernel to optimize heap allocation and guarantees side-effect-free evaluation. |
 | **Graph directedness (`Directed`/`Undirected`)** | Explicit direction annotation prevents ambiguity in graph traversal algorithms. Undirected graphs treat edges as unordered pairs; directed graphs use ordered pairs. |
 | **`Memory:` annotation** | Optional memory complexity bound complements `Complexity:`. The kernel tracks `heap.bytes_allocated()` and traps with `HEAP_EXHAUSTION` if the bound is exceeded. |
-| **V3.0 Iceberg Architecture** | Syntax is user-facing (academic pseudocode with `Require:`/`Ensure:` preamble, `<-` assignment, `then`/`do`/`end` closures). Semantic engine (`kernel/src/infer/`) performs type inference and operator desugaring transparently. Users write textbook-style pseudocode; the kernel handles the rigor. |
+| **V5.0 Dafny Architecture** | Syntax is user-facing (academic pseudocode). The kernel handles Big-O profiling at the edge. Dafny provides Z3 theorem proofs and generates C++, Python, Java, Go, C#, and JavaScript via a single transpiler. Lean 4, TLA+, and LaTeX targets serve formal verification and academic publishing. |
 
 ---
 
@@ -680,9 +680,9 @@ ueas/
     ├── kernel/            Rust abstract interpreter
     │   ├── src/           AST, heap, traps, invariants, profiling, linker, infer
     │   └── tests/         Conformance, fuzz, integration
-    ├── backends/          Transpiler plugins (8 targets)
-    │   ├── src/           PythonTarget, RustTarget, CppTarget, JavaTarget,
-    │   │                  JavaScriptTarget, LeanTarget, TlaTarget, LatexTarget
+    ├── backends/          Transpiler plugins (4 targets)
+    │   ├── src/           DafnyTarget (Z3 proofs + code gen),
+    │   │                  LeanTarget, TlaTarget, LatexTarget
     │   └── tests/         Cross-target equivalence test suite
     ├── frontends/         Reverse transpilation (target language → UEAS AST)
     │   └── src/           Python extractor with axiom enforcement
