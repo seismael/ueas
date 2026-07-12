@@ -75,7 +75,7 @@ The UEAS ecosystem is divided into three decoupled domains, connected by the can
 
 1. **Front-End (Grammar & Parsing):** The ANTLR4 grammar (`UEAS.g4`) ingests human-readable pseudocode and produces a typed, validated AST. The grammar supports advanced algorithmic primitives including Module Linking (`Import:`), Stochastic Primitives (`random`), Infinite Streams (`Stream<T>`), and Cryptographic guarantees (`Secret<T>`, `@ConstantTime`).
 2. **Core Kernel (Abstract Interpreter):** A Rust-based virtual machine executes the AST in an isolated Virtual Heap with zero system I/O. It counts abstract logical steps rather than wall-clock time, enabling deterministic complexity profiling regardless of your CPU speed. The kernel now includes cache simulation (`@HardwareProfile`), symbolic execution for timing leak detection, and a pseudo-random number generator for stochastic algorithms.
-3. **Ecosystem Tooling:** The verified AST feeds into 8 Transpiler plugins (idiomatic Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, LaTeX algorithm2e), a Debug Adapter Protocol (DAP) server for step-through debugging, a ZeroMQ Jupyter Kernel for academic workflows, and an MCP server for AI agent integration.
+3. **Ecosystem Tooling:** The verified AST feeds into a unified Dafny Transpilation Bridge (Z3 proofs + code gen for C++, Python, Java, Go, C#, JavaScript), plus Lean 4, TLA+, and LaTeX targets. Tools include a DAP debugger, Jupyter kernel, and always-on MCP server.
 
 ---
 
@@ -126,7 +126,7 @@ Algorithm MultilevelTSP(cities, initialUpperBound)
 The AST produced by this algorithm can be:
 - **Executed** in the kernel sandbox with step-count profiling.
 - **Validated** against its declared `O(N^2)` contract.
-- **Transpiled** to Python, Rust, or C++ with guaranteed semantic equivalence.
+- **Transpiled** to Dafny (Z3-verified code for C++, Python, Java, Go, C#, JavaScript).
 
 ---
 
@@ -147,8 +147,8 @@ ueas run examples/core/euclidean.ueas
 ueas check implementation/library/sorting/quicksort.ueas
 
 # Transpile to a target language
-ueas transpile examples/core/linear_search.ueas --target python
-ueas transpile examples/core/linear_search.ueas --target rust
+ueas transpile examples/core/linear_search.ueas --target dafny
+ueas transpile examples/core/linear_search.ueas --target lean4
 ```
 
 ### MCP Server (AI Agents)

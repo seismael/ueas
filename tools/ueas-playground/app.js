@@ -202,7 +202,7 @@ async function reverseAudit() {
 }
 
 function updateTargetLanguage() {
-  var langMap = { java: 'java', python: 'python', rust: 'rust', cpp: 'cpp', javascript: 'javascript' };
+  var langMap = { dafny: 'plaintext', lean4: 'plaintext', tlaplus: 'plaintext', latex: 'tex' };
   var sel = document.getElementById('target-select').value;
   var modelLang = langMap[sel] || 'plaintext';
   if (targetEditor) {
