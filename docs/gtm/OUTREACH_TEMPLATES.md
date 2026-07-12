@@ -2,7 +2,7 @@
 
 ## Target: Computer Science Professors (Data Structures & Algorithms)
 
-**Subject:** Stop failing students over syntax errors (UEAS v4.0.0 is live)
+**Subject:** Stop failing students over syntax errors (UEAS v5.0 is live)
 
 Hi Prof. [Name],
 

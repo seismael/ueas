@@ -987,7 +987,7 @@ entries. A subset of idiomatic forms is shown below:
 
 ---
 
-## Appendix D: Draft Specifications (Upcoming in v4.0)
+## Appendix D: Draft Specifications (Upcoming in v5.x)
 
 The following grammar extensions have been formally ratified (Phase 4 & 5) and are currently pending implementation into the core `UEAS.g4` grammar and abstract interpreter:
 

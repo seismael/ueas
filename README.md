@@ -8,7 +8,7 @@
 [![Examples](https://img.shields.io/badge/Examples-45-orange)](examples/)
 [![Playground](https://img.shields.io/badge/Playground-Live-success)](https://ueas-three.vercel.app/)
 [![MCP Server](https://img.shields.io/badge/MCP%20Server-Live-success)](https://ueas-mcp.seismael.workers.dev)
-[![Version](https://img.shields.io/badge/Version-4.4.0-blue)](VERSION)
+[![Version](https://img.shields.io/badge/Version-5.0.1-blue)](VERSION)
 
 > **An executable, language-agnostic algorithmic ecosystem.** UEAS allows algorithms to be written universally, mathematically verified, natively debugged, and profiled. Eliminating language-specific constraints for technical evaluations, academic research, data science, and core engineering.
 
@@ -57,7 +57,7 @@ UEAS is **not a new programming language.** It does not build web servers, manag
                                        |                       |                       |
                                +---------------+       +---------------+       +---------------+
                                |  Transpilers  |       | DAP Debugger  |       | Jupyter Kernel|
-                               |  (8 targets)  |       |  (VS Code)    |       |   (ZeroMQ)    |
+                               | Dafny+Formal |       |  (VS Code)    |       |   (ZeroMQ)    |
                                +---------------+       +---------------+       +---------------+
                                        |
                                +---------------+
@@ -75,7 +75,7 @@ The UEAS ecosystem is divided into three decoupled domains, connected by the can
 
 1. **Front-End (Grammar & Parsing):** The ANTLR4 grammar (`UEAS.g4`) ingests human-readable pseudocode and produces a typed, validated AST. The grammar supports advanced algorithmic primitives including Module Linking (`Import:`), Stochastic Primitives (`random`), Infinite Streams (`Stream<T>`), and Cryptographic guarantees (`Secret<T>`, `@ConstantTime`).
 2. **Core Kernel (Abstract Interpreter):** A Rust-based virtual machine executes the AST in an isolated Virtual Heap with zero system I/O. It counts abstract logical steps rather than wall-clock time, enabling deterministic complexity profiling regardless of your CPU speed. The kernel now includes cache simulation (`@HardwareProfile`), symbolic execution for timing leak detection, and a pseudo-random number generator for stochastic algorithms.
-3. **Ecosystem Tooling:** The verified AST feeds into a unified Dafny Transpilation Bridge (Z3 proofs + code gen for C++, Python, Java, Go, C#, JavaScript), plus Lean 4, TLA+, and LaTeX targets. Tools include a DAP debugger, Jupyter kernel, and always-on MCP server.
+3. **Dafny Transpilation Bridge & Formal Verification:** A single DafnyTarget provides Z3 theorem proofs and generates production code in C++, Python, Java, Go, C#, and JavaScript via `dafny build`. Lean 4, TLA+, and LaTeX targets serve formal verification and academic publishing as distinct concerns.
 
 ---
 

@@ -8,9 +8,9 @@ display_name: UEAS — Universal Executable Algorithm Standard
 description: |
   Parse, execute, and transpile mathematically-verified algorithms.
   Formal complexity guarantees (O(1) to O(N!)) enforced by a Rust
-  abstract interpreter with zero system I/O. 8 transpiler targets
-  including Lean 4 theorem proofs and TLA+ model checking.
-version: 4.1.0
+  abstract interpreter with zero system I/O. Dafny transpiler with Z3 proofs
+  plus Lean 4 theorem proving and TLA+ model checking.
+version: 5.0.1
 repository: https://github.com/seismael/ueas
 license: Apache-2.0
 tags:

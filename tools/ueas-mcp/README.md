@@ -1,30 +1,31 @@
 # UEAS MCP Server — Cloudflare Workers
 
-Always-on, globally distributed MCP server for AI agent integration.
-Zero cold starts, 100K req/day free tier.
+Always-on MCP server with 8 tools deployed at the edge.
 
-## Deploy
+## Tools
 
-```bash
-cd tools/ueas-mcp
-npm install -g wrangler
-wrangler login
-wrangler deploy
-```
+| Tool | Description |
+|------|-------------|
+| `parse` | Validate UEAS syntax, return parsed AST |
+| `execute` | Execute with step-count profiling |
+| `transpile` | Transpile to Dafny, Lean 4, TLA+, LaTeX |
+| `verify` | @ConstantTime / Secret<T> compliance |
+| `hardware` | Cache locality analysis |
+| `complexity` | Work-Span DAG analysis |
+| `memory` | Heap footprint estimation |
+| `audit` | Bidirectional reverse audit (Python→UEAS) |
 
-## Local Dev
+## Endpoint
 
-```bash
-wrangler dev
-# → http://localhost:8787
-
-# Test tools/list
-curl -X POST http://localhost:8787 \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-```
+https://ueas-mcp.seismael.workers.dev
 
 ## Architecture
 
-Edge-deployed JavaScript Worker wrapping WASM-compiled Rust kernel.
-All computation runs at the Cloudflare edge — no containers, no cold starts.
+WASM-compiled Rust kernel at the edge. No Docker, no cold starts.
+Auto-deploys via Cloudflare native Git integration on push to master.
+
+## Deploy
+
+1. Cloudflare Dashboard → Workers & Pages → ueas-mcp
+2. Settings → Build → Root directory: `tools/ueas-mcp`
+3. Push to master → auto-deploy in ~15s
