@@ -21,5 +21,5 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Build and run
 WORKDIR /app
 COPY . .
-RUN cargo build --release --bin ueas-cloud-receiver
+RUN cargo build --release --manifest-path tools/ueas-cloud-receiver/Cargo.toml --target-dir /app/target
 CMD ["./target/release/ueas-cloud-receiver"]
