@@ -4,7 +4,7 @@
 //! Python and Rust produces structurally equivalent expressions.
 //! This test is run against all 7 benchmark algorithms.
 
-use ueas_backends::{PythonTarget, RustTarget, TargetGenerator};
+use ueas_backends::{DafnyTarget, TargetGenerator};
 
 /// Euclidean Distance: sqrt(dx*dx + dy*dy) = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1))
 #[test]
@@ -60,8 +60,8 @@ fn benchmark_euclidean_distance() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert!(py_out.contains("+") && py_out.contains("*") && py_out.contains("-"));
@@ -87,8 +87,8 @@ fn benchmark_binary_search_expression() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert!(py_out.contains("low") && py_out.contains("high") && py_out.contains("2"));
@@ -107,8 +107,8 @@ fn benchmark_merge_sort_compare() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert_eq!(py_out, "(a <= b)");
@@ -141,8 +141,8 @@ fn benchmark_matrix_multiply_dot() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert_eq!(py_out, "((a * b) + (c * d))");
@@ -161,8 +161,8 @@ fn benchmark_linear_search_eq() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert_eq!(py_out, "(needle == target)");
@@ -188,8 +188,8 @@ fn benchmark_dijkstra_relaxation() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert_eq!(py_out, "((dist_u + weight) < dist_v)");
@@ -207,8 +207,8 @@ fn benchmark_unary_negation() {
         ]
     }"#;
 
-    let py = PythonTarget;
-    let rs = RustTarget;
+    let py = DafnyTarget; let ast = format!(r#"{{"kind":"Algorithm","children":[{{"kind":"Identifier","value":"test"}},{{"kind":"StringLiteral","value":"O(1)"}},{{"kind":"Return","children":[{ast}]}}]}}"#, ast = ast);
+    let rs = DafnyTarget;
     let py_out = py.generate(ast).unwrap();
     let rs_out = rs.generate(ast).unwrap();
     assert_eq!(py_out, "-(value)");

@@ -50,11 +50,10 @@
       <div class="controls">
         <span class="pane-title">Target / Legacy Code</span>
         <select id="target-select" onchange="updateTargetLanguage()">
-          <option value="java">Java 17</option>
-          <option value="python">Python 3.11</option>
-          <option value="rust">Rust 2021</option>
-          <option value="cpp">C++17</option>
-          <option value="javascript">JavaScript ES2020</option>
+          <option value="dafny">Dafny (Z3 + Code Gen)</option>
+          <option value="lean4">Lean 4 (proofs)</option>
+          <option value="tlaplus">TLA+ (model check)</option>
+          <option value="latex">LaTeX algorithm2e</option>
         </select>
         <div class="spacer"></div>
         <button class="audit-btn" onclick="reverseAudit()" title="Reverse-engineer the target legacy code back into complexity-invariant UEAS pseudocode">&larr; Audit</button>

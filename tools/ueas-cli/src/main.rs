@@ -3,10 +3,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
-use ueas_backends::{
-    CppTarget, JavaScriptTarget, JavaTarget, LatexTarget, LeanTarget, PythonTarget, RustTarget,
-    TargetGenerator, TlaTarget,
-};
+use ueas_backends::{DafnyTarget, LatexTarget, LeanTarget, TargetGenerator, TlaTarget};
 use ueas_kernel::ast::{AstNode, AstNodeFactory, AstNodeKind};
 use ueas_kernel::interp::{execute_program, ExecContext};
 
@@ -41,11 +38,7 @@ enum Command {
 
 #[derive(Clone, ValueEnum)]
 enum Target {
-    Python,
-    Rust,
-    Cpp,
-    Java,
-    Javascript,
+    Dafny,
     #[value(name = "lean4")]
     Lean4,
     #[value(name = "tlaplus")]
@@ -555,19 +548,7 @@ fn cmd_transpile(file: &PathBuf, target: &Target) -> Result<()> {
     let program = AstNodeFactory::program(vec![algo]);
     let ast_json = serde_json::to_string_pretty(&program)?;
     let output = match target {
-        Target::Python => PythonTarget
-            .generate(&ast_json)
-            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
-        Target::Rust => RustTarget
-            .generate(&ast_json)
-            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
-        Target::Cpp => CppTarget
-            .generate(&ast_json)
-            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
-        Target::Java => JavaTarget
-            .generate(&ast_json)
-            .map_err(|e| anyhow::anyhow!("{}", e.message))?,
-        Target::Javascript => JavaScriptTarget
+        Target::Dafny => DafnyTarget
             .generate(&ast_json)
             .map_err(|e| anyhow::anyhow!("{}", e.message))?,
         Target::Lean4 => LeanTarget

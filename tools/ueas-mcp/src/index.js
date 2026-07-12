@@ -29,7 +29,7 @@ function tools() {
   return [
     { name: 'parse', description: 'Validate UEAS pseudocode syntax, return parsed AST with complexity detection', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'execute', description: 'Execute algorithm with step-count profiling, heap tracking, and Work/Span metrics', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
-    { name: 'transpile', description: 'Transpile UEAS to 8 targets: Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, LaTeX algorithm2e', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } },
+    { name: 'transpile', description: 'Transpile UEAS to Dafny (Z3 proofs + code gen), Lean 4 (theorems), TLA+ (model checking), or LaTeX (academic)', inputSchema: { type: 'object', properties: { source: { type: 'string' }, target: { type: 'string' } } } },
     { name: 'verify', description: 'Verify @ConstantTime and Secret<T> cryptographic compliance for timing-leak resistance', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'hardware', description: 'Analyze cache locality: L1/L2/L3 access patterns, data locality, miss penalties', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
     { name: 'complexity', description: 'Empirical Work-Span DAG analysis: step count, parallel efficiency, is_parallel detection', inputSchema: { type: 'object', properties: { source: { type: 'string' } } } },
@@ -68,8 +68,8 @@ function run(name, args) {
 
     case 'transpile': {
       const target = (args.target || 'python').toLowerCase();
-      if (!['python','rust','cpp','java','javascript','lean4','tlaplus','latex'].includes(target))
-        return { status: 'error', error: 'unsupported target: ' + target, valid_targets: 'python, rust, cpp, java, javascript, lean4, tlaplus, latex' };
+      if (!['dafny','lean4','tlaplus','latex'].includes(target))
+        return { status: 'error', error: 'unsupported target: ' + target, valid_targets: 'dafny, lean4, tlaplus, latex' };
       try {
         const out = transpile_ueas(src, target);
         return { status: 'ok', language: target, source: out };

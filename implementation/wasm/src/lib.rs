@@ -1,8 +1,6 @@
 //! UEAS WASM bindings — Track 7 domain tools.
 
-use ueas_backends::cpp::CppTarget;
-use ueas_backends::java::JavaTarget;
-use ueas_backends::javascript::JavaScriptTarget;
+use ueas_backends::dafny::DafnyTarget;
 use ueas_backends::latex::LatexTarget;
 use ueas_backends::lean4::LeanTarget;
 use ueas_backends::tla::TlaTarget;
@@ -53,11 +51,7 @@ pub fn transpile_ueas(s: &str, t: &str) -> Result<String, JsValue> {
     let p = AstNodeFactory::program(vec![a]);
     let js = serde_json::to_string(&p).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let gen: Box<dyn TargetGenerator> = match t {
-        "python" => Box::new(PythonTarget),
-        "rust" => Box::new(RustTarget),
-        "cpp" => Box::new(CppTarget),
-        "java" => Box::new(JavaTarget),
-        "javascript" => Box::new(JavaScriptTarget),
+        "dafny" => Box::new(DafnyTarget),
         "lean4" => Box::new(LeanTarget),
         "tlaplus" => Box::new(TlaTarget::new()),
         "latex" => Box::new(LatexTarget),
