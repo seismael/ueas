@@ -32,7 +32,11 @@ async fn handle(req: Request<Incoming>) -> Result<Response<String>, hyper::Error
 
 fn verify_request(body: &str) -> Result<String, String> {
     let req: serde_json::Value = serde_json::from_str(body).map_err(|e| format!("Invalid JSON: {}", e))?;
-    let ast_str = serde_json::to_string(&req["ast"]).map_err(|e| format!("AST serialization: {}", e))?;
+    // Accept 'ast' as a raw JSON AST string directly, or re-serialize if it's an object
+    let ast_str = match &req["ast"] {
+        serde_json::Value::String(s) => s.clone(),
+        other => serde_json::to_string(other).map_err(|e| format!("AST serialization: {}", e))?,
+    };
     let target = req["target"].as_str().unwrap_or("cpp");
 
     let dafny_source = DafnyTarget.generate(&ast_str).map_err(|e| format!("Transpile: {}", e.message))?;
