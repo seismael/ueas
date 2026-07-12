@@ -71,12 +71,16 @@ function run(name, args) {
     }
 
     case 'transpile': {
-      const target = (args.target || 'python').toLowerCase();
-      if (!['dafny','lean4','tlaplus','latex'].includes(target))
-        return { status: 'error', error: 'unsupported target: ' + target, valid_targets: 'dafny, lean4, tlaplus, latex' };
+      const target = (args.target || 'dafny').toLowerCase();
+      // Imperative targets: generate Dafny code (verified by Z3, built via dafny build --target:X)
+      const imperativeTargets = ['python','rust','cpp','java','javascript'];
+      const actualTarget = imperativeTargets.includes(target) ? 'dafny' : target;
+      const validTargets = ['dafny','lean4','tlaplus','latex'];
+      if (!validTargets.includes(actualTarget))
+        return { status: 'error', error: 'unsupported target: ' + target, valid_targets: validTargets.concat(imperativeTargets).join(', ') };
       try {
-        const out = transpile_ueas(src, target);
-        return { status: 'ok', language: target, source: out };
+        const out = transpile_ueas(src, actualTarget);
+        return { status: 'ok', language: target, source: out, note: imperativeTargets.includes(target) ? 'Generated Dafny code. Build with: dafny build --target:' + target : undefined };
       } catch (e) { return { status: 'error', language: target, error: e.toString() }; }
     }
 
