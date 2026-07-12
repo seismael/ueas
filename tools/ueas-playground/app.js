@@ -166,16 +166,17 @@ async function runExecute() {
     document.getElementById('exec-status').style.color = 'var(--red)';
   } else {
     updateDashboard(result);
-    updateAstTree(code);
+    // Get AST from MCP parse for tree view
+    var parsed = await callMCP('parse', { source: code });
+    updateAstTree(parsed.ast || parsed);
   }
 }
 
 
 async function reverseAudit() {
   var legacyCode = targetEditor.getValue();
-  var lang = document.getElementById('target-select').value;
-  if (lang !== 'python' && legacyCode.indexOf('def ') === -1) {
-    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Audit works best with Python code. Try pasting Python code first, then audit.</span>';
+  if (!legacyCode || legacyCode.startsWith('//')) {
+    document.getElementById('audit-report').innerHTML = '<span style="color:var(--orange)">Type or paste code in the target editor, then click Audit to reverse-analyze it.</span>';
     return;
   }
   document.getElementById('audit-report').innerHTML = 'Auditing via MCP...';
@@ -202,7 +203,7 @@ async function reverseAudit() {
 }
 
 function updateTargetLanguage() {
-  var langMap = { dafny: 'plaintext', lean4: 'plaintext', tlaplus: 'plaintext', latex: 'tex' };
+  var langMap = { dafny: 'plaintext', cpp: 'cpp', python: 'python', java: 'java', javascript: 'javascript', lean4: 'plaintext', tlaplus: 'plaintext', latex: 'tex' };
   var sel = document.getElementById('target-select').value;
   var modelLang = langMap[sel] || 'plaintext';
   if (targetEditor) {
@@ -213,13 +214,16 @@ function updateTargetLanguage() {
 function updateDashboard(r) {
   r = r || {};
   document.getElementById('exec-status').textContent = r.status || r.exit_name || 'OK';
-  var isError = r.status === 'error' || r.exit_code > 0 || (r.exit_name && r.exit_name !== 'OK');
+  var isError = r.status === 'error' || r.exit_code > 0;
   document.getElementById('exec-status').style.color = isError ? 'var(--red)' : 'var(--green)';
   document.getElementById('exec-steps').textContent = r.step_count != null ? r.step_count : '—';
   document.getElementById('exec-heap').textContent = (r.heap_bytes || '—') + ' B';
-  document.getElementById('exec-cache').textContent = r.cache_l1_hits != null ? r.cache_l1_hits : '—';
+  document.getElementById('exec-cache').textContent = r.cache_l1_hits != null ? ('L1: ' + r.cache_l1_hits) : '—';
   document.getElementById('exec-complexity').textContent = extractComplexity(ueasEditor.getValue());
   document.getElementById('step-bar-fill').style.width = Math.min((r.step_count || 0) * 2, 100) + '%';
+  document.getElementById('exec-work').textContent = r.work != null ? r.work : '—';
+  document.getElementById('exec-span').textContent = r.span != null ? r.span : '—';
+  document.getElementById('exec-parallel').textContent = r.parallel_efficiency != null ? r.parallel_efficiency : '—';
 }
 
 function updateAstTree(astJson) {
