@@ -103,10 +103,10 @@ function auditLegacyCode(src) {
   let currentFn = null;
   let indentLevel = 0;
 
-  // I/O violation detection (Axiom 1)
+  // I/O violation detection (Axiom 1) — only flag dangerous patterns, not stdlib imports
   const ioViolations = [];
-  const ioPatterns = ['print(', 'open(', 'input(', 'import ', 'from ', 'read(', 'write(', 'socket', 'http', 'request', 'urlopen'];
-  ioPatterns.forEach(p => {
+  const dangerousPatterns = ['print(', 'open(', 'input(', 'read(', 'write(', 'socket', 'http', 'request', 'urlopen', 'subprocess', 'os.', 'sys.exit', 'exec(', 'eval('];
+  dangerousPatterns.forEach(p => {
     if (src.includes(p)) ioViolations.push({ line: src.indexOf(p), pattern: p, severity: 'axiom_violation' });
   });
 
@@ -149,14 +149,19 @@ function auditLegacyCode(src) {
 
   // Generate UEAS equivalent mapping
   const ueasMappings = functions.map(fn => {
+    const paramsStr = fn.params.length ? fn.params.join(', ') : '';
+    const requireStr = fn.params.length ? 'Require: ' + fn.params.map(p => p + ': Integer').join(', ') : 'Require:';
     const bodyStr = fn.body_lines.map(l => {
-      let currentSpace = (l.match(/^\s*/) || [''])[0].length;
-      let keepSpaces = Math.max(0, currentSpace - indentLevel);
-      let prefix = ' '.repeat(keepSpaces);
-      return prefix + l.trim().replace(/\bdef\b/g, '#').replace(/print\(/g, '# print(').replace(/import\s+/g, '# import ');
-    }).join('\n    ');
+      let trimmed = l.trim();
+      if (!trimmed || trimmed.startsWith('#')) return '';
+      // Convert Python assignment = to UEAS arrow <-
+      if (trimmed.includes(' = ') && !trimmed.includes('==') && !trimmed.includes('!=') && !trimmed.includes('<=') && !trimmed.includes('>=')) {
+        trimmed = trimmed.replace(/ = /g, ' <- ');
+      }
+      return trimmed;
+    }).filter(l => l).join('\n    ');
 
-    const algo = 'Algorithm ' + fn.name + '(' + fn.params.join(', ') + ')\n    Require: ' + fn.params.map(p => p + ': Integer').join(', ') + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + bodyStr;
+    const algo = 'Algorithm ' + fn.name + '(' + paramsStr + ')\n    ' + requireStr + '\n    Ensure: Integer\n    Complexity: "' + (complexityEstimates.find(c => c.function === fn.name) || {}).estimated_complexity + '"\n\n    ' + bodyStr + '\n    return 0';
     return { function: fn.name, ueas_equivalent: algo };
   });
 
@@ -169,9 +174,9 @@ function auditLegacyCode(src) {
     ueas_mappings: ueasMappings,
     findings: findings,
     recommendations: ioViolations.length
-      ? ['Remove I/O calls — UEAS Axiom 1 prohibits system I/O', 'Replace print() with return statements', 'Remove import statements — UEAS algorithms are self-contained']
+      ? ['Remove I/O calls — UEAS Axiom 1 prohibits system I/O', 'Replace print() with return statements', 'Remove dangerous imports (os, subprocess, sys.exit)']
       : functions.length
-        ? ['All functions map to valid UEAS Algorithm declarations', 'Run `ueas transpile` on the generated UEAS to verify']
+        ? ['Algorithm maps to UEAS structure', 'Use ueas transpile to verify the generated pseudocode']
         : ['No Python functions found — source may not be algorithmic code']
   };
 }
