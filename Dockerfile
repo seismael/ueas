@@ -12,7 +12,8 @@ RUN wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-p
 ENV DAFNY_VERSION=4.6.0
 RUN wget https://github.com/dafny-lang/dafny/releases/download/v${DAFNY_VERSION}/dafny-${DAFNY_VERSION}-x64-ubuntu-20.04.zip \
     && unzip dafny-${DAFNY_VERSION}-x64-ubuntu-20.04.zip -d /opt/dafny \
-    && ln -s /opt/dafny/dafny /usr/local/bin/dafny
+    && chmod +x /opt/dafny/dafny/dafny \
+    && ln -s /opt/dafny/dafny/dafny /usr/local/bin/dafny
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
