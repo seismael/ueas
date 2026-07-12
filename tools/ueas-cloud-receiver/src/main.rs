@@ -32,10 +32,10 @@ async fn handle(req: Request<Incoming>) -> Result<Response<String>, hyper::Error
 
 fn verify_request(body: &str) -> Result<String, String> {
     let req: serde_json::Value = serde_json::from_str(body).map_err(|e| format!("Invalid JSON: {}", e))?;
-    let ast = req["ast"].to_string();
+    let ast_str = serde_json::to_string(&req["ast"]).map_err(|e| format!("AST serialization: {}", e))?;
     let target = req["target"].as_str().unwrap_or("cpp");
 
-    let dafny_source = DafnyTarget.generate(&ast).map_err(|e| format!("Transpile: {}", e.message))?;
+    let dafny_source = DafnyTarget.generate(&ast_str).map_err(|e| format!("Transpile: {}", e.message))?;
     std::fs::write("/tmp/ueas.dfy", &dafny_source).map_err(|e| format!("Write: {}", e))?;
 
     let verify = Command::new("dafny").args(["verify", "/tmp/ueas.dfy"]).output().map_err(|e| format!("Dafny: {}", e))?;
