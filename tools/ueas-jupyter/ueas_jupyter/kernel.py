@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import subprocess
+import asyncio
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -72,24 +72,28 @@ class UeasKernel(Kernel):
         with tempfile.TemporaryDirectory() as tmpdir:
             src_path = Path(tmpdir) / "cell.ueas"
             src_path.write_text(combined, encoding="utf-8")
-            proc = subprocess.run(
-                ["ueas", *cmd_args, str(src_path)],
-                capture_output=True,
-                text=True,
-                timeout=15,
-                check=False,
+            proc = await asyncio.create_subprocess_exec(
+                "ueas",
+                *cmd_args,
+                str(src_path),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            if proc.returncode == 0 and any(kw in body for kw in ("Algorithm ", "Record ")):
+            stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=15)
+            returncode = proc.returncode if proc.returncode is not None else 1
+            if returncode == 0 and any(kw in body for kw in ("Algorithm ", "Record ")):
                 self._definitions.append(body)
-            output = proc.stdout if proc.returncode == 0 else proc.stderr
+            output = (stdout_bytes if returncode == 0 else stderr_bytes).decode(
+                "utf-8", errors="replace"
+            )
             if not silent and output:
                 self.send_response(  # type: ignore[no-untyped-call]
                     self.iopub_socket,
                     "stream",
-                    {"name": "stdout" if proc.returncode == 0 else "stderr", "text": output},
+                    {"name": "stdout" if returncode == 0 else "stderr", "text": output},
                 )
             return {
-                "status": "ok" if proc.returncode == 0 else "error",
+                "status": "ok" if returncode == 0 else "error",
                 "execution_count": self.execution_count,
                 "payload": [],
                 "user_expressions": {},
