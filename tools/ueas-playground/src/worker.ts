@@ -15,7 +15,7 @@ interface UeasWasmApi {
   ueas_format(source: string): string;
   ueas_verify(source: string, level: string, fuzzIters: number): string;
   ueas_transpile(source: string, target: string): string;
-  ueas_run(source: string, entry: string, stepBudget: number): string;
+  ueas_run(source: string, entry: string, stepBudget: bigint): string;
 }
 
 let wasmPromise: Promise<UeasWasmApi> | null = null;
@@ -52,7 +52,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         payload = wasm.ueas_transpile(req.source, req.target ?? "rust");
         break;
       case "run":
-        payload = wasm.ueas_run(req.source, "", 1_000_000);
+        payload = wasm.ueas_run(req.source, "", 1_000_000n);
         break;
     }
     self.postMessage({ id: req.id, ok: true, payload });

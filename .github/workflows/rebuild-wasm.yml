@@ -1,29 +1,44 @@
 name: Rebuild WASM
+
 on:
   push:
-    branches: [master]
+    branches: [master, main]
     paths:
-      - 'implementation/kernel/**'
-      - 'implementation/backends/**'
-      - 'implementation/wasm/src/**'
+      - 'crates/ueas-syntax/**'
+      - 'crates/ueas-hir/**'
+      - 'crates/ueas-vm/**'
+      - 'crates/ueas-verify/**'
+      - 'crates/ueas-codegen/**'
+      - 'crates/ueas-wasm/**'
+      - '.github/workflows/rebuild-wasm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  wasm:
+  build-wasm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with: { targets: 'wasm32-unknown-unknown' }
-      - run: cargo install wasm-pack
-      - name: Build WASM
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@wasm-pack
+      - name: Build ueas-wasm
         run: |
-          cd implementation/wasm
-          wasm-pack build --target web
-          cp pkg/ueas_wasm.js ../../tools/ueas-mcp/src/
-          cp pkg/ueas_wasm_bg.wasm ../../tools/ueas-mcp/src/
-      - name: Commit fresh WASM
+          wasm-pack build crates/ueas-wasm --target web --out-dir ../../tools/ueas-mcp-edge/src/pkg
+          rm -f tools/ueas-mcp-edge/src/pkg/.gitignore tools/ueas-mcp-edge/src/pkg/package.json
+          mkdir -p tools/ueas-playground/public/pkg
+          cp tools/ueas-mcp-edge/src/pkg/ueas_wasm.js tools/ueas-playground/public/pkg/
+          cp tools/ueas-mcp-edge/src/pkg/ueas_wasm_bg.wasm tools/ueas-playground/public/pkg/
+          cp tools/ueas-mcp-edge/src/pkg/ueas_wasm.d.ts tools/ueas-playground/public/pkg/
+      - name: Commit rebuilt WASM artifacts
         run: |
-          git config user.name "ueas-bot"
-          git config user.email "bot@ueas.dev"
-          git add tools/ueas-mcp/src/ueas_wasm.js tools/ueas-mcp/src/ueas_wasm_bg.wasm
-          git diff --cached --quiet || git commit -m "build: auto-rebuild WASM after kernel/backends change" && git push
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/ueas-mcp-edge/src/pkg tools/ueas-playground/public/pkg
+          if ! git diff --cached --quiet; then
+            git commit -s -m "chore(wasm): rebuild ueas-wasm artifacts [skip ci]"
+            git push
+          fi

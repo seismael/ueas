@@ -3,12 +3,21 @@
  * Backed 100% by compiled `ueas-wasm` — zero regex heuristics or mocked metrics.
  */
 
+import initWasm, {
+  ueas_check,
+  ueas_format,
+  ueas_verify,
+  ueas_transpile,
+  ueas_run,
+} from "./pkg/ueas_wasm.js";
+import wasmModule from "./pkg/ueas_wasm_bg.wasm";
+
 export interface UeasWasmModule {
   ueas_check(source: string): string;
   ueas_format(source: string): string;
   ueas_verify(source: string, level: string, fuzzIterations: number): string;
   ueas_transpile(source: string, target: string): string;
-  ueas_run(source: string, entry: string, stepBudget: number): string;
+  ueas_run(source: string, entry: string, stepBudget: bigint): string;
 }
 
 interface JsonRpcRequest {
@@ -27,11 +36,16 @@ const MAX_STEP_BUDGET = 1_000_000;
 
 let wasmLoader: Promise<UeasWasmModule> | null = null;
 
-async function getWasm(): Promise<UeasWasmModule> {
+function getWasm(): Promise<UeasWasmModule> {
   if (!wasmLoader) {
-    // Expects `wasm-pack build crates/ueas-wasm --target web --out-dir ../../tools/ueas-mcp-edge/src/pkg`
-    const modPath = "./pkg/ueas_wasm.js";
-    wasmLoader = import(/* @vite-ignore */ modPath) as Promise<UeasWasmModule>;
+    // Initialize the statically bundled WebAssembly.Module once per isolate.
+    wasmLoader = initWasm(wasmModule).then(() => ({
+      ueas_check,
+      ueas_format,
+      ueas_verify,
+      ueas_transpile,
+      ueas_run,
+    }));
   }
   return wasmLoader;
 }
@@ -180,7 +194,7 @@ export default {
         case "ueas_run": {
           const entry = typeof args.entry === "string" ? args.entry : "";
           const budget = typeof args.stepBudget === "number" ? Math.min(args.stepBudget, MAX_STEP_BUDGET) : 500_000;
-          output = wasm.ueas_run(source, entry, budget);
+          output = wasm.ueas_run(source, entry, BigInt(Math.max(1, Math.trunc(budget))));
           break;
         }
         default:
