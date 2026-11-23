@@ -5,44 +5,47 @@ from __future__ import annotations
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from ipykernel.kernelbase import Kernel
 
 
-class UeasKernel(Kernel):  # type: ignore[misc]
+class UeasKernel(Kernel):
     """Stateful Jupyter kernel for UEAS v2.0 supporting `%reset`, `%verify`, and `%transpile`."""
 
     implementation = "ueas_jupyter"
     implementation_version = "2.0.0"
     language = "ueas"
     language_version = "2.0.0"
-    language_info: ClassVar[dict[str, Any]] = {
-        "name": "ueas",
-        "mimetype": "text/x-ueas",
-        "file_extension": ".ueas",
-    }
     banner = "UEAS v2.0 Stateful Algorithmic Specification & Verification Kernel"
 
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore[no-untyped-call]
+        self.language_info = {
+            "name": "ueas",
+            "mimetype": "text/x-ueas",
+            "file_extension": ".ueas",
+        }
         self._definitions: list[str] = []
 
-    def do_execute(
+    async def do_execute(
         self,
         code: str,
         silent: bool,
         store_history: bool = True,
         user_expressions: dict[str, Any] | None = None,
         allow_stdin: bool = False,
+        *,
+        cell_meta: dict[str, Any] | None = None,
+        cell_id: str | None = None,
     ) -> dict[str, Any]:
         """Execute a UEAS cell with accumulated prior definitions and cell magics."""
-        del store_history, user_expressions, allow_stdin
+        del store_history, user_expressions, allow_stdin, cell_meta, cell_id
         stripped = code.strip()
         if stripped == "%reset":
             self._definitions.clear()
             if not silent:
-                self.send_response(
+                self.send_response(  # type: ignore[no-untyped-call]
                     self.iopub_socket, "stream", {"name": "stdout", "text": "Kernel state reset.\n"}
                 )
             return {
@@ -80,7 +83,7 @@ class UeasKernel(Kernel):  # type: ignore[misc]
                 self._definitions.append(body)
             output = proc.stdout if proc.returncode == 0 else proc.stderr
             if not silent and output:
-                self.send_response(
+                self.send_response(  # type: ignore[no-untyped-call]
                     self.iopub_socket,
                     "stream",
                     {"name": "stdout" if proc.returncode == 0 else "stderr", "text": output},
