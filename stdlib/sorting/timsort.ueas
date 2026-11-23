@@ -1,0 +1,64 @@
+module std.sorting
+
+Algorithm TimSort(mut data: List<Int>) -> List<Int>
+    Complexity:
+        Time: O(N log N) where N = data.length,
+        Space: O(N)
+
+    let n <- data.length
+    let run <- 4
+    let mut start <- 0
+    while start < n do
+        let end_i <- min(start + run, n)
+        for i in (start + 1)..end_i do
+            let key <- data[i]
+            let mut j <- i - 1
+            while j >= start and data[j] > key do
+                data[j + 1] <- data[j]
+                j <- j - 1
+            end while
+            data[j + 1] <- key
+        end for
+        start <- start + run
+    end while
+    let mut size <- run
+    while size < n do
+        let mut left <- 0
+        while left < n do
+            let mid <- min(left + size, n)
+            let right <- min(left + 2 * size, n)
+            if mid < right then
+                let mut merged <- []
+                let mut i <- left
+                let mut j <- mid
+                while i < mid and j < right do
+                    if data[i] <= data[j] then
+                        merged.push(data[i])
+                        i <- i + 1
+                    else
+                        merged.push(data[j])
+                        j <- j + 1
+                    end if
+                end while
+                while i < mid do
+                    merged.push(data[i])
+                    i <- i + 1
+                end while
+                while j < right do
+                    merged.push(data[j])
+                    j <- j + 1
+                end while
+                for k in 0..merged.length do
+                    data[left + k] <- merged[k]
+                end for
+            end if
+            left <- left + 2 * size
+        end while
+        size <- size * 2
+    end while
+    return data
+end Algorithm
+
+@Test "timsort"
+    assert TimSort([12, 5, 9, 1, 15, 3, 7, 2, 11]) == [1, 2, 3, 5, 7, 9, 11, 12, 15]
+end Test

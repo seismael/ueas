@@ -1,0 +1,33 @@
+module std.dp
+
+Algorithm CoinChange(coins: List<Int>, amount: Int) -> Option<Int>
+    Require:
+        amount >= 0
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let inf <- amount + 1
+    let mut dp <- []
+    for i in 0..=amount do
+        dp.push(inf)
+    end for
+    dp[0] <- 0
+    for a in 1..=amount do
+        for i in 0..coins.length do
+            let c <- coins[i]
+            if c <= a and dp[a - c] + 1 < dp[a] then
+                dp[a] <- dp[a - c] + 1
+            end if
+        end for
+    end for
+    if dp[amount] > amount then
+        return None
+    end if
+    return Some(dp[amount])
+end Algorithm
+
+@Test "coin change"
+    assert CoinChange([1, 2, 5], 11) == Some(3)
+    assert CoinChange([2], 3) == None
+end Test

@@ -1,20 +1,28 @@
-Algorithm MatrixMultiply(A, B)
-    Require: A: Matrix, B: Matrix
-    Ensure: Matrix
-    Complexity: "O(R * C * K)"
+module examples.core
 
-    result <- zeroMatrix(R, K)
+Algorithm MatrixMultiply(a: List<List<Int>>, b: List<List<Int>>) -> List<List<Int>>
+    Complexity:
+        Time: O(N^3),
+        Space: O(N^2)
 
-    for each i in range(0, R) do
-        for each j in range(0, K) do
-            sum <- 0.0
-
-            for each k in range(0, C) do
-                sum <- sum + A[i][k] * B[k][j]
+    let rows <- a.length
+    let cols <- b[0].length
+    let inner <- b.length
+    let mut c <- []
+    for i in 0..rows do
+        let mut row <- []
+        for j in 0..cols do
+            let mut sum <- 0
+            for k in 0..inner do
+                sum <- sum + a[i][k] * b[k][j]
             end for
-
-            result[i][j] <- sum
+            row.push(sum)
         end for
+        c.push(row)
     end for
+    return c
+end Algorithm
 
-    return result
+@Test "matrix multiply"
+    assert MatrixMultiply([[1, 2], [3, 4]], [[5, 6], [7, 8]]) == [[19, 22], [43, 50]]
+end Test

@@ -1,0 +1,39 @@
+module std.dp
+
+Algorithm MatrixChainOrder(dims: List<Int>) -> Int
+    Require:
+        dims.length >= 2
+    Complexity:
+        Time: O(N^3),
+        Space: O(N^2)
+
+    let n <- dims.length - 1
+    let mut dp <- []
+    for i in 0..n do
+        let mut row <- []
+        for j in 0..n do
+            row.push(0)
+        end for
+        dp.push(row)
+    end for
+    for len_c in 2..=n do
+        for i in 0..=(n - len_c) do
+            let j <- i + len_c - 1
+            let mut best <- 1000000000
+            for k in i..j do
+                let cost <- dp[i][k] + dp[k + 1][j] + dims[i] * dims[k + 1] * dims[j + 1]
+                if cost < best then
+                    best <- cost
+                end if
+            end for
+            let mut row_i <- dp[i]
+            row_i[j] <- best
+            dp[i] <- row_i
+        end for
+    end for
+    return dp[0][n - 1]
+end Algorithm
+
+@Test "matrix chain"
+    assert MatrixChainOrder([10, 30, 5, 60]) == 4500
+end Test

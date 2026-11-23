@@ -1,0 +1,16 @@
+[package]
+name = "ueas-ucts"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "UEAS Conformance Test Suite (UCTS)"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+ueas-syntax = { path = "../../crates/ueas-syntax" }
+ueas-hir = { path = "../../crates/ueas-hir" }
+ueas-vm = { path = "../../crates/ueas-vm" }
+ueas-verify = { path = "../../crates/ueas-verify" }
+ueas-codegen = { path = "../../crates/ueas-codegen" }

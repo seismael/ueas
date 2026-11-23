@@ -1,0 +1,20 @@
+name: UEAS v2.0 Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build-cli:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --bin ueas
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ueas-cli-${{ matrix.os }}
+          path: target/release/ueas*

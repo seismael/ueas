@@ -1,0 +1,33 @@
+module std.strings
+
+Algorithm ZArray(s: String) -> List<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(N)
+
+    let n <- s.length
+    let mut z <- []
+    for i in 0..n do
+        z.push(0)
+    end for
+    let mut l <- 0
+    let mut r <- 0
+    for i in 1..n do
+        if i <= r then
+            z[i] <- min(r - i + 1, z[i - l])
+        end if
+        while i + z[i] < n and s[z[i]] == s[i + z[i]] do
+            z[i] <- z[i] + 1
+        end while
+        if i + z[i] - 1 > r then
+            l <- i
+            r <- i + z[i] - 1
+        end if
+    end for
+    return z
+end Algorithm
+
+@Test "z array"
+    let z <- ZArray("aabxaab")
+    assert z[4] == 3
+end Test

@@ -1,25 +1,19 @@
-Algorithm IsValidParentheses(s)
-    Require: s: String
-    Ensure: Boolean
-    Complexity: "O(N)", N = s.length
+module examples.stack
 
-    stack <- []
+Algorithm ValidParens(s: String) -> Bool
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    for each ch in s do
-        if ch == '(' or ch == '{' or ch == '[' then
-            stack.append(ch)
-        else
-            if stack.length == 0 then
-                return false
-            end if
-
-            top <- stack[-1]
-            if (ch == ')' and top == '(') or (ch == '}' and top == '{') or (ch == ']' and top == '[') then
-                stack.pop()
-            else
-                return false
-            end if
-        end if
+    let mut bal <- 0
+    for i in 0..s.length do
+        if s[i] == "(" then bal <- bal + 1
+        else bal <- bal - 1 end if
+        if bal < 0 then return false end if
     end for
+    return bal == 0
+end Algorithm
 
-    return stack.length == 0
+@Test "ValidParens"
+    assert ValidParens("(())") == true
+end Test

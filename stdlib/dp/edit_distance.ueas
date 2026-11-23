@@ -1,0 +1,29 @@
+module std.dp
+
+Algorithm EditDistance(a: String, b: String) -> Int
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let m <- a.length
+    let n <- b.length
+    let mut prev <- []
+    for j in 0..=n do
+        prev.push(j)
+    end for
+    for i in 1..=m do
+        let mut curr <- [i]
+        for j in 1..=n do
+            let sub_cost <- select(a[i - 1] == b[j - 1], prev[j - 1], prev[j - 1] + 1)
+            let ins_cost <- curr[j - 1] + 1
+            let del_cost <- prev[j] + 1
+            curr.push(min(sub_cost, min(ins_cost, del_cost)))
+        end for
+        prev <- curr
+    end for
+    return prev[n]
+end Algorithm
+
+@Test "edit distance"
+    assert EditDistance("kitten", "sitting") == 3
+end Test

@@ -1,0 +1,24 @@
+module std.math
+
+Algorithm GCD(a: Int, b: Int) -> Int
+    Require:
+        a >= 0 and b >= 0
+    Ensure(res):
+        res >= 0
+    Complexity:
+        Time: O(log N) where N = a,
+        Space: O(1)
+
+    let mut x <- a
+    let mut y <- b
+    while y != 0 do
+        let t <- y
+        y <- x % y
+        x <- t
+    end while
+    return x
+end Algorithm
+
+@Test "gcd"
+    assert GCD(48, 18) == 6
+end Test

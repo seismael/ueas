@@ -1,0 +1,32 @@
+module std.math
+
+Algorithm ExtendedEuclid(a: Int, b: Int) -> Tuple<Int, Int, Int>
+    Complexity:
+        Time: O(log N) where N = a,
+        Space: O(1)
+
+    let mut old_r <- a
+    let mut r <- b
+    let mut old_s <- 1
+    let mut s <- 0
+    let mut old_t <- 0
+    let mut t <- 1
+    while r != 0 do
+        let q <- old_r / r
+        let nr <- old_r - q * r
+        old_r <- r
+        r <- nr
+        let ns <- old_s - q * s
+        old_s <- s
+        s <- ns
+        let nt <- old_t - q * t
+        old_t <- t
+        t <- nt
+    end while
+    return (old_r, old_s, old_t)
+end Algorithm
+
+@Test "extended euclid"
+    let res <- ExtendedEuclid(30, 20)
+    assert res[0] == 10
+end Test

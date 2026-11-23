@@ -1,40 +1,15 @@
-# UEAS Deployment Architecture
+# UEAS v2.0 Deployment Architecture
 
-Three cloud services, all free tier, zero cost at idle.
+Three decoupled deployment targets aligned with UEAS v2.0:
 
-```
-                    ┌─────────────────────────┐
-                    │   Vercel (Edge)          │
-                    │   Playground UI          │
-                    │   ueas-three.vercel.app  │
-                    │   Static HTML/JS/CSS     │
-                    └──────────┬──────────────┘
-                               │ fetch()
-                               ▼
-                    ┌─────────────────────────┐
-                    │ Cloudflare Workers       │
-                    │ MCP Server (8 tools)     │
-                    │ ueas-mcp.seismael.workers.dev │
-                    │ WASM kernel at edge      │
-                    └──────────┬──────────────┘
-                               │ POST /verify (coming)
-                               ▼
-                    ┌─────────────────────────┐
-                    │ Google Cloud Run         │
-                    │ Dafny + Z3 Verifier      │
-                    │ ueas-verify-...run.app   │
-                    │ Scale-to-zero, $0 idle   │
-                    └─────────────────────────┘
-```
-
-| Tier | Service | URL | Purpose | Cost |
-|------|---------|-----|---------|------|
-| Presentation | **Vercel** | `ueas-three.vercel.app` | Playground UI | Free |
-| API | **Cloudflare Workers** | `ueas-mcp.seismael.workers.dev` | 8 MCP tools | Free |
-| Verification | **Google Cloud Run** | TBD (after deploy) | Dafny/Z3 proofs + code gen | Free tier |
+| Tier | Service | Source | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Presentation** | **Vercel (Vite SPA)** | `tools/ueas-playground` | Browser IDE running `ueas-wasm` in a dedicated Web Worker |
+| **Edge API** | **Cloudflare Workers** | `tools/ueas-mcp-edge` | Stateless MCP 2025-03-26 JSON-RPC server backed by `ueas-wasm` |
+| **Formal Prover** | **Google Cloud Run** | `tools/ueas-cloud-verify` | Hardened Axum service running Dafny 4 / Lean 4 with 1 MB limit & 15s timeout |
 
 ## Setup Guides
 
-1. [Vercel Playground](VERCEL.md) — static HTML deploy
-2. [Cloudflare MCP Worker](CLOUDFLARE.md) — WASM kernel at edge
-3. [Google Cloud Run Dafny Backend](GOOGLE_CLOUD.md) — Z3 verification
+1. [Vercel Playground](VERCEL.md)
+2. [Cloudflare Edge MCP Worker](CLOUDFLARE.md)
+3. [Google Cloud Run Formal Verifier](GOOGLE_CLOUD.md)

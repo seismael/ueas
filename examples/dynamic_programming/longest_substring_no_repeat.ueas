@@ -1,37 +1,24 @@
-Algorithm LengthOfLongestSubstring(s)
-    Require: s: String
-    Ensure: Integer
-    Complexity: "O(N)", N = s.length
+module examples.dynamic_programming
 
-    if s.length == 0 then
-        return 0
-    end if
+Algorithm LengthOfLongestSubstring(s: String) -> Int
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    lastSeen <- [-1]
-    i <- 0
-    while i < 128 do
-        lastSeen.append(-1)
-        i <- i + 1
-    end while
-
-    maxLen <- 0
-    left <- 0
-    right <- 0
-
-    while right < s.length do
-        ch <- CharCode(s[right])
-        if lastSeen[ch] >= left then
-            left <- lastSeen[ch] + 1
+    let mut best <- 0
+    let mut start <- 0
+    let mut last <- Map()
+    for i in 0..s.length do
+        let ch <- s[i]
+        if last.contains(ch) and last[ch] >= start then
+            start <- last[ch] + 1
         end if
+        last.insert(ch, i)
+        best <- max(best, i - start + 1)
+    end for
+    return best
+end Algorithm
 
-        lastSeen[ch] <- right
-
-        currentLen <- right - left + 1
-        if currentLen > maxLen then
-            maxLen <- currentLen
-        end if
-
-        right <- right + 1
-    end while
-
-    return maxLen
+@Test "LengthOfLongestSubstring"
+    assert LengthOfLongestSubstring("abcabcbb") == 3
+end Test

@@ -2,38 +2,14 @@
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 1.0.0-draft | Yes |
+UEAS `2.0.x` is actively maintained and receives security updates.
+
+## Architectural Security Guarantees
+
+- **Axiom 1 Purity:** Core `crates/*` compile with `#![forbid(unsafe_code)]`, zero host filesystem/network/clock access, and deterministic `StepBudget` / `HeapBudget` enforcement.
+- **Constant-Time Enforcement:** `@ConstantTime` algorithms undergo static `Public ⊑ Secret` taint analysis in `ueas-hir` and dynamic `(pc, cache_line, branch_taken)` trace equivalence verification in `ueas-verify`.
+- **Cloud Microservice Hardening:** `ueas-cloud-verify` enforces 1 MB request limits, isolated `TempDir` sandboxes, and 15-second subprocess timeouts.
 
 ## Reporting a Vulnerability
 
-Do not open a public issue for security vulnerabilities.
-
-Send a detailed report to the project security contact. Include:
-
-- Affected component(s): grammar parser, kernel sandbox, MCP endpoint, CI/CD
-- Attack vector description
-- Proof-of-concept exploit
-- Suggested mitigation
-
-The security team will acknowledge receipt within 48 hours and provide a
-timeline for remediation. Critical vulnerabilities will trigger an out-of-band
-security release.
-
-## Scope
-
-Security reports are accepted for:
-
-- Kernel sandbox escapes (VirtualHeap, I/O bypass)
-- Parser-level crashes or undefined behavior on malicious `.ueas` input
-- AST injection via crafted canonical JSON
-- MCP endpoint authentication bypass
-- CI/CD supply chain compromise
-
-Out of scope:
-
-- Theoretical attacks requiring physical access
-- Social engineering
-- Unsafe usage of transpiled output in production systems (the standard
-  provides verification, not runtime sandboxing of transpiled code)
+Please report security issues privately via GitHub Security Advisories or the repository maintainers rather than opening a public issue.

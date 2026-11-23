@@ -1,0 +1,42 @@
+module std.data_structures
+
+Record AvlNode
+    key: Int,
+    height: Int,
+    left: Int,
+    right: Int
+end Record
+
+Algorithm AvlHeight(arena: List<AvlNode>, idx: Int) -> Int
+    Complexity:
+        Time: O(1),
+        Space: O(1)
+    if idx == -1 then
+        return 0
+    end if
+    return arena[idx].height
+end Algorithm
+
+Algorithm AvlContains(arena: List<AvlNode>, root: Int, key: Int) -> Bool
+    Complexity:
+        Time: O(log N) where N = arena.length,
+        Space: O(1)
+    let mut cur <- root
+    while cur != -1 do
+        let n <- arena[cur]
+        if key == n.key then
+            return true
+        else if key < n.key then
+            cur <- n.left
+        else
+            cur <- n.right
+        end if
+    end while
+    return false
+end Algorithm
+
+@Test "avl arena lookup"
+    let arena <- [AvlNode { key: 20, height: 1, left: -1, right: -1 }]
+    assert AvlHeight(arena, 0) == 1
+    assert AvlContains(arena, 0, 20) == true
+end Test

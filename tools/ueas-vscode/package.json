@@ -1,0 +1,40 @@
+{
+  "name": "ueas-vscode",
+  "displayName": "UEAS v2.0",
+  "description": "Official UEAS v2.0 LSP, DAP time-travel debugger, and verification extension",
+  "version": "2.0.0",
+  "publisher": "ueas",
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Programming Languages", "Debuggers"],
+  "activationEvents": ["onLanguage:ueas"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "ueas",
+      "aliases": ["UEAS", "ueas"],
+      "extensions": [".ueas"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "ueas",
+      "scopeName": "source.ueas",
+      "path": "./syntaxes/ueas.tmLanguage.json"
+    }],
+    "debuggers": [{
+      "type": "ueas",
+      "label": "UEAS VM Debugger",
+      "languages": ["ueas"]
+    }]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "compile": "tsc -p ."
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.7.0"
+  }
+}

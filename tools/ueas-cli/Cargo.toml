@@ -1,16 +1,27 @@
 [package]
 name = "ueas-cli"
-version = "0.1.0"
-edition = "2021"
-description = "UEAS CLI — parse, validate, execute, and transpile UEAS algorithms"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Unified UEAS CLI (run, check, verify, audit, transpile, fmt, lsp, dap, mcp, publish, ci)"
+
+[lints]
+workspace = true
 
 [[bin]]
 name = "ueas"
 path = "src/main.rs"
 
 [dependencies]
+ueas-syntax = { path = "../../crates/ueas-syntax" }
+ueas-hir = { path = "../../crates/ueas-hir" }
+ueas-vm = { path = "../../crates/ueas-vm" }
+ueas-verify = { path = "../../crates/ueas-verify" }
+ueas-codegen = { path = "../../crates/ueas-codegen" }
+ueas-extract = { path = "../../crates/ueas-extract" }
+ueas-lsp = { path = "../ueas-lsp" }
+ueas-dap = { path = "../ueas-dap" }
 clap = { version = "4", features = ["derive"] }
-ueas-kernel = { path = "../../implementation/kernel" }
-ueas-backends = { path = "../../implementation/backends" }
 anyhow = "1"
 serde_json = "1"
+tokio = { version = "1", features = ["full"] }

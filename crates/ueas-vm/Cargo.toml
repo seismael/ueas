@@ -1,0 +1,17 @@
+[package]
+name = "ueas-vm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "UEAS deterministic cost-metered bytecode VM, VirtualHeap, cache & Work/Span DAG"
+
+[lints]
+workspace = true
+
+[dependencies]
+ueas-syntax = { path = "../ueas-syntax" }
+ueas-hir = { path = "../ueas-hir" }
+indexmap = { version = "2", features = ["serde"] }
+num-bigint = { version = "0.4", features = ["serde"] }
+num-traits = "0.2"
+serde = { version = "1", features = ["derive"] }

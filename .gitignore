@@ -12,11 +12,9 @@ __pycache__/
 # Ruff Cache
 .ruff_cache
 
-# ANTLR4
-*.tokens
-*.interp
-*.class
-specification/grammar/generated/
+# Node / TypeScript
+node_modules/
+tools/ueas-vscode/out/
 
 # Docker
 .dockerignore

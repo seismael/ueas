@@ -1,48 +1,48 @@
-# UEAS MCP Server — Anthropic Directory Submission
+# UEAS v2.0 MCP Server — Directory Submission
 
 ## Manifest
 
 ```yaml
 name: ueas
-display_name: UEAS — Universal Executable Algorithm Standard
+display_name: UEAS v2.0 — Unified Executable Algorithmic Specification
 description: |
-  Parse, execute, and transpile mathematically-verified algorithms.
-  Formal complexity guarantees (O(1) to O(N!)) enforced by a Rust
-  abstract interpreter with zero system I/O. Dafny transpiler with Z3 proofs
-  plus Lean 4 theorem proving and TLA+ model checking.
-version: 5.0.1
-repository: https://github.com/seismael/ueas
+  Parse, verify (L0-L3 progressive verification, property fuzzing, adversarial Big-O
+  complexity fitting, observational constant-time checking), extract from Python/TS/Rust,
+  and transpile to Rust, Python, TypeScript, C++20, Go, Dafny 4, Lean 4, Verus, Quint,
+  TLA+, LaTeX, and Typst.
+version: 2.0.0
 license: Apache-2.0
 tags:
   - algorithms
   - formal-verification
   - transpiler
-  - computational-science
-  - education
+  - wasm
+  - rust
 tools:
-  - name: parse_ueas
-    description: Validate UEAS academic pseudocode syntax
-  - name: execute_ueas
-    description: Run an algorithm in the virtual heap sandbox with step-count profiling
-  - name: transpile_ueas
-    description: Transpile to Python, Rust, C++17, Java 17, JavaScript, Lean 4, TLA+, or LaTeX
-contact: maintainers@ueas.dev
+  - name: ueas_check
+    description: Static L0 check (lossless CST parse, canonical HIR, bidirectional types, MVS, CT lattice)
+  - name: ueas_verify
+    description: Progressive L0-L3 verification & cryptographic SHA-256 certificate
+  - name: ueas_transpile
+    description: Dual-track transpilation across 12 Track A/B/C targets
+  - name: ueas_extract
+    description: Tree-sitter extraction from Python, TypeScript, or Rust with Axiom 1 purity audit
 status: stable
 ```
 
 ## Installation
 
 ```bash
-# Local (stdio transport)
-cd implementation && cargo install --path tools/ueas-mcp
+# Local stdio transport via unified CLI
+cargo install --path tools/ueas-cli
 
-# Add to Claude Desktop config:
+# Claude Desktop / MCP client config:
 {
   "mcpServers": {
     "ueas": {
-      "command": "ueas-mcp"
+      "command": "ueas",
+      "args": ["mcp"]
     }
   }
 }
 ```
-

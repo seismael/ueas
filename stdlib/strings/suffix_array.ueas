@@ -1,0 +1,27 @@
+module std.strings
+
+Algorithm BuildSuffixArray(s: String) -> List<Int>
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let n <- s.length
+    let mut sa <- []
+    for i in 0..n do
+        sa.push(i)
+    end for
+    for i in 1..n do
+        let key <- sa[i]
+        let mut j <- i - 1
+        while j >= 0 and s[sa[j]..n] > s[key..n] do
+            sa[j + 1] <- sa[j]
+            j <- j - 1
+        end while
+        sa[j + 1] <- key
+    end for
+    return sa
+end Algorithm
+
+@Test "suffix array"
+    assert BuildSuffixArray("banana") == [5, 3, 1, 0, 4, 2]
+end Test

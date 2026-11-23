@@ -1,0 +1,16 @@
+[package]
+name = "ueas-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "UEAS Language Server Protocol (LSP) server"
+
+[lints]
+workspace = true
+
+[dependencies]
+ueas-syntax = { path = "../../crates/ueas-syntax" }
+ueas-hir = { path = "../../crates/ueas-hir" }
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"

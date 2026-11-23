@@ -1,37 +1,33 @@
-Algorithm RotateArray(data, k)
-    Require: data: List, k: Integer
-    Ensure: List
-    Complexity: "O(N)", N = data.length
+module examples.arrays
 
-    n <- data.length
-    if n <= 1 then
-        return data
+Algorithm RotateArray(mut nums: List<Int>, k: Int) -> List<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(1)
+
+    let n <- nums.length
+    if n == 0 then
+        return nums
     end if
-
-    k <- k mod n
-    if k == 0 then
-        return data
-    end if
-
-    ReverseRange(data, 0, n - 1)
-    ReverseRange(data, 0, k - 1)
-    ReverseRange(data, k, n - 1)
-
-    return data
+    let s <- k % n
+    nums.reverse()
+    let mut l <- 0
+    let mut r <- s - 1
+    while l < r do
+        nums.swap(l, r)
+        l <- l + 1
+        r <- r - 1
+    end while
+    l <- s
+    r <- n - 1
+    while l < r do
+        nums.swap(l, r)
+        l <- l + 1
+        r <- r - 1
+    end while
+    return nums
 end Algorithm
 
-
-Algorithm ReverseRange(data, left, right)
-    Require: data: List, left: Integer, right: Integer
-    Ensure: List
-    Complexity: "O(M)", M = right - left + 1
-
-    while left < right do
-        temp <- data[left]
-        data[left] <- data[right]
-        data[right] <- temp
-        left <- left + 1
-        right <- right - 1
-    end while
-
-    return data
+@Test "rotate array"
+    assert RotateArray([1, 2, 3, 4, 5], 2) == [4, 5, 1, 2, 3]
+end Test

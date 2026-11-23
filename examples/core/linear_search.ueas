@@ -1,12 +1,18 @@
-Algorithm LinearSearch(data, target)
-    Require: data: List, target: Integer
-    Ensure: Integer
-    Complexity: "O(N)"
+module examples.core
 
-    for each item in data do
-        if item == target then
-            return item
+Algorithm LinearSearch(data: List<Int>, target: Int) -> Option<Int>
+    Complexity:
+        Time: O(N) where N = data.length,
+        Space: O(1)
+
+    for i in 0..data.length do
+        if data[i] == target then
+            return Some(i)
         end if
     end for
+    return None
+end Algorithm
 
-    return -1
+@Test "linear search"
+    assert LinearSearch([4, 2, 7, 1], 7) == Some(2)
+end Test

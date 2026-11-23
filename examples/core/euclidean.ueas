@@ -1,9 +1,22 @@
-Algorithm EuclideanDistance(x1, y1, x2, y2)
-    Require: x1: Real, y1: Real, x2: Real, y2: Real
-    Ensure: Real
-    Complexity: "O(1)"
+module examples.core
 
-    dx <- x2 - x1
-    dy <- y2 - y1
-    assert(dx * dx >= 0.0, "Square of real must be non-negative")
-    return sqrt(dx * dx + dy * dy)
+Algorithm EuclideanGcd(a: Int, b: Int) -> Int
+    Require:
+        a >= 0 and b >= 0
+    Complexity:
+        Time: O(log N) where N = a,
+        Space: O(1)
+
+    let mut x <- a
+    let mut y <- b
+    while y != 0 do
+        let t <- y
+        y <- x % y
+        x <- t
+    end while
+    return x
+end Algorithm
+
+@Test "euclidean gcd"
+    assert EuclideanGcd(54, 24) == 6
+end Test

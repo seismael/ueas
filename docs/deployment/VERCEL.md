@@ -1,33 +1,20 @@
-# Vercel Playground Deployment
+# Vercel Playground Deployment (`ueas-playground`)
 
-The browser-based bidirectional editor runs on Vercel (static HTML/JS/CSS).
+The UEAS v2.0 Playground is a Vite + TypeScript SPA executing `ueas-wasm` locally inside a browser Web Worker (`src/worker.ts`) with zero `innerHTML` sinks.
 
-## Prerequisites
-- A Vercel account (free at https://vercel.com/signup)
-- GitHub repo connected
-
-## Step 1: Configure
-
-1. Go to **https://vercel.com** → Import Project → select `ueas` repo
-2. Fill in:
+## Build & Deploy
 
 | Field | Value |
-|-------|-------|
+| :--- | :--- |
 | **Root Directory** | `tools/ueas-playground` |
-| **Framework Preset** | Other / Static |
-| **Build Command** | *(leave empty — no build step)* |
-| **Output Directory** | `.` |
+| **Framework Preset** | Vite |
+| **Build Command** | `npm run build` |
+| **Output Directory** | `dist` |
 
-3. Click **Deploy**
+Build `ueas-wasm` into `tools/ueas-playground/public/pkg` before deploying:
 
-## Step 2: Verify
-
-Visit `https://ueas-three.vercel.app` — the playground should load with:
-- Monaco editor with UEAS syntax highlighting
-- Accordion examples sidebar
-- Transpile to Dafny, Lean 4, TLA+, LaTeX
-- Evaluate + Audit buttons calling CF Workers MCP
-
-## How It Works
-
-The playground is a **pure MCP client** — zero WASM, zero build step. All computation happens via `fetch()` to the Cloudflare Workers MCP server at `ueas-mcp.seismael.workers.dev`.
+```bash
+wasm-pack build crates/ueas-wasm --target web --out-dir ../../tools/ueas-playground/public/pkg
+cd tools/ueas-playground
+npm ci && npm run build
+```

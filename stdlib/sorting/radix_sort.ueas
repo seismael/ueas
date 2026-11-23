@@ -1,0 +1,44 @@
+module std.sorting
+
+Algorithm RadixSort(mut data: List<Int>) -> List<Int>
+    Require:
+        forall i in 0..data.length :: data[i] >= 0
+    Complexity:
+        Time: O(N) where N = data.length,
+        Space: O(N)
+
+    if data.length <= 1 then
+        return data
+    end if
+    let mut max_val <- data[0]
+    for i in 1..data.length do
+        max_val <- max(max_val, data[i])
+    end for
+    let mut exp <- 1
+    while max_val / exp > 0 do
+        let mut buckets <- []
+        for b in 0..10 do
+            buckets.push([])
+        end for
+        for i in 0..data.length do
+            let digit <- (data[i] / exp) % 10
+            let mut b <- buckets[digit]
+            b.push(data[i])
+            buckets[digit] <- b
+        end for
+        let mut next_data <- []
+        for b in 0..10 do
+            let bucket <- buckets[b]
+            for j in 0..bucket.length do
+                next_data.push(bucket[j])
+            end for
+        end for
+        data <- next_data
+        exp <- exp * 10
+    end while
+    return data
+end Algorithm
+
+@Test "radix sort"
+    assert RadixSort([170, 45, 75, 90, 802, 24, 2, 66]) == [2, 24, 45, 66, 75, 90, 170, 802]
+end Test

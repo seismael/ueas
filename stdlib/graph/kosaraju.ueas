@@ -1,0 +1,37 @@
+module std.graph
+
+Algorithm CountReachableComponents(n: Int, adj: List<List<Int>>) -> Int
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let mut visited <- []
+    for i in 0..n do
+        visited.push(false)
+    end for
+    let mut count <- 0
+    for start in 0..n do
+        if not visited[start] then
+            count <- count + 1
+            let mut stack <- [start]
+            while stack.length > 0 do
+                let u <- stack.pop().unwrap()
+                if visited[u] then
+                    continue
+                end if
+                visited[u] <- true
+                for j in 0..adj[u].length do
+                    let v <- adj[u][j]
+                    if not visited[v] then
+                        stack.push(v)
+                    end if
+                end for
+            end while
+        end if
+    end for
+    return count
+end Algorithm
+
+@Test "components"
+    assert CountReachableComponents(4, [[1], [0], [3], [2]]) == 2
+end Test

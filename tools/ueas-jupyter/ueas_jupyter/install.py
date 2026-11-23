@@ -1,29 +1,26 @@
+"""Install the UEAS v2.0 Jupyter kernel specification."""
+
+from __future__ import annotations
+
 import json
-import os
 import sys
+from pathlib import Path
+from typing import Any
 
 
-def main():
-    kernel_dir = os.path.join(os.path.dirname(__file__), "..")
-    kernel_spec = {
-        "argv": [
-            sys.executable,
-            "-m",
-            "ueas_jupyter.kernel",
-            "-f",
-            "{connection_file}",
-        ],
-        "display_name": "UEAS (Algorithm Standard)",
-        "language": "python",
+def install_kernel_spec() -> Path:
+    """Write kernel.json into the user Jupyter kernels directory."""
+    spec_dir = Path.home() / ".local" / "share" / "jupyter" / "kernels" / "ueas"
+    spec_dir.mkdir(parents=True, exist_ok=True)
+    spec: dict[str, Any] = {
+        "argv": [sys.executable, "-m", "ueas_jupyter.kernel", "-f", "{connection_file}"],
+        "display_name": "UEAS v2.0",
+        "language": "ueas",
     }
-
-    import jupyter_client
-
-    kd = jupyter_client.kernelspec.KernelSpecManager().install_kernel_spec(
-        kernel_dir, "ueas", user=True
-    )
-    print(f"UEAS kernel installed to {kd}")
+    target = spec_dir / "kernel.json"
+    target.write_text(json.dumps(spec, indent=2), encoding="utf-8")
+    return target
 
 
 if __name__ == "__main__":
-    main()
+    print(install_kernel_spec())

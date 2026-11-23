@@ -1,94 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UEAS Playground — Universal Executable Algorithm Standard</title>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
-<link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UEAS v2.1 Studio Playground</title>
+  <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-<header>
-  <div style="display:flex; align-items:center; gap: 15px;">
-    <button class="icon-btn" onclick="toggleSidebar()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); cursor:pointer; padding: 0; display:flex;"><span class="material-symbols-outlined">menu</span></button>
-    <div class="brand">
-      <h1><span class="accent">&Sigma;</span> UEAS Playground</h1>
-      <p class="tagline">Write once. Verify mathematically. Transpile anywhere.</p>
+  <header class="topbar">
+    <h1>UEAS v2.1 Studio</h1>
+    <div class="controls">
+      <select id="example-select" aria-label="Examples"></select>
+      <button id="btn-run" type="button">Run @Test</button>
+      <button id="btn-verify" type="button">Verify (L3)</button>
+      <button id="btn-fmt" type="button">Format</button>
+      <select id="target-select" aria-label="Codegen Target">
+        <option value="rust">Rust</option>
+        <option value="python">Python</option>
+        <option value="typescript">TypeScript</option>
+        <option value="wasm">WASM Binary</option>
+        <option value="wit">WIT Interface</option>
+        <option value="smt2">SMT-LIB2</option>
+        <option value="dafny">Dafny 4</option>
+        <option value="lean4">Lean 4</option>
+        <option value="verus">Verus</option>
+        <option value="latex">LaTeX</option>
+        <option value="typst">Typst</option>
+      </select>
+      <button id="btn-transpile" type="button">Transpile</button>
+      <button id="btn-share" type="button">Share URL</button>
+      <button id="btn-cert" type="button">Download Cert</button>
     </div>
-  </div>
-  <div class="badges">
-    <span class="badge">v4.5.0</span>
-    <span class="badge">MCP</span>
-  </div>
-</header>
-
-<main class="layout-grid">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-scroll" id="sidebar-scroll"></div>
-    <div class="sidebar-footer">
-      <a href="https://github.com/seismael/ueas" target="_blank">GitHub</a>
-      <a href="https://ueas-mcp.seismael.workers.dev" target="_blank">MCP Server</a>
-      <a href="https://github.com/seismael/ueas/blob/main/library/INDEX.md" target="_blank">Library (45)</a>
-    </div>
-  </aside>
-
-  <div class="editor-container">
-    <div class="editor-pane ueas-pane">
-      <div class="controls">
-        <span class="pane-title">UEAS Pseudocode</span>
-        <div class="spacer"></div>
-        <button class="primary" onclick="runExecute()" title="Execute the UEAS pseudocode to profile complexity, step count, and memory bound in the dashboard below">&#9654; Evaluate</button>
-        <button class="primary" onclick="simulateTranspile()" title="Translate the UEAS pseudocode into the target legacy language selected on the right">Transpile &rarr;</button>
-      </div>
-      <div id="editor-ueas" class="monaco-container"></div>
-    </div>
-
-    <div class="resizer" id="editor-resizer"></div>
-
-    <div class="editor-pane target-pane">
-      <div class="controls">
-        <span class="pane-title">Target / Legacy Code</span>
-        <select id="target-select" onchange="updateTargetLanguage()">
-          <option value="dafny">Dafny (Z3 Proof)</option>
-          <option value="cpp">C++ (via Dafny)</option>
-          <option value="python">Python (via Dafny)</option>
-          <option value="java">Java (via Dafny)</option>
-          <option value="javascript">JS (via Dafny)</option>
-          <option value="lean4">Lean 4 (proofs)</option>
-          <option value="tlaplus">TLA+ (model check)</option>
-          <option value="latex">LaTeX algorithm2e</option>
-        </select>
-        <div class="spacer"></div>
-        <button class="audit-btn" onclick="reverseAudit()" title="Reverse-engineer the target legacy code back into complexity-invariant UEAS pseudocode">&larr; Audit</button>
-      </div>
-      <div id="editor-target" class="monaco-container"></div>
-    </div>
-  </div>
-</main>
-
-<footer class="fixed-bottom" id="bottom-panel">
-  <div id="dashboard" class="dashboard">
-    <div class="dash-card"><span class="dash-label">Status</span><span class="dash-value" id="exec-status">—</span></div>
-    <div class="dash-card"><span class="dash-label">Steps</span><span class="dash-value" id="exec-steps">—</span></div>
-    <div class="dash-card"><span class="dash-label">Heap</span><span class="dash-value" id="exec-heap">—</span></div>
-    <div class="dash-card"><span class="dash-label">Complexity</span><span class="dash-value complexity" id="exec-complexity">—</span></div>
-    <div style="flex-grow:1;"></div>
-    <button class="icon-btn" id="bottom-toggle-btn" onclick="toggleBottomPanel()" title="Toggle Metrics Panel" style="background:none; border:none; color:var(--text); cursor:pointer; padding: 0; margin-right: 15px; display:flex; align-items:center;"><span class="material-symbols-outlined">expand_more</span></button>
-    <div class="step-bar"><div class="step-bar-fill" id="step-bar-fill"></div></div>
-  </div>
-  <div class="bottom-split">
-    <div class="metrics-panel">
-      <div class="panel-header">Output &amp; Audit Report</div>
-      <div id="audit-report" class="audit-report">Run Evaluate or Reverse-Audit to generate report.</div>
-    </div>
-    <div class="ast-panel">
-      <div class="panel-header">Interactive AST</div>
-      <div id="ast-tree" class="ast-tree">AST will appear here.</div>
-    </div>
-  </div>
-</footer>
-
-<script src="app.js"></script>
+  </header>
+  <main class="workspace">
+    <section class="pane">
+      <h2>UEAS v2.1 Source</h2>
+      <textarea id="editor" spellcheck="false"></textarea>
+    </section>
+    <section class="pane">
+      <h2>Telemetry, Verification &amp; Output</h2>
+      <div id="chart-panel" class="chart-panel"></div>
+      <pre id="output"></pre>
+    </section>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

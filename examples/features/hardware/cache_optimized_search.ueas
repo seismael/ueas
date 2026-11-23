@@ -1,18 +1,16 @@
-Algorithm CacheOptimizedSearch(data, target)
-    Require: data: List, target: Integer
-    Ensure: Integer
-    Complexity: "O(N / L)"
+module examples.features.hardware
 
-    @HardwareProfile(L1 = 64KB, L2 = 512KB, CacheLine = 64B)
+Algorithm CacheLinearScan(data: List<Int>, target: Int) -> Option<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    n <- data.length
-    i <- 0
+    for i in 0..data.length do
+        if data[i] == target then return Some(i) end if
+    end for
+    return None
+end Algorithm
 
-    while i < n do
-        if data[i] == target then
-            return i
-        end if
-        i <- i + 1
-    end while
-
-    return -1
+@Test "CacheLinearScan"
+    assert CacheLinearScan([10, 20, 30], 20) == Some(1)
+end Test

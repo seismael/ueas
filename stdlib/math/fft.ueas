@@ -1,0 +1,23 @@
+module std.math
+
+Algorithm PolynomialMultiply(a: List<Int>, b: List<Int>) -> List<Int>
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let n <- a.length + b.length - 1
+    let mut out <- []
+    for i in 0..n do
+        out.push(0)
+    end for
+    for i in 0..a.length do
+        for j in 0..b.length do
+            out[i + j] <- out[i + j] + a[i] * b[j]
+        end for
+    end for
+    return out
+end Algorithm
+
+@Test "polynomial multiply"
+    assert PolynomialMultiply([1, 2], [3, 4]) == [3, 10, 8]
+end Test

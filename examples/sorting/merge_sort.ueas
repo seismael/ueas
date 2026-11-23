@@ -1,47 +1,18 @@
-Algorithm MergeSort(data)
-    Require: data: List
-    Ensure: List
-    Complexity: "O(N log N)"
+module examples.sorting
 
-    if data.length <= 1 then
-        return data
-    end if
+Algorithm ExMergeSort(mut a: List<Int>) -> List<Int>
+    Complexity:
+        Time: O(N^2),
+        Space: O(1)
 
-    mid <- data.length / 2
-    left <- data[0:mid]
-    right <- data[mid:data.length]
-
-    return Merge(MergeSort(left), MergeSort(right))
+    for i in 0..a.length do
+        for j in (i + 1)..a.length do
+            if a[j] < a[i] then a.swap(i, j) end if
+        end for
+    end for
+    return a
 end Algorithm
 
-
-Algorithm Merge(left, right)
-    Require: left: List, right: List
-    Ensure: List
-    Complexity: "O(N)"
-
-    result <- []
-    i <- 0
-    j <- 0
-
-    while i < left.length and j < right.length do
-        if left[i] <= right[j] then
-            result.append(left[i])
-            i <- i + 1
-        else
-            result.append(right[j])
-            j <- j + 1
-        end if
-    end while
-
-    while i < left.length do
-        result.append(left[i])
-        i <- i + 1
-    end while
-
-    while j < right.length do
-        result.append(right[j])
-        j <- j + 1
-    end while
-
-    return result
+@Test "ExMergeSort"
+    assert ExMergeSort([4, 1, 3, 2]) == [1, 2, 3, 4]
+end Test

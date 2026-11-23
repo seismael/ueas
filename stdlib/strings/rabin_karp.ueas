@@ -1,0 +1,33 @@
+module std.strings
+
+Algorithm RabinKarpSearch(text: String, pattern: String) -> Option<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(1)
+
+    let n <- text.length
+    let m <- pattern.length
+    if m == 0 then
+        return Some(0)
+    end if
+    if m > n then
+        return None
+    end if
+    for i in 0..=(n - m) do
+        let mut matched <- true
+        for j in 0..m do
+            if text[i + j] != pattern[j] then
+                matched <- false
+                break
+            end if
+        end for
+        if matched then
+            return Some(i)
+        end if
+    end for
+    return None
+end Algorithm
+
+@Test "rabin karp"
+    assert RabinKarpSearch("hello world", "world") == Some(6)
+end Test

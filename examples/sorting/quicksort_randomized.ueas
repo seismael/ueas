@@ -1,20 +1,13 @@
-Algorithm QuickSortRandomized(data)
-    Require: data: List
-    Ensure: List
-    Complexity: "O(N log N)"
-    Memory: "O(N)"
+module examples.sorting
 
-    pivotIndex <- randInt(0, data.length - 1)
-    pivot <- data[pivotIndex]
-    left <- []
-    right <- []
+Algorithm RandomizedPivot(n: Int) -> Int
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    for each item in data do
-        if item < pivot then
-            left.append(item)
-        else if item > pivot then
-            right.append(item)
-        end if
-    end for
+    return rand_int(0, max(0, n - 1))
+end Algorithm
 
-    return QuickSortRandomized(left) + [pivot] + QuickSortRandomized(right)
+@Test "RandomizedPivot"
+    assert RandomizedPivot(5) >= 0
+end Test

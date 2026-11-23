@@ -1,40 +1,24 @@
-Algorithm MaxSlidingWindow(data, k)
-    Require: data: List, k: Integer
-    Ensure: List
-    Complexity: "O(N)", N = data.length
+module examples.arrays
 
-    n <- data.length
-    if k > n then
-        k <- n
+Algorithm SlidingWindowMax(nums: List<Int>, k: Int) -> List<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(N)
+
+    let mut out <- []
+    if nums.length == 0 or k <= 0 then
+        return out
     end if
+    for i in 0..=(nums.length - k) do
+        let mut m <- nums[i]
+        for j in (i + 1)..(i + k) do
+            m <- max(m, nums[j])
+        end for
+        out.push(m)
+    end for
+    return out
+end Algorithm
 
-    result <- []
-    dequeIndices <- []
-
-    i <- 0
-    while i < k do
-        while dequeIndices.length > 0 and data[i] >= data[dequeIndices[-1]] do
-            dequeIndices.pop()
-        end while
-        dequeIndices.append(i)
-        i <- i + 1
-    end while
-
-    while i < n do
-        result.append(data[dequeIndices[0]])
-
-        while dequeIndices.length > 0 and dequeIndices[0] <= i - k do
-            dequeIndices.popIndex(0)
-        end while
-
-        while dequeIndices.length > 0 and data[i] >= data[dequeIndices[-1]] do
-            dequeIndices.pop()
-        end while
-
-        dequeIndices.append(i)
-        i <- i + 1
-    end while
-
-    result.append(data[dequeIndices[0]])
-
-    return result
+@Test "sliding window max"
+    assert SlidingWindowMax([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
+end Test

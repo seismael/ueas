@@ -1,7 +1,0 @@
-[workspace]
-members = [
-    "kernel",
-    "backends",
-    "frontends",
-]
-resolver = "2"

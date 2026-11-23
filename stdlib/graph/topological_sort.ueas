@@ -1,0 +1,43 @@
+module std.graph
+
+Algorithm TopologicalSort(n: Int, edges: List<List<Int>>) -> List<Int>
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let mut indeg <- []
+    for i in 0..n do
+        indeg.push(0)
+    end for
+    for e in 0..edges.length do
+        let v <- edges[e][1]
+        indeg[v] <- indeg[v] + 1
+    end for
+    let mut queue <- []
+    for i in 0..n do
+        if indeg[i] == 0 then
+            queue.push(i)
+        end if
+    end for
+    let mut head <- 0
+    let mut order <- []
+    while head < queue.length do
+        let u <- queue[head]
+        head <- head + 1
+        order.push(u)
+        for e in 0..edges.length do
+            if edges[e][0] == u then
+                let v <- edges[e][1]
+                indeg[v] <- indeg[v] - 1
+                if indeg[v] == 0 then
+                    queue.push(v)
+                end if
+            end if
+        end for
+    end while
+    return order
+end Algorithm
+
+@Test "topological sort"
+    assert TopologicalSort(3, [[0, 1], [1, 2]]) == [0, 1, 2]
+end Test

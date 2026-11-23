@@ -1,0 +1,44 @@
+module std.sorting
+
+Algorithm QuickSort(data: List<Int>) -> List<Int>
+    Ensure(res):
+        res.length == data.length
+    Complexity:
+        Time: O(N log N) where N = data.length,
+        Space: O(log N)
+
+    if data.length <= 1 then
+        return data
+    end if
+    let pivot <- data[data.length / 2]
+    let mut less <- []
+    let mut equal <- []
+    let mut greater <- []
+    for i in 0..data.length do
+        let x <- data[i]
+        if x < pivot then
+            less.push(x)
+        else if x == pivot then
+            equal.push(x)
+        else
+            greater.push(x)
+        end if
+    end for
+    let left <- QuickSort(less)
+    let right <- QuickSort(greater)
+    let mut out <- []
+    for i in 0..left.length do
+        out.push(left[i])
+    end for
+    for i in 0..equal.length do
+        out.push(equal[i])
+    end for
+    for i in 0..right.length do
+        out.push(right[i])
+    end for
+    return out
+end Algorithm
+
+@Test "quicksort"
+    assert QuickSort([10, 7, 8, 9, 1, 5]) == [1, 5, 7, 8, 9, 10]
+end Test

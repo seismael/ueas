@@ -1,0 +1,65 @@
+module std.data_structures
+
+Record DisjointSet
+    parent: List<Int>,
+    rank: List<Int>
+end Record
+
+Algorithm DsuNew(n: Int) -> DisjointSet
+    Complexity:
+        Time: O(N),
+        Space: O(N)
+
+    let mut parent <- []
+    let mut rank <- []
+    for i in 0..n do
+        parent.push(i)
+        rank.push(0)
+    end for
+    return DisjointSet { parent: parent, rank: rank }
+end Algorithm
+
+Algorithm DsuFind(dsu: DisjointSet, x: Int) -> Int
+    Complexity:
+        Time: O(log N) where N = dsu.parent.length,
+        Space: O(1)
+
+    let mut cur <- x
+    while dsu.parent[cur] != cur do
+        cur <- dsu.parent[cur]
+    end while
+    return cur
+end Algorithm
+
+Algorithm DsuUnion(mut dsu: DisjointSet, a: Int, b: Int) -> DisjointSet
+    Complexity:
+        Time: O(log N) where N = dsu.parent.length,
+        Space: O(1)
+
+    let ra <- DsuFind(dsu, a)
+    let rb <- DsuFind(dsu, b)
+    if ra == rb then
+        return dsu
+    end if
+    let mut p <- dsu.parent
+    let mut r <- dsu.rank
+    if r[ra] < r[rb] then
+        p[ra] <- rb
+    else if r[ra] > r[rb] then
+        p[rb] <- ra
+    else
+        p[rb] <- ra
+        r[ra] <- r[ra] + 1
+    end if
+    dsu.parent <- p
+    dsu.rank <- r
+    return dsu
+end Algorithm
+
+@Test "disjoint set union and find"
+    let mut dsu <- DsuNew(5)
+    dsu <- DsuUnion(dsu, 0, 1)
+    dsu <- DsuUnion(dsu, 1, 2)
+    assert DsuFind(dsu, 0) == DsuFind(dsu, 2)
+    assert DsuFind(dsu, 0) != DsuFind(dsu, 3)
+end Test

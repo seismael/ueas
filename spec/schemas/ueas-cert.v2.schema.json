@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ueas.dev/schemas/ueas-cert.v2.schema.json",
+  "title": "UEAS Verification Certificate v2.0",
+  "type": "object",
+  "required": ["schema", "source_sha256", "spec_version", "engine_version", "algorithm", "assurance_level", "static_checks", "tests", "complexity"],
+  "properties": {
+    "schema": { "const": "ueas.cert.v2" },
+    "source_sha256": { "type": "string" },
+    "spec_version": { "type": "string" },
+    "engine_version": { "type": "string" },
+    "algorithm": { "type": "string" },
+    "assurance_level": { "enum": ["L0_STATIC", "L1_PROPERTY", "L2_EMPIRICAL_COMPLEXITY", "L3_FORMAL_PROOF", "L4_DIFFERENTIAL"] },
+    "static_checks": { "type": "object" },
+    "tests": { "type": "object" },
+    "complexity": { "type": "object" },
+    "constant_time": { "type": ["object", "null"] },
+    "formal_proof": { "type": ["object", "null"] }
+  }
+}

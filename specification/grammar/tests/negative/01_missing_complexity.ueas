@@ -1,6 +1,0 @@
-Algorithm BadAlgo(x)
-    Require: x: Integer
-    Ensure: Integer
-
-    return x
-end Algorithm

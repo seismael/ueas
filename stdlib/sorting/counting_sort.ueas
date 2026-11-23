@@ -1,0 +1,39 @@
+module std.sorting
+
+Algorithm CountingSort(data: List<Int>) -> List<Int>
+    Require:
+        forall i in 0..data.length :: data[i] >= 0
+    Ensure(res):
+        res.length == data.length
+    Complexity:
+        Time: O(N) where N = data.length,
+        Space: O(N)
+
+    if data.length == 0 then
+        return []
+    end if
+    let mut max_val <- data[0]
+    for i in 1..data.length do
+        max_val <- max(max_val, data[i])
+    end for
+    let mut counts <- []
+    for k in 0..=max_val do
+        counts.push(0)
+    end for
+    for i in 0..data.length do
+        counts[data[i]] <- counts[data[i]] + 1
+    end for
+    let mut out <- []
+    for v in 0..=max_val do
+        let mut c <- counts[v]
+        while c > 0 do
+            out.push(v)
+            c <- c - 1
+        end while
+    end for
+    return out
+end Algorithm
+
+@Test "counting sort"
+    assert CountingSort([4, 2, 2, 8, 3, 3, 1]) == [1, 2, 2, 3, 3, 4, 8]
+end Test

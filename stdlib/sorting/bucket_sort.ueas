@@ -1,0 +1,50 @@
+module std.sorting
+
+Algorithm BucketSort(data: List<Int>) -> List<Int>
+    Require:
+        forall i in 0..data.length :: data[i] >= 0
+    Complexity:
+        Time: O(N) where N = data.length,
+        Space: O(N)
+
+    if data.length <= 1 then
+        return data
+    end if
+    let n <- data.length
+    let mut max_v <- data[0]
+    for i in 1..n do
+        max_v <- max(max_v, data[i])
+    end for
+    let mut buckets <- []
+    for i in 0..n do
+        buckets.push([])
+    end for
+    let denom <- max(1, max_v + 1)
+    for i in 0..n do
+        let idx <- (data[i] * n) / denom
+        let mut b <- buckets[idx]
+        b.push(data[i])
+        buckets[idx] <- b
+    end for
+    let mut out <- []
+    for i in 0..n do
+        let mut b <- buckets[i]
+        for j in 1..b.length do
+            let key <- b[j]
+            let mut k <- j - 1
+            while k >= 0 and b[k] > key do
+                b[k + 1] <- b[k]
+                k <- k - 1
+            end while
+            b[k + 1] <- key
+        end for
+        for j in 0..b.length do
+            out.push(b[j])
+        end for
+    end for
+    return out
+end Algorithm
+
+@Test "bucket sort"
+    assert BucketSort([29, 25, 3, 49, 9, 37, 21, 43]) == [3, 9, 21, 25, 29, 37, 43, 49]
+end Test

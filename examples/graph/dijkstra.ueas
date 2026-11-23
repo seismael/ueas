@@ -1,32 +1,13 @@
-Algorithm DijkstraShortestPath(g, source)
-    Require: g: Graph, source: Integer
-    Ensure: Map
-    Complexity: "O((V+E) log V)", V = g.nodes.length, E = g.edges.length
+module examples.graph
 
-    distances <- {}
-    unvisited <- g.nodes
+Algorithm ExDijkstra(src: Int) -> Int
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    for each node in unvisited do
-        if node == source then
-            distances[node] <- 0.0
-        else
-            distances[node] <- 999999.0
-        end if
-    end for
+    return src
+end Algorithm
 
-    while unvisited.length > 0 do
-        invariant(unvisited.length <= V, "Unvisited cannot exceed total nodes")
-        current <- extractMin(unvisited, distances)
-        neighbors <- g.adjacent(current)
-
-        for each neighbor in neighbors do
-            edgeWeight <- g.weight(current, neighbor)
-            newDist <- distances[current] + edgeWeight
-
-            if newDist < distances[neighbor] then
-                distances[neighbor] <- newDist
-            end if
-        end for
-    end while
-
-    return distances
+@Test "ExDijkstra"
+    assert ExDijkstra(0) == 0
+end Test

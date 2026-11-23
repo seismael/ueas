@@ -1,0 +1,22 @@
+[package]
+name = "ueas-cloud-verify"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Hardened UEAS Cloud Run formal proof microservice (Dafny/Z3 & Lean 4)"
+
+[lints]
+workspace = true
+
+[dependencies]
+ueas-syntax = { path = "../../crates/ueas-syntax" }
+ueas-hir = { path = "../../crates/ueas-hir" }
+ueas-codegen = { path = "../../crates/ueas-codegen" }
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["limit"] }
+tempfile = "3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"

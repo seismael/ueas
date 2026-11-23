@@ -1,0 +1,69 @@
+module std.math
+
+Algorithm IsPrimeMillerRabin(n: Int) -> Bool
+    Complexity:
+        Time: O(log N) where N = n,
+        Space: O(1)
+
+    if n < 2 then
+        return false
+    end if
+    if n == 2 or n == 3 then
+        return true
+    end if
+    if n % 2 == 0 then
+        return false
+    end if
+    let mut d <- n - 1
+    let mut r <- 0
+    while d % 2 == 0 do
+        d <- d / 2
+        r <- r + 1
+    end while
+    let bases <- [2, 3, 5, 7, 11]
+    for i in 0..bases.length do
+        let a <- bases[i]
+        if a >= n then
+            continue
+        end if
+        let mut x <- ModPow(a, d, n)
+        if x == 1 or x == n - 1 then
+            continue
+        end if
+        let mut comp <- true
+        for j in 1..r do
+            x <- (x * x) % n
+            if x == n - 1 then
+                comp <- false
+                break
+            end if
+        end for
+        if comp then
+            return false
+        end if
+    end for
+    return true
+end Algorithm
+
+Algorithm ModPow(base: Int, exp: Int, m: Int) -> Int
+    Complexity:
+        Time: O(log N) where N = exp,
+        Space: O(1)
+
+    let mut res <- 1
+    let mut b <- base % m
+    let mut e <- exp
+    while e > 0 do
+        if e % 2 == 1 then
+            res <- (res * b) % m
+        end if
+        b <- (b * b) % m
+        e <- e / 2
+    end while
+    return res
+end Algorithm
+
+@Test "miller rabin"
+    assert IsPrimeMillerRabin(97) == true
+    assert IsPrimeMillerRabin(91) == false
+end Test

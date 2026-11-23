@@ -1,17 +1,18 @@
-Algorithm ParallelSum(data)
-    Require: data: List
-    Ensure: Integer
-    Complexity: "O(N / P + log P)", Work = O(N)
+module examples.concurrency
 
-    parallel for each chunk in data do
-        size <- chunk.length
-        partial <- 0
-        i <- 0
-        while i < size do
-            partial <- partial + chunk[i]
-            i <- i + 1
-        end while
+Algorithm ParallelSum(n: Int) -> Int
+    Complexity:
+        Time: O(N),
+        Work: O(N),
+        Span: O(log N)
+
+    let mut total <- 0
+    parallel for i in 0..n do
+        total <- total + i
     end for
+    return total
+end Algorithm
 
-    result <- partial
-    return result
+@Test "parallel sum"
+    assert ParallelSum(5) == 10
+end Test

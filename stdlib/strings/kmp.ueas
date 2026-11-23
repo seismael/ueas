@@ -1,0 +1,51 @@
+module std.strings
+
+Algorithm KmpSearch(text: String, pattern: String) -> Option<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(N)
+
+    let m <- pattern.length
+    let n <- text.length
+    if m == 0 then
+        return Some(0)
+    end if
+    let mut lps <- []
+    for i in 0..m do
+        lps.push(0)
+    end for
+    let mut len_p <- 0
+    let mut i <- 1
+    while i < m do
+        if pattern[i] == pattern[len_p] then
+            len_p <- len_p + 1
+            lps[i] <- len_p
+            i <- i + 1
+        else if len_p != 0 then
+            len_p <- lps[len_p - 1]
+        else
+            lps[i] <- 0
+            i <- i + 1
+        end if
+    end while
+    let mut ti <- 0
+    let mut pi <- 0
+    while ti < n do
+        if text[ti] == pattern[pi] then
+            ti <- ti + 1
+            pi <- pi + 1
+            if pi == m then
+                return Some(ti - pi)
+            end if
+        else if pi != 0 then
+            pi <- lps[pi - 1]
+        else
+            ti <- ti + 1
+        end if
+    end while
+    return None
+end Algorithm
+
+@Test "kmp search"
+    assert KmpSearch("abxabcabcaby", "abcaby") == Some(6)
+end Test

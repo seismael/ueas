@@ -1,78 +1,13 @@
-Algorithm SudokuSolver(board)
-    Require: board: List
-    Ensure: Boolean
-    Complexity: "O(9^(N*N))"
+module examples.backtracking
 
-    rows <- {}
-    cols <- {}
-    boxes <- {}
-    emptyCells <- {}
+Algorithm IsValidDigit(d: Int) -> Bool
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    i <- 0
-    while i < 9 do
-        rows[i] <- {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-        cols[i] <- {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-        boxes[i] <- {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-        i <- i + 1
-    end while
-
-    row <- 0
-    while row < 9 do
-        col <- 0
-        while col < 9 do
-            if board[row][col] != 0 then
-                digit <- board[row][col]
-                box <- (row / 3) * 3 + (col / 3)
-                rows[row][digit] <- 1
-                cols[col][digit] <- 1
-                boxes[box][digit] <- 1
-            else
-                emptyCells.append({row, col})
-            end if
-            col <- col + 1
-        end while
-        row <- row + 1
-    end while
-
-    index <- 0
-    while index >= 0 do
-        if index == emptyCells.length then
-            return true
-        end if
-        cell <- emptyCells[index]
-        row <- cell[0]
-        col <- cell[1]
-        box <- (row / 3) * 3 + (col / 3)
-        found <- false
-        digit <- board[row][col] + 1
-        while digit <= 9 and found == false do
-            if rows[row][digit] == 0 and cols[col][digit] == 0 and boxes[box][digit] == 0 then
-                prev <- board[row][col]
-                if prev != 0 then
-                    rows[row][prev] <- 0
-                    cols[col][prev] <- 0
-                    boxes[box][prev] <- 0
-                end if
-                board[row][col] <- digit
-                rows[row][digit] <- 1
-                cols[col][digit] <- 1
-                boxes[box][digit] <- 1
-                found <- true
-            end if
-            digit <- digit + 1
-        end while
-        if found then
-            index <- index + 1
-        else
-            prev <- board[row][col]
-            if prev != 0 then
-                rows[row][prev] <- 0
-                cols[col][prev] <- 0
-                boxes[box][prev] <- 0
-            end if
-            board[row][col] <- 0
-            index <- index - 1
-        end if
-    end while
-    return false
+    return d >= 1 and d <= 9
 end Algorithm
+
+@Test "IsValidDigit"
+    assert IsValidDigit(5) == true
+end Test

@@ -1,0 +1,25 @@
+module std.math
+
+Algorithm FastPower(base: Int, exp: Int, modulus: Int) -> Int
+    Require:
+        exp >= 0 and modulus > 0
+    Complexity:
+        Time: O(log N) where N = exp,
+        Space: O(1)
+
+    let mut res <- 1 % modulus
+    let mut b <- base % modulus
+    let mut e <- exp
+    while e > 0 do
+        if e % 2 == 1 then
+            res <- (res * b) % modulus
+        end if
+        b <- (b * b) % modulus
+        e <- e / 2
+    end while
+    return res
+end Algorithm
+
+@Test "fast power"
+    assert FastPower(2, 10, 1000) == 24
+end Test

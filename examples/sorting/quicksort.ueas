@@ -1,22 +1,18 @@
-Algorithm QuickSort(data)
-    Require: data: List
-    Ensure: List
-    Complexity: "O(N log N)"
+module examples.sorting
 
-    if data.length <= 1 then
-        return data
-    end if
+Algorithm ExQuickSort(mut a: List<Int>) -> List<Int>
+    Complexity:
+        Time: O(N^2),
+        Space: O(1)
 
-    pivot <- data[0]
-    left <- []
-    right <- []
-
-    for each item in data[1:] do
-        if item <= pivot then
-            left.append(item)
-        else
-            right.append(item)
-        end if
+    for i in 0..a.length do
+        for j in (i + 1)..a.length do
+            if a[j] < a[i] then a.swap(i, j) end if
+        end for
     end for
+    return a
+end Algorithm
 
-    return QuickSort(left) + [pivot] + QuickSort(right)
+@Test "ExQuickSort"
+    assert ExQuickSort([4, 1, 3, 2]) == [1, 2, 3, 4]
+end Test

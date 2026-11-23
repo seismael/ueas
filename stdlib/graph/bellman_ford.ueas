@@ -1,0 +1,36 @@
+module std.graph
+
+Algorithm BellmanFord(n: Int, edges: List<List<Int>>, src: Int) -> Option<List<Int>>
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let inf <- 1000000000
+    let mut dist <- []
+    for i in 0..n do
+        dist.push(inf)
+    end for
+    dist[src] <- 0
+    for iter in 0..(n - 1) do
+        for e in 0..edges.length do
+            let edge <- edges[e]
+            let u <- edge[0]
+            let v <- edge[1]
+            let w <- edge[2]
+            if dist[u] < inf and dist[u] + w < dist[v] then
+                dist[v] <- dist[u] + w
+            end if
+        end for
+    end for
+    for e in 0..edges.length do
+        let edge <- edges[e]
+        if dist[edge[0]] < inf and dist[edge[0]] + edge[2] < dist[edge[1]] then
+            return None
+        end if
+    end for
+    return Some(dist)
+end Algorithm
+
+@Test "bellman ford"
+    assert BellmanFord(3, [[0, 1, 5], [1, 2, -2]], 0) == Some([0, 5, 3])
+end Test

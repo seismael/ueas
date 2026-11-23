@@ -1,0 +1,32 @@
+module std.strings
+
+Algorithm BoyerMooreSearch(text: String, pattern: String) -> Option<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(1)
+
+    let n <- text.length
+    let m <- pattern.length
+    if m == 0 then
+        return Some(0)
+    end if
+    if m > n then
+        return None
+    end if
+    let mut s <- 0
+    while s <= n - m do
+        let mut j <- m - 1
+        while j >= 0 and pattern[j] == text[s + j] do
+            j <- j - 1
+        end while
+        if j < 0 then
+            return Some(s)
+        end if
+        s <- s + 1
+    end while
+    return None
+end Algorithm
+
+@Test "boyer moore"
+    assert BoyerMooreSearch("abacaabadcabacabaabb", "abacab") == Some(10)
+end Test

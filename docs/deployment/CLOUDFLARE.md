@@ -1,48 +1,23 @@
-# Cloudflare Workers Deployment
+# Cloudflare Workers Deployment (`ueas-mcp-edge`)
 
-The MCP server runs on Cloudflare Workers (always-on, globally distributed).
+The Edge MCP server runs on Cloudflare Workers and executes `ueas-wasm` directly at the edge with strict payload and fuel limits.
 
-## Prerequisites
-- A Cloudflare account (free at https://dash.cloudflare.com/sign-up)
-- GitHub repo already connected via Workers & Pages
-
-## Step 1: Configure Worker
-
-1. Go to **https://dash.cloudflare.com** → **Workers & Pages** → select `ueas-mcp`
-2. Click **Settings** → **Build**
-
-3. Fill in:
-
-| Field | Value |
-|-------|-------|
-| **Root directory** | `tools/ueas-mcp` |
-| **Build command** | `echo 'Static ES module — no build'` |
-| **Framework preset** | None (Custom) |
-
-4. Click **Save**
-
-## Step 2: Deploy
-
-Cloudflare auto-deploys on every push to `master`. To trigger immediately:
-
-1. **Deployments** → **Deploy latest commit**
-
-## Step 3: Verify
+## Build & Typecheck
 
 ```bash
-curl https://ueas-mcp.seismael.workers.dev
-# → "UEAS MCP OK"
-
-curl -X POST https://ueas-mcp.seismael.workers.dev \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-# → 8 tools listed
+wasm-pack build crates/ueas-wasm --target web --out-dir ../../tools/ueas-mcp-edge/src/pkg
+cd tools/ueas-mcp-edge
+npm ci && npm run typecheck
+npm run deploy
 ```
 
-## Troubleshooting
+## Verify
 
-| Issue | Fix |
-|-------|-----|
-| Build fails | Delete node_modules, retry deploy |
-| 404 on all paths | Root directory might be wrong — verify `tools/ueas-mcp` |
-| WASM not loaded | Push to master to trigger CF native Git deploy |
+```bash
+curl https://<your-worker>.workers.dev/healthz
+# -> {"ok":true,"engine":"ueas-wasm-2.0"}
+
+curl -X POST https://<your-worker>.workers.dev/ \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```

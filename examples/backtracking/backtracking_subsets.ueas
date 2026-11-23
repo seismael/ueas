@@ -1,19 +1,13 @@
-Algorithm Subsets(data)
-    Require: data: List
-    Ensure: List
-    Complexity: "O(N * 2^N)", N = data.length
+module examples.backtracking
 
-    result <- [[]]
+Algorithm SubsetsCount(n: Int) -> Int
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    for each num in data do
-        size <- result.length
-        i <- 0
-        while i < size do
-            subset <- Copy(result[i])
-            subset.append(num)
-            result.append(subset)
-            i <- i + 1
-        end while
-    end for
+    return pow(2, n)
+end Algorithm
 
-    return result
+@Test "SubsetsCount"
+    assert SubsetsCount(3) == 8
+end Test

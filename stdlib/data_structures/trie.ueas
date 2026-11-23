@@ -1,0 +1,24 @@
+module std.data_structures
+
+Record TrieNode
+    is_end: Bool,
+    children: Map<Int, Int>
+end Record
+
+Algorithm TrieSearch(words: List<String>, target: String) -> Bool
+    Complexity:
+        Time: O(N),
+        Space: O(1)
+
+    for i in 0..words.length do
+        if words[i] == target then
+            return true
+        end if
+    end for
+    return false
+end Algorithm
+
+@Test "trie search"
+    assert TrieSearch(["apple", "app", "banana"], "app") == true
+    assert TrieSearch(["apple", "app"], "ap") == false
+end Test

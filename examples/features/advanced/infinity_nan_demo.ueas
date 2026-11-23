@@ -1,24 +1,14 @@
-Algorithm InfinityDemo(data)
-    Require: data: List
-    Ensure: Real
-    Complexity: "O(N)"
+module examples.features.advanced
 
-    Infinity
-    NaN
+Algorithm MinDistanceInit(n: Int) -> Real
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    minDist <- 999999.0
-    i <- 0
-
-    while i < data.length do
-        if data[i] < minDist then
-            minDist <- data[i]
-        end if
-        i <- i + 1
-    end while
-
-    if minDist == 999999.0 then
-        return 0.0
-    end if
-
-    return minDist
+    let inf <- Infinity
+    return min(inf, (n as Real) * 1.0)
 end Algorithm
+
+@Test "MinDistanceInit"
+    assert MinDistanceInit(5) == 5.0
+end Test

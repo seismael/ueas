@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "UEAS",
+  "scopeName": "source.ueas",
+  "patterns": [
+    { "name": "comment.line.double-slash.ueas", "match": "//.*$" },
+    { "name": "keyword.control.ueas", "match": "\\b(module|import|Record|Algorithm|Require|Ensure|Complexity|if|then|else|while|for|parallel|do|match|case|return|break|continue|assert|invariant|decreases|end|let|mut|const|select|forall|exists)\\b" },
+    { "name": "storage.type.ueas", "match": "\\b(Int|Int64|UInt64|Real|Bool|String|Void|List|Set|Map|Graph|Matrix|Option|Result|Tuple|Secret)\\b" },
+    { "name": "string.quoted.double.ueas", "begin": "\"", "end": "\"" },
+    { "name": "constant.numeric.ueas", "match": "\\b[0-9]+(\\.[0-9]+)?\\b" }
+  ]
+}

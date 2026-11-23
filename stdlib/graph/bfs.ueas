@@ -1,0 +1,35 @@
+module std.graph
+
+Algorithm BfsOrder(adj: List<List<Int>>, start: Int) -> List<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(N)
+
+    let n <- adj.length
+    let mut visited <- []
+    for i in 0..n do
+        visited.push(false)
+    end for
+    let mut queue <- [start]
+    visited[start] <- true
+    let mut head <- 0
+    let mut order <- []
+    while head < queue.length do
+        let u <- queue[head]
+        head <- head + 1
+        order.push(u)
+        let nbrs <- adj[u]
+        for i in 0..nbrs.length do
+            let v <- nbrs[i]
+            if not visited[v] then
+                visited[v] <- true
+                queue.push(v)
+            end if
+        end for
+    end while
+    return order
+end Algorithm
+
+@Test "bfs traversal"
+    assert BfsOrder([[1, 2], [3], [3], []], 0) == [0, 1, 2, 3]
+end Test

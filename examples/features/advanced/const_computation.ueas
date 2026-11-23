@@ -1,12 +1,14 @@
-Algorithm ConstComputation(radius)
-    Require: radius: Real
-    Ensure: Real
-    Complexity: "O(1)"
+module examples.features.advanced
 
-    const PI <- 3.14159265359
-    const TWO <- 2.0
+Algorithm SquareConst(x: Int) -> Int
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    area <- PI * radius * radius
-    circumference <- TWO * PI * radius
+    const k <- 7
+    return x * k
+end Algorithm
 
-    return area + circumference
+@Test "SquareConst"
+    assert SquareConst(6) == 42
+end Test

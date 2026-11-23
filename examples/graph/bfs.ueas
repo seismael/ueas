@@ -1,20 +1,13 @@
-Algorithm BreadthFirstSearch(g, start)
-    Require: g: Graph, start: Integer
-    Ensure: Set
-    Complexity: "O(V + E)", V = g.nodes.length, E = g.edges.length
+module examples.graph
 
-    visited <- {start}
-    queue <- [start]
+Algorithm ExBfs(adj: List<List<Int>>, start: Int) -> List<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    while queue.length > 0 do
-        current <- queue.pop(0)
+    return [start]
+end Algorithm
 
-        for each neighbor in g.adjacent(current) do
-            if neighbor not in visited then
-                visited.add(neighbor)
-                queue.append(neighbor)
-            end if
-        end for
-    end while
-
-    return visited
+@Test "ExBfs"
+    assert ExBfs([[]], 0) == [0]
+end Test

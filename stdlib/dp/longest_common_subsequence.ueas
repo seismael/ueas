@@ -1,0 +1,30 @@
+module std.dp
+
+Algorithm LongestCommonSubsequence(a: String, b: String) -> Int
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let m <- a.length
+    let n <- b.length
+    let mut prev <- []
+    for j in 0..=n do
+        prev.push(0)
+    end for
+    for i in 1..=m do
+        let mut curr <- [0]
+        for j in 1..=n do
+            if a[i - 1] == b[j - 1] then
+                curr.push(prev[j - 1] + 1)
+            else
+                curr.push(max(prev[j], curr[j - 1]))
+            end if
+        end for
+        prev <- curr
+    end for
+    return prev[n]
+end Algorithm
+
+@Test "lcs"
+    assert LongestCommonSubsequence("abcde", "ace") == 3
+end Test

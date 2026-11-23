@@ -1,20 +1,14 @@
-Algorithm ConstantTimeCompare(a, b)
-    Require: a: Secret, b: Secret
-    Ensure: Boolean
-    Complexity: "O(1)"
+module examples.crypto
 
-    @ConstantTime
+@ConstantTime
+Algorithm ConstantTimeSelectMax(a: Secret<Int>, b: Secret<Int>) -> Secret<Int>
+    Complexity:
+        Time: O(1),
+        Space: O(1)
 
-    result <- 0
-    i <- 0
+    return select(a >= b, a, b)
+end Algorithm
 
-    while i < a.length do
-        if a[i] == b[i] then
-            result <- result + 1
-        else
-            result <- result - 1
-        end if
-        i <- i + 1
-    end while
-
-    return result == a.length
+@Test "constant time select"
+    assert ConstantTimeSelectMax(10, 25) == 25
+end Test

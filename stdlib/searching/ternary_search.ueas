@@ -1,0 +1,36 @@
+module std.searching
+
+Algorithm TernarySearch(data: List<Int>, target: Int) -> Option<Int>
+    Require:
+        forall i in 0..(data.length - 1) :: data[i] <= data[i + 1]
+    Complexity:
+        Time: O(log N) where N = data.length,
+        Space: O(1)
+
+    let mut left <- 0
+    let mut right <- data.length - 1
+    while left <= right do
+        let third <- (right - left) / 3
+        let mid1 <- left + third
+        let mid2 <- right - third
+        if data[mid1] == target then
+            return Some(mid1)
+        end if
+        if data[mid2] == target then
+            return Some(mid2)
+        end if
+        if target < data[mid1] then
+            right <- mid1 - 1
+        else if target > data[mid2] then
+            left <- mid2 + 1
+        else
+            left <- mid1 + 1
+            right <- mid2 - 1
+        end if
+    end while
+    return None
+end Algorithm
+
+@Test "ternary search"
+    assert TernarySearch([10, 20, 30, 40, 50], 40) == Some(3)
+end Test

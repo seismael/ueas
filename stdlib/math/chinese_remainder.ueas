@@ -1,0 +1,43 @@
+module std.math
+
+Algorithm ChineseRemainder(rems: List<Int>, mods: List<Int>) -> Option<Int>
+    Require:
+        rems.length == mods.length
+    Complexity:
+        Time: O(N log N) where N = rems.length,
+        Space: O(1)
+
+    let mut prod <- 1
+    for i in 0..mods.length do
+        prod <- prod * mods[i]
+    end for
+    let mut sum <- 0
+    for i in 0..rems.length do
+        let p <- prod / mods[i]
+        let mut t <- 0
+        let mut new_t <- 1
+        let mut r <- mods[i]
+        let mut new_r <- p % mods[i]
+        while new_r != 0 do
+            let q <- r / new_r
+            let tt <- t - q * new_t
+            t <- new_t
+            new_t <- tt
+            let tr <- r - q * new_r
+            r <- new_r
+            new_r <- tr
+        end while
+        if r > 1 then
+            return None
+        end if
+        if t < 0 then
+            t <- t + mods[i]
+        end if
+        sum <- (sum + rems[i] * t * p) % prod
+    end for
+    return Some((sum + prod) % prod)
+end Algorithm
+
+@Test "chinese remainder"
+    assert ChineseRemainder([2, 3, 2], [3, 5, 7]) == Some(23)
+end Test

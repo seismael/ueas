@@ -1,0 +1,52 @@
+module std.sorting
+
+Algorithm HeapSort(mut data: List<Int>) -> List<Int>
+    Ensure(res):
+        res.length == data.length
+    Complexity:
+        Time: O(N log N) where N = data.length,
+        Space: O(1)
+
+    let n <- data.length
+    let mut i <- n / 2 - 1
+    while i >= 0 do
+        data <- SiftDown(data, n, i)
+        i <- i - 1
+    end while
+    let mut end_idx <- n - 1
+    while end_idx > 0 do
+        data.swap(0, end_idx)
+        data <- SiftDown(data, end_idx, 0)
+        end_idx <- end_idx - 1
+    end while
+    return data
+end Algorithm
+
+Algorithm SiftDown(mut data: List<Int>, heap_size: Int, root: Int) -> List<Int>
+    Complexity:
+        Time: O(log N),
+        Space: O(1)
+
+    let mut cur <- root
+    while true do
+        let left <- 2 * cur + 1
+        let right <- 2 * cur + 2
+        let mut largest <- cur
+        if left < heap_size and data[left] > data[largest] then
+            largest <- left
+        end if
+        if right < heap_size and data[right] > data[largest] then
+            largest <- right
+        end if
+        if largest == cur then
+            break
+        end if
+        data.swap(cur, largest)
+        cur <- largest
+    end while
+    return data
+end Algorithm
+
+@Test "heapsort"
+    assert HeapSort([4, 10, 3, 5, 1]) == [1, 3, 4, 5, 10]
+end Test

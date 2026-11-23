@@ -1,0 +1,28 @@
+module std.data_structures
+
+Algorithm MinHeapPush(mut heap: List<Int>, val: Int) -> List<Int>
+    Complexity:
+        Time: O(log N),
+        Space: O(1)
+
+    heap.push(val)
+    let mut idx <- heap.length - 1
+    while idx > 0 do
+        let parent <- (idx - 1) / 2
+        if heap[idx] < heap[parent] then
+            heap.swap(idx, parent)
+            idx <- parent
+        else
+            break
+        end if
+    end while
+    return heap
+end Algorithm
+
+@Test "min heap push maintains root minimum"
+    let mut h <- []
+    h <- MinHeapPush(h, 10)
+    h <- MinHeapPush(h, 3)
+    h <- MinHeapPush(h, 7)
+    assert h[0] == 3
+end Test

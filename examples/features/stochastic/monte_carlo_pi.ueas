@@ -1,23 +1,24 @@
-Algorithm MonteCarloPi(iterations)
-    Require: iterations: Integer
-    Ensure: Real
-    Complexity: "O(N)", Expected = "O(N)"
+module examples.stochastic
 
-    inside <- 0
-    i <- 0
+Algorithm EstimatePi(samples: Int) -> Real
+    Require:
+        samples > 0
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    while i < iterations do
-        x <- random(0, 10000)
-        y <- random(0, 10000)
-
-        dist <- x * x + y * y
-
-        if dist <= 100000000 then
+    let mut inside <- 0
+    for i in 0..samples do
+        let x <- rand_real()
+        let y <- rand_real()
+        if x * x + y * y <= 1.0 then
             inside <- inside + 1
         end if
+    end for
+    return (4.0 * (inside as Real)) / (samples as Real)
+end Algorithm
 
-        i <- i + 1
-    end while
-
-    pi <- (4.0 * inside) / iterations
-    return pi
+@Test "monte carlo pi"
+    let pi <- EstimatePi(100)
+    assert pi > 2.0 and pi < 4.0
+end Test

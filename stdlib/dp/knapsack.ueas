@@ -1,0 +1,28 @@
+module std.dp
+
+Algorithm Knapsack01(weights: List<Int>, values: List<Int>, capacity: Int) -> Int
+    Require:
+        weights.length == values.length and capacity >= 0
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let mut dp <- []
+    for w in 0..=capacity do
+        dp.push(0)
+    end for
+    for i in 0..weights.length do
+        let wt <- weights[i]
+        let val <- values[i]
+        let mut w <- capacity
+        while w >= wt do
+            dp[w] <- max(dp[w], dp[w - wt] + val)
+            w <- w - 1
+        end while
+    end for
+    return dp[capacity]
+end Algorithm
+
+@Test "knapsack 0/1"
+    assert Knapsack01([1, 3, 4, 5], [1, 4, 5, 7], 7) == 9
+end Test

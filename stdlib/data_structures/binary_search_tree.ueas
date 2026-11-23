@@ -1,0 +1,62 @@
+module std.data_structures
+
+Record BstNode
+    key: Int,
+    left: Int,
+    right: Int
+end Record
+
+Algorithm BstInsert(mut arena: List<BstNode>, root: Int, key: Int) -> Tuple<List<BstNode>, Int>
+    Complexity:
+        Time: O(N) where N = arena.length,
+        Space: O(N)
+
+    if root == -1 then
+        let idx <- arena.length
+        arena.push(BstNode { key: key, left: -1, right: -1 })
+        return (arena, idx)
+    end if
+    let mut node <- arena[root]
+    if key < node.key then
+        let res <- BstInsert(arena, node.left, key)
+        arena <- res[0]
+        node.left <- res[1]
+        arena[root] <- node
+    else if key > node.key then
+        let res <- BstInsert(arena, node.right, key)
+        arena <- res[0]
+        node.right <- res[1]
+        arena[root] <- node
+    end if
+    return (arena, root)
+end Algorithm
+
+Algorithm BstContains(arena: List<BstNode>, root: Int, key: Int) -> Bool
+    Complexity:
+        Time: O(N) where N = arena.length,
+        Space: O(1)
+
+    let mut cur <- root
+    while cur != -1 do
+        let node <- arena[cur]
+        if key == node.key then
+            return true
+        else if key < node.key then
+            cur <- node.left
+        else
+            cur <- node.right
+        end if
+    end while
+    return false
+end Algorithm
+
+@Test "arena bst insert and search"
+    let mut arena <- []
+    let r1 <- BstInsert(arena, -1, 10)
+    arena <- r1[0]
+    let root <- r1[1]
+    let r2 <- BstInsert(arena, root, 5)
+    arena <- r2[0]
+    assert BstContains(arena, root, 5) == true
+    assert BstContains(arena, root, 99) == false
+end Test

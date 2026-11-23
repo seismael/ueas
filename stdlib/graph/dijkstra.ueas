@@ -1,0 +1,43 @@
+module std.graph
+
+Algorithm Dijkstra(n: Int, edges: List<List<Int>>, src: Int) -> List<Int>
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let inf <- 1000000000
+    let mut dist <- []
+    let mut used <- []
+    for i in 0..n do
+        dist.push(inf)
+        used.push(false)
+    end for
+    dist[src] <- 0
+    for step in 0..n do
+        let mut u <- -1
+        for i in 0..n do
+            if not used[i] and (u == -1 or dist[i] < dist[u]) then
+                u <- i
+            end if
+        end for
+        if u == -1 or dist[u] == inf then
+            break
+        end if
+        used[u] <- true
+        for e in 0..edges.length do
+            let edge <- edges[e]
+            if edge[0] == u then
+                let v <- edge[1]
+                let w <- edge[2]
+                if dist[u] + w < dist[v] then
+                    dist[v] <- dist[u] + w
+                end if
+            end if
+        end for
+    end for
+    return dist
+end Algorithm
+
+@Test "dijkstra shortest paths"
+    assert Dijkstra(4, [[0, 1, 4], [0, 2, 1], [2, 1, 2], [1, 3, 1]], 0) == [0, 3, 1, 4]
+end Test

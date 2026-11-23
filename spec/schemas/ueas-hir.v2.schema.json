@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ueas.dev/schemas/ueas-hir.v2.schema.json",
+  "title": "UEAS Canonical HIR v2.0",
+  "type": "object",
+  "required": ["spec_version", "engine_version", "imports", "records", "algorithms", "tests", "benchmarks"],
+  "properties": {
+    "spec_version": { "type": "string" },
+    "engine_version": { "type": "string" },
+    "module": { "type": ["string", "null"] },
+    "imports": { "type": "array" },
+    "records": { "type": "array" },
+    "algorithms": { "type": "array" },
+    "tests": { "type": "array" },
+    "benchmarks": { "type": "array" }
+  }
+}

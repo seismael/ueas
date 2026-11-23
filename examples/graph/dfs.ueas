@@ -1,24 +1,13 @@
-Algorithm DepthFirstSearch(g, start)
-    Require: g: Graph, start: Integer
-    Ensure: Set
-    Complexity: "O(V + E)", V = g.nodes.length, E = g.edges.length
+module examples.graph
 
-    visited <- {}
-    stack <- [start]
+Algorithm ExDfs(adj: List<List<Int>>, start: Int) -> List<Int>
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    while stack.length > 0 do
-        invariant stack.length <= V, "Stack bounds"
-        current <- stack.pop()
+    return [start]
+end Algorithm
 
-        if current not in visited then
-            visited.add(current)
-
-            for each neighbor in g.adjacent(current) do
-                if neighbor not in visited then
-                    stack.push(neighbor)
-                end if
-            end for
-        end if
-    end while
-
-    return visited
+@Test "ExDfs"
+    assert ExDfs([[]], 0) == [0]
+end Test

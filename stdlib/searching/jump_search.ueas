@@ -1,0 +1,36 @@
+module std.searching
+
+Algorithm JumpSearch(data: List<Int>, target: Int) -> Option<Int>
+    Require:
+        forall i in 0..(data.length - 1) :: data[i] <= data[i + 1]
+    Complexity:
+        Time: O(sqrt N) where N = data.length,
+        Space: O(1)
+
+    let n <- data.length
+    if n == 0 then
+        return None
+    end if
+    let step <- max(1, floor(sqrt(n)))
+    let mut prev <- 0
+    let mut curr <- min(step, n) - 1
+    while curr < n and data[curr] < target do
+        prev <- curr + 1
+        if prev >= n then
+            return None
+        end if
+        curr <- min(curr + step, n - 1)
+    end while
+    let mut i <- prev
+    while i <= curr do
+        if data[i] == target then
+            return Some(i)
+        end if
+        i <- i + 1
+    end while
+    return None
+end Algorithm
+
+@Test "jump search"
+    assert JumpSearch([2, 4, 6, 8, 10, 12], 10) == Some(4)
+end Test

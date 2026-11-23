@@ -1,0 +1,42 @@
+module std.graph
+
+Algorithm KruskalMstWeight(n: Int, edges: List<List<Int>>) -> Int
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let mut parent <- []
+    for i in 0..n do
+        parent.push(i)
+    end for
+    let mut sorted <- edges
+    for i in 1..sorted.length do
+        let key <- sorted[i]
+        let mut j <- i - 1
+        while j >= 0 and sorted[j][2] > key[2] do
+            sorted[j + 1] <- sorted[j]
+            j <- j - 1
+        end while
+        sorted[j + 1] <- key
+    end for
+    let mut total <- 0
+    for e in 0..sorted.length do
+        let mut u <- sorted[e][0]
+        while parent[u] != u do
+            u <- parent[u]
+        end while
+        let mut v <- sorted[e][1]
+        while parent[v] != v do
+            v <- parent[v]
+        end while
+        if u != v then
+            parent[u] <- v
+            total <- total + sorted[e][2]
+        end if
+    end for
+    return total
+end Algorithm
+
+@Test "kruskal mst"
+    assert KruskalMstWeight(3, [[0, 1, 1], [1, 2, 2], [0, 2, 5]]) == 3
+end Test

@@ -1,0 +1,38 @@
+module std.graph
+
+Algorithm PrimMstWeight(n: Int, adj_matrix: List<List<Int>>) -> Int
+    Complexity:
+        Time: O(N^2),
+        Space: O(N)
+
+    let inf <- 1000000000
+    let mut key <- []
+    let mut in_mst <- []
+    for i in 0..n do
+        key.push(inf)
+        in_mst.push(false)
+    end for
+    key[0] <- 0
+    let mut total <- 0
+    for step in 0..n do
+        let mut u <- -1
+        for i in 0..n do
+            if not in_mst[i] and (u == -1 or key[i] < key[u]) then
+                u <- i
+            end if
+        end for
+        in_mst[u] <- true
+        total <- total + key[u]
+        for v in 0..n do
+            let w <- adj_matrix[u][v]
+            if w > 0 and not in_mst[v] and w < key[v] then
+                key[v] <- w
+            end if
+        end for
+    end for
+    return total
+end Algorithm
+
+@Test "prim mst"
+    assert PrimMstWeight(3, [[0, 1, 5], [1, 0, 2], [5, 2, 0]]) == 3
+end Test

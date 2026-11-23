@@ -1,29 +1,21 @@
-Algorithm TwoSum(data, target)
-    Require: data: List, target: Integer
-    Ensure: List
-    Complexity: "O(N log N)"
+module examples.arrays
 
-    pairs <- []
-    i <- 0
-    while i < data.length do
-        pairs.append([data[i], i])
-        i <- i + 1
-    end while
+Algorithm TwoSum(nums: List<Int>, target: Int) -> Option<Tuple<Int, Int>>
+    Complexity:
+        Time: O(N),
+        Space: O(N)
 
-    SortPairsByValue(pairs)
-
-    left <- 0
-    right <- pairs.length - 1
-
-    while left < right do
-        sum <- pairs[left][0] + pairs[right][0]
-        if sum == target then
-            return [pairs[left][1], pairs[right][1]]
-        else if sum < target then
-            left <- left + 1
-        else
-            right <- right - 1
+    let mut seen: Map<Int, Int> <- Map()
+    for i in 0..nums.length do
+        let need <- target - nums[i]
+        if seen.contains(need) then
+            return Some((seen[need], i))
         end if
-    end while
+        seen.insert(nums[i], i)
+    end for
+    return None
+end Algorithm
 
-    return []
+@Test "two sum"
+    assert TwoSum([2, 7, 11, 15], 9) == Some((0, 1))
+end Test

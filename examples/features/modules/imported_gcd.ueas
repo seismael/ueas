@@ -1,8 +1,19 @@
-Algorithm ModularGCD(a, b, m)
-    Require: a: Integer, b: Integer, m: Integer
-    Ensure: Integer
-    Complexity: "O(log min(a, b))"
-    # Uses imported gcd/fast_power from standard library (Import: math.gcd, math.fast_power)
-    g <- gcd(a, b)
-    result <- fast_power(g, 1)
-    return result
+module examples.features.modules
+
+Algorithm GcdPair(a: Int, b: Int) -> Int
+    Complexity:
+        Time: O(log N) where N = a,
+        Space: O(1)
+
+    let mut x <- a
+    let mut y <- b
+    while y != 0 do let t <- y
+        y <- x % y
+        x <- t
+    end while
+    return x
+end Algorithm
+
+@Test "GcdPair"
+    assert GcdPair(21, 14) == 7
+end Test

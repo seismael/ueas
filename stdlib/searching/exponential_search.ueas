@@ -1,0 +1,39 @@
+module std.searching
+
+Algorithm ExponentialSearch(data: List<Int>, target: Int) -> Option<Int>
+    Require:
+        forall i in 0..(data.length - 1) :: data[i] <= data[i + 1]
+    Complexity:
+        Time: O(log N) where N = data.length,
+        Space: O(1)
+
+    let n <- data.length
+    if n == 0 then
+        return None
+    end if
+    if data[0] == target then
+        return Some(0)
+    end if
+    let mut bound <- 1
+    while bound < n and data[bound] <= target do
+        bound <- bound * 2
+    end while
+    let mut low <- bound / 2
+    let mut high <- min(bound, n - 1)
+    while low <= high do
+        let mid <- low + (high - low) / 2
+        if data[mid] == target then
+            return Some(mid)
+        else if data[mid] < target then
+            low <- mid + 1
+        else
+            high <- mid - 1
+        end if
+    end while
+    return None
+end Algorithm
+
+@Test "exponential search"
+    assert ExponentialSearch([1, 3, 5, 7, 9, 12, 18], 12) == Some(5)
+    assert ExponentialSearch([1, 3, 5], 4) == None
+end Test

@@ -1,21 +1,20 @@
-Algorithm SpawnJoinMatrix(A, B)
-    Require: A: Matrix, B: Matrix
-    Ensure: Matrix
-    Complexity: "O(N^3 / P)", Work = O(N^3), Span = O(log N)
+module examples.features.concurrency
 
-    N <- A.rows
+Algorithm ParallelRowSum(mat: List<List<Int>>) -> Int
+    Complexity:
+        Time: O(N^2),
+        Space: O(1)
 
-    parallel for each i in range(0, N) do
-        j <- 0
-        while j < N do
-            k <- 0
-            while k < N do
-                spawn C[i][j] <- A[i][k] * B[k][j]
-                k <- k + 1
-            end while
-            j <- j + 1
-        end while
+    let mut total <- 0
+    parallel for i in 0..mat.length do
+        let row <- mat[i]
+        for j in 0..row.length do
+            total <- total + row[j]
+        end for
     end for
+    return total
+end Algorithm
 
-    sync
-    return C
+@Test "ParallelRowSum"
+    assert ParallelRowSum([[1, 2], [3, 4]]) == 10
+end Test

@@ -1,78 +1,37 @@
-# Google Cloud Run Deployment
+# Google Cloud Run Deployment (`ueas-cloud-verify`)
 
-Dafny/Z3 verification backend — scale-to-zero, $0/month.
+Hardened Axum formal verification backend for Dafny 4 and Lean 4 — scale-to-zero, isolated `TempDir` per request, 1 MB body limit, and 15-second subprocess timeout.
 
-## Prerequisites
+## Build & Push Docker Image
 
-1. **Google Cloud account** (free tier, credit card for verification only)
-   - Sign up at https://console.cloud.google.com
+From the repository root (so workspace crates are in Docker build context):
 
-2. **Install Google Cloud CLI:**
-   ```powershell
-   # Windows (PowerShell as Admin)
-   (New-Object Net.WebClient).DownloadFile("https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe", "$env:TEMP\gc-sdk.exe")
-   & "$env:TEMP\gc-sdk.exe"
-   ```
-
-3. **Authenticate:**
-   ```bash
-   gcloud auth login
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-
-## Step 1: Create Project
 ```bash
-gcloud projects create ueas-verify --name="UEAS Verification"
-gcloud config set project ueas-verify
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com
+docker build -f tools/ueas-cloud-verify/Dockerfile -t gcr.io/YOUR_PROJECT_ID/ueas-cloud-verify .
+docker push gcr.io/YOUR_PROJECT_ID/ueas-cloud-verify
 ```
 
-## Step 2: Build & Push Docker Image
+## Deploy to Cloud Run
+
 ```bash
-cd tools/ueas-cloud-receiver
-
-# Build
-docker build -t gcr.io/YOUR_PROJECT_ID/ueas-verify .
-
-# Push
-gcloud auth configure-docker
-docker push gcr.io/YOUR_PROJECT_ID/ueas-verify
-```
-
-## Step 3: Deploy to Cloud Run
-```bash
-gcloud run deploy ueas-verify \
-  --image gcr.io/YOUR_PROJECT_ID/ueas-verify \
+gcloud run deploy ueas-cloud-verify \
+  --image gcr.io/YOUR_PROJECT_ID/ueas-cloud-verify \
   --region us-central1 \
   --memory 1Gi \
   --cpu 1 \
   --min-instances 0 \
   --max-instances 5 \
-  --concurrency 80 \
   --allow-unauthenticated \
   --port 8080
 ```
 
-After deployment, note the **Service URL** (e.g., `https://ueas-verify-xyz-uc.a.run.app`).
+## Verify
 
-## Step 4: Verify
 ```bash
-# Health check
-curl https://ueas-verify-xyz-uc.a.run.app/health
-# → "OK"
+curl https://<service-url>/healthz
+# -> ok
 
-# Verify an algorithm
-curl -X POST https://ueas-verify-xyz-uc.a.run.app/verify \
+curl -X POST https://<service-url>/verify \
   -H "Content-Type: application/json" \
-  -d '{"ast": "...", "target": "cpp"}'
+  -d '{"source": "module demo\nAlgorithm Id(x: Int) -> Int\n    return x\nend Algorithm", "prover": "dafny"}'
 ```
-
-## Free Tier Limits
-
-| Resource | Monthly Free | Enough For |
-|----------|-------------|------------|
-| Requests | 2,000,000 | ~1 verify every 2 seconds |
-| vCPU | 180,000 sec | 50 hours of active processing |
-| Memory | 360,000 GiB-sec | 100 hours of 1GiB RAM |
-
-The service scales to **0** when idle — $0 cost when not in use.

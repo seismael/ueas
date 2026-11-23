@@ -1,0 +1,16 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; background: #1e293b; border-bottom: 1px solid #334155; }
+.topbar h1 { margin: 0; font-size: 1.1rem; }
+.controls { display: flex; gap: 0.5rem; align-items: center; }
+button, select { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 0.45rem 0.85rem; cursor: pointer; font-weight: 600; }
+select { background: #334155; }
+.workspace { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 56px); }
+.pane { display: flex; flex-direction: column; padding: 0.75rem; border-right: 1px solid #334155; overflow: hidden; }
+.pane h2 { margin: 0 0 0.5rem; font-size: 0.9rem; color: #94a3b8; }
+#editor, #output { flex: 1; width: 100%; background: #020617; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; padding: 0.75rem; font-family: ui-monospace, monospace; font-size: 0.9rem; overflow: auto; }
+#output { margin: 0; white-space: pre-wrap; }
+.chart-panel { background: #020617; border: 1px solid #334155; border-radius: 6px; padding: 0.5rem; margin-bottom: 0.5rem; }
+.chart-title { font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.25rem; }
+.chart-empty { font-size: 0.8rem; color: #64748b; padding: 0.5rem 0; }
+.chart-svg { width: 100%; max-height: 150px; display: block; }

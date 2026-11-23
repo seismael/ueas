@@ -1,29 +1,15 @@
-Algorithm TopKFrequent(data, k)
-    Require: data: List, k: Integer
-    Ensure: List
-    Complexity: "O(N log K)", N = data.length
+module examples.heap
 
-    freqMap <- {}
-    for each num in data do
-        if num not in freqMap then
-            freqMap[num] <- 0
-        end if
-        freqMap[num] <- freqMap[num] + 1
-    end for
+Algorithm MaxElement(nums: List<Int>) -> Int
+    Complexity:
+        Time: O(N),
+        Space: O(1)
 
-    minHeap <- []
-    for each key in Keys(freqMap) do
-        MinHeapPush(minHeap, [freqMap[key], key])
-        if minHeap.length > k then
-            MinHeapPop(minHeap)
-        end if
-    end for
+    let mut m <- nums[0]
+    for i in 1..nums.length do m <- max(m, nums[i]) end for
+    return m
+end Algorithm
 
-    result <- []
-    while minHeap.length > 0 do
-        entry <- MinHeapPop(minHeap)
-        result.append(entry[1])
-    end while
-
-    Reverse(result)
-    return result
+@Test "MaxElement"
+    assert MaxElement([1, 5, 3]) == 5
+end Test

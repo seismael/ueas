@@ -1,0 +1,27 @@
+module std.graph
+
+Algorithm FloydWarshall(mut dist: List<List<Int>>) -> List<List<Int>>
+    Complexity:
+        Time: O(N^3),
+        Space: O(1)
+
+    let n <- dist.length
+    for k in 0..n do
+        for i in 0..n do
+            let mut row_i <- dist[i]
+            let row_k <- dist[k]
+            for j in 0..n do
+                if row_i[k] + row_k[j] < row_i[j] then
+                    row_i[j] <- row_i[k] + row_k[j]
+                end if
+            end for
+            dist[i] <- row_i
+        end for
+    end for
+    return dist
+end Algorithm
+
+@Test "floyd warshall"
+    let d <- FloydWarshall([[0, 5, 100], [100, 0, 2], [100, 100, 0]])
+    assert d[0][2] == 7
+end Test
