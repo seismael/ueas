@@ -42,8 +42,15 @@ class UeasKernel(Kernel):  # type: ignore[misc]
         if stripped == "%reset":
             self._definitions.clear()
             if not silent:
-                self.send_response(self.iopub_socket, "stream", {"name": "stdout", "text": "Kernel state reset.\n"})
-            return {"status": "ok", "execution_count": self.execution_count, "payload": [], "user_expressions": {}}
+                self.send_response(
+                    self.iopub_socket, "stream", {"name": "stdout", "text": "Kernel state reset.\n"}
+                )
+            return {
+                "status": "ok",
+                "execution_count": self.execution_count,
+                "payload": [],
+                "user_expressions": {},
+            }
 
         cmd_args = ["run"]
         body = code
