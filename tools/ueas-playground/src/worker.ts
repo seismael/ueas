@@ -1,6 +1,15 @@
 /**
  * Dedicated Web Worker running `ueas-wasm` off the main UI thread.
  */
+import initWasm, {
+  ueas_check,
+  ueas_format,
+  ueas_verify,
+  ueas_transpile,
+  ueas_run,
+} from "./pkg/ueas_wasm.js";
+import wasmUrl from "./pkg/ueas_wasm_bg.wasm?url";
+
 interface WorkerRequest {
   id: number;
   action: "check" | "verify" | "transpile" | "run" | "format";
@@ -10,7 +19,6 @@ interface WorkerRequest {
 }
 
 interface UeasWasmApi {
-  default?: () => Promise<unknown>;
   ueas_check(source: string): string;
   ueas_format(source: string): string;
   ueas_verify(source: string, level: string, fuzzIters: number): string;
@@ -20,15 +28,15 @@ interface UeasWasmApi {
 
 let wasmPromise: Promise<UeasWasmApi> | null = null;
 
-async function loadWasm(): Promise<UeasWasmApi> {
+function loadWasm(): Promise<UeasWasmApi> {
   if (!wasmPromise) {
-    const pkgPath = "/pkg/ueas_wasm.js";
-    wasmPromise = (import(/* @vite-ignore */ pkgPath) as Promise<UeasWasmApi>).then(async (mod) => {
-      if (typeof mod.default === "function") {
-        await mod.default();
-      }
-      return mod;
-    });
+    wasmPromise = initWasm(wasmUrl).then(() => ({
+      ueas_check,
+      ueas_format,
+      ueas_verify,
+      ueas_transpile,
+      ueas_run,
+    }));
   }
   return wasmPromise;
 }
