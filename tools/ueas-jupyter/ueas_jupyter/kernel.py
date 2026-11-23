@@ -5,7 +5,7 @@ from __future__ import annotations
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from ipykernel.kernelbase import Kernel
 
@@ -17,7 +17,7 @@ class UeasKernel(Kernel):  # type: ignore[misc]
     implementation_version = "2.0.0"
     language = "ueas"
     language_version = "2.0.0"
-    language_info: dict[str, Any] = {
+    language_info: ClassVar[dict[str, Any]] = {
         "name": "ueas",
         "mimetype": "text/x-ueas",
         "file_extension": ".ueas",
